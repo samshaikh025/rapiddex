@@ -74,15 +74,6 @@ export default function Chainui(props: propsType) {
                         ))
                     }
                 </div>
-                <div className="coin-list">
-                    master: {
-                         
-                        masterAvailableChains.length
-                    }
-                    avail : {
-                        AvailableChains.length
-                    }
-                </div>
             </div>
     );
   }

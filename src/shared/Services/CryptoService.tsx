@@ -21,7 +21,7 @@ export class CryptoService {
     async GetAvailableTokens(selectedChain: Chains)
     {
         this.SetLifiCoins = await this.GetLifiCoinFromIndexDB(selectedChain.chainId);
-        this.SetDlnCoins = await this.GetCoinsForDln(selectedChain.chainId);
+        //this.SetDlnCoins = await this.GetCoinsForDln(selectedChain.chainId);
         this.SetRangoCoins  = await this.GetCoinsForRango(selectedChain.chainId);
         this.SetOwltoCoins = await this.GetOwltoCoinFromIndexDB(selectedChain.chainId);
 
@@ -35,19 +35,19 @@ export class CryptoService {
             this.AvailableCoins.push(obj);
         })
 
-        this.SetDlnCoins?.map((coin: any)=>{
+        // this.SetDlnCoins?.map((coin: any)=>{
 
-            if(this.AvailableCoins.filter(x => x.address == coin.address).length == 0)
-            {
-                let obj = new Tokens();
-                obj.name = coin.name;
-                obj.address = coin.address;
-                obj.symbol = coin.symbol;
-                obj.logoURI = coin.logoURI;
+        //     if(this.AvailableCoins.filter(x => x.address == coin.address).length == 0)
+        //     {
+        //         let obj = new Tokens();
+        //         obj.name = coin.name;
+        //         obj.address = coin.address;
+        //         obj.symbol = coin.symbol;
+        //         obj.logoURI = coin.logoURI;
 
-                this.AvailableCoins.push(obj);
-            }    
-        })
+        //         this.AvailableCoins.push(obj);
+        //     }    
+        // })
 
         this.SetRangoCoins?.map((coin: any)=>{
 
@@ -235,7 +235,7 @@ export class CryptoService {
         {
             this.AvailableChains = [];
             this.SetLifiChains = await this.GetLifiChains();
-            this.SetDlnChains = await this.GetDlnChains();
+            //this.SetDlnChains = await this.GetDlnChains();
             this.SetRangoChains = await this.GetRangoChains();
             this.SetOwltoChains = await this.GetOwltoChains();
 
@@ -249,14 +249,14 @@ export class CryptoService {
                 this.AvailableChains.push(obj);
             });
 
-            this.SetDlnChains?.map((chain) => {
-                if (this.AvailableChains?.filter(x => x.chainId == chain.originalChainId).length == 0) {
-                    let obj = new Chains();
-                    obj.chainId = chain.originalChainId
-                    obj.chainName = chain.chainName;
-                    this.AvailableChains.push(obj);
-                }
-            });
+            // this.SetDlnChains?.map((chain) => {
+            //     if (this.AvailableChains?.filter(x => x.chainId == chain.originalChainId).length == 0) {
+            //         let obj = new Chains();
+            //         obj.chainId = chain.originalChainId
+            //         obj.chainName = chain.chainName;
+            //         this.AvailableChains.push(obj);
+            //     }
+            // });
 
             this.SetRangoChains?.map((chain) => {
                 if (this.AvailableChains.filter(x => x.chainId == parseInt(chain.chainId)).length == 0) {
@@ -403,5 +403,32 @@ export class CryptoService {
             console.log(error);
         }
         
+    }
+
+    async GetTokenValue(token: Tokens)
+    {
+        let amountUSD = 0;
+        let query = token.address == '0x0000000000000000000000000000000000000000' ? 'symbol='+ token.symbol : 'asset='+ token.address;
+        let payLoad = {
+            apiType : 'GET',
+            apiUrl : `https://api.mobula.io/api/1/market/data?${query}`,
+            apiData : null
+        }
+        try{
+            let tokenExec = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+    
+            });
+            const TokenResponse = await tokenExec.json();
+            amountUSD = TokenResponse?.Data?.data?.price;
+        }catch(error){
+            console.log(error);
+        }
+        
+        return amountUSD; 
     }
 }

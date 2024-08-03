@@ -10,7 +10,7 @@ type propsType = {
     sourceToken: Tokens,
     destToken: Tokens,
     openChainUI: (isShow: boolean) => void,
-    closeTokenUI: (token: Tokens) => void
+    closeTokenUI: (token: Tokens) => Promise<void>
 }
 export default function Tokenui(props: propsType) {
 
@@ -37,10 +37,14 @@ export default function Tokenui(props: propsType) {
         
     }
     
-    function backFromTokenUI()
+    async function backCloseTokenUI()
     {
         let token = props.dataSource == DataSource.From ? props.sourceToken : props.destToken;
-        props.closeTokenUI(token);
+        await props.closeTokenUI(token);
+    }
+
+    async function handleCloseTokenUI(token: Tokens){
+        await props.closeTokenUI(token)
     }
 
     function filterToken(tokenValue: string)
@@ -62,7 +66,7 @@ export default function Tokenui(props: propsType) {
     return (
         <div className="exchange-section gap-top-setion swap-coin-section">
             <div className="section-top">
-                <i className="fa-solid fa-arrow-left" role="button" onClick={()=> backFromTokenUI()}></i> &nbsp;
+                <i className="fa-solid fa-arrow-left" role="button" onClick={()=> backCloseTokenUI()}></i> &nbsp;
                 <h3 className="section_title">Swap coin</h3>
             </div>
             <div className="searching-section button-with-icon" onClick={()=> props.openChainUI(true)}>
@@ -80,7 +84,7 @@ export default function Tokenui(props: propsType) {
                 {
                     AvailableToken.map((token: Tokens, index) => (
                         <div>
-                            <div className="coin-item" onClick={() => props.closeTokenUI(token)}>
+                            <div className="coin-item" onClick={() => handleCloseTokenUI(token)}>
                                 <span className="icon">
                                     <img src={token.logoURI} alt="" />
                                 </span>

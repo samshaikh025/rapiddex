@@ -31,7 +31,6 @@ export default function Swapui() {
             setSourceToken(token);
             let amount = await cryptoService.GetTokenValue(token);
             setSourceTokenAmount(amount);
-            debugger
             console.log('Source token amount = '+ amount);
         }else if(dataSource == DataSource.To){
             setDestToken(token);

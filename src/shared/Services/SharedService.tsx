@@ -1,11 +1,15 @@
 import { openDB } from "idb";
+import { BehaviorSubject } from "rxjs";
 
 export class SharedService {
+  
+    public walletAddress$ = new BehaviorSubject(null);
+    public walletAddress = this.walletAddress$.asObservable();
 
     DB_NAME = 'IndexDB';
     STORE_NAME = 'Store';
     DB_VERSION = 1;
-    
+
     SharedService()
     {
 
@@ -34,6 +38,11 @@ export class SharedService {
     async getIndexDbItem(key: string) {
         const db = await this.getDB();
         return db.get(this.STORE_NAME, key);
+    }
+
+    async removeIndexDbItem(key) {
+      const db = await this.getDB();
+      return db.delete(this.STORE_NAME, key);
     }
 
     async getDB() {

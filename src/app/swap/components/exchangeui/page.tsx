@@ -1,6 +1,11 @@
-import { DataSource } from "@/shared/Enum/Common.enum";
+import { config } from "@/app/wagmi/config";
+import { DataSource, Keys } from "@/shared/Enum/Common.enum";
 import { Chains, Tokens } from "@/shared/Models/Common.model";
+import { SharedService } from "@/shared/Services/SharedService";
+import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useState } from "react";
+import { useAccount, useBalance, useDisconnect } from "wagmi";
+import { getBalance } from "wagmi/actions";
 
 type propsType = {
     sourceChain: Chains,
@@ -18,10 +23,47 @@ export default function Exchangeui(props: propsType) {
 
     let [sendAmount, setSendAmount] = useState<number>(0);
     let [equAmountUSD, setequAmountUSD] = useState<number>(0);
+    let sharedService = new SharedService();
+    let [walletAddress, setWalletAddress] = useState<string>(null);
+    const { open } = useWeb3Modal();
+    let account = useAccount();
+
+    function openWallet() {
+        open();
+    } 
+
+    async function getWalletAddressFromStorage()
+    {
+        let address = await sharedService.getIndexDbItem(Keys.Wallet_Address);
+        if(address){
+            setWalletAddress(address);
+        }
+    }
+
+    async function setWalletAddressInStorage(){
+        let response = await sharedService.setIndexDbItem(Keys.Wallet_Address, account.address);
+    }
+
     useEffect(()=>{
-        debugger
         console.log('exchange Ui loaded');
+        getWalletAddressFromStorage();
+        getAvailableBalanceInWallet();
     }, []);
+
+    useEffect(()=>{
+        sharedService.walletAddress$.next(account.address);
+        setWalletAddressInStorage();
+    }, [account]);
+
+    useEffect(() => {
+        let walletSub = sharedService.walletAddress.subscribe((res) => {
+          setWalletAddress(res);
+          getAvailableBalanceInWallet();
+        });
+        return () => {
+          walletSub.unsubscribe();
+        }
+      }, [sharedService.walletAddress$]);
 
     function updateAmount(amount: number)
     {
@@ -44,6 +86,14 @@ export default function Exchangeui(props: propsType) {
         setSendAmount(0);
         setequAmountUSD(0);
         props.interChangeData();
+    }
+
+    async function getAvailableBalanceInWallet(){
+        const balance = getBalance(config,{
+            address: walletAddress as `0x${string}`,//or as Address(viem) 
+          });
+          let amount = await balance;
+          console.log('wallet address:',amount)
     }
 
     return (
@@ -123,8 +173,8 @@ export default function Exchangeui(props: propsType) {
             </div>
 
             <div className="button-icon">
-                <button className="theme-card btn">connect to wallet</button>
-                <span className="icon"><i className="fa-solid fa-wallet"></i></span>
+                {walletAddress != null && <button className="theme-card btn">Excahnge</button>}
+                {walletAddress == null && <button className="theme-card btn" onClick={()=> openWallet()}>Connect Wallet</button>}
             </div>
         </div>
     );

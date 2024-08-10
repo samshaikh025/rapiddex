@@ -3,7 +3,10 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import 'bootstrap/dist/css/bootstrap.css';
 import Header from "@/shared/Component/header/page";
-
+import { cookieToInitialState } from "wagmi";
+import { config } from './wagmi/config'
+import { headers } from "next/headers";
+import WagmiProviderComp from "./wagmi/wagmi-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -16,6 +19,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialState = cookieToInitialState(config, headers().get("cookie"));
   return (
     <html lang="en">
     <head>
@@ -26,10 +30,13 @@ export default function RootLayout({
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
     </head>    
     <body>
+      <WagmiProviderComp initialState={initialState}>
         <Header/>
         <div className="container">
-          {children}
+            {children}
         </div>
+      </WagmiProviderComp>
+
     </body>
     </html>
   );

@@ -21,7 +21,6 @@ export default function Tokenui(props: propsType) {
     async function getCoinsByChain(){
         let tokens: Tokens[] = [];
         let chainDataSource = new Chains();
-        debugger
         try{
             chainDataSource = props.dataSource == DataSource.From ? props.sourceChain : props.destChain;
             if(chainDataSource.chainId > 0)

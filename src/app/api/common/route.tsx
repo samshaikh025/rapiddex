@@ -5,7 +5,6 @@ export async function POST(req: Request , res: NextApiResponse)
 {
     const request = await req.json();
     let apiResponse;
-    debugger
     if(request.apiType == 'GET')
     {
         apiResponse = await fetch(request.apiUrl);

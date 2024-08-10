@@ -9,4 +9,5 @@ export enum Keys {
     All_OWLTO_COINS = 'All_Owlto_Coins',
     All_AVAILABLE_CHAINS = 'All_Available_Chains',
     All_DLN_CHAINS = 'All_DLN_Chains',
+    Wallet_Address = 'Wallet_Address'
 }

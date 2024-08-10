@@ -1,4 +1,60 @@
+'use client'
+import { Keys } from "@/shared/Enum/Common.enum";
+import { SharedService } from "@/shared/Services/SharedService";
+import { useWeb3Modal } from "@web3modal/wagmi/react";
+import { useEffect, useState } from "react";
+import { BehaviorSubject, Subject } from "rxjs";
+import { useAccount, useDisconnect } from "wagmi";
+
 export default function Header() {
+
+  const { open } = useWeb3Modal();
+  let account = useAccount();
+  let sharedService = new SharedService();
+  let { disconnect } = useDisconnect()
+  let [walletAddress, setWalletAddress] = useState<string | null>(null);
+
+  async function setWalletAddressInStorage(){
+    let response = await sharedService.setIndexDbItem(Keys.Wallet_Address, account.address);
+  }
+
+  async function getWalletAddressFromStorage()
+  {
+      let address = await sharedService.getIndexDbItem(Keys.Wallet_Address);
+      if(address){
+        setWalletAddress(address);
+      }
+  }
+
+  useEffect(() => {
+    getWalletAddressFromStorage();
+  }, []);
+
+  useEffect(() => {
+    let walletSub = sharedService.walletAddress.subscribe((res) => {
+      setWalletAddress(res);
+    });
+    return () => {
+      walletSub.unsubscribe();
+    }
+  }, [sharedService.walletAddress$]);
+
+  useEffect(() => {
+    console.log('account info: ' + account);
+    setWalletAddressInStorage();
+    sharedService.walletAddress$.next(account.address);
+  }, [account]);
+
+  function openWallet()
+  {
+    open();
+  }
+  
+  function diconnectWallet(){
+    disconnect();
+    sharedService.walletAddress$.next(null);
+    sharedService.removeIndexDbItem(Keys.Wallet_Address);
+  }
     return(
         <nav className="navbar navbar-expand-lg navbar-light ">
           <div className="container">
@@ -28,6 +84,11 @@ export default function Header() {
                 </li>
               </ul>
             </div>
+            <div>
+              {walletAddress != null && <button>{walletAddress}</button>}
+              {walletAddress == null && <button onClick={()=> openWallet()}>Connect Wallet</button>}
+            </div>
+            <button onClick={()=> diconnectWallet()}>diconnect</button>
           </div>
         </nav>
     )

@@ -4,15 +4,31 @@ import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useState } from "react";
 import { BehaviorSubject, Subject } from "rxjs";
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount, useAccountEffect, useDisconnect } from "wagmi";
+import { config } from "../../../app/wagmi/config"
 
 export default function Header() {
 
   const { open } = useWeb3Modal();
   let account = useAccount();
-  let sharedService = new SharedService();
-  let { disconnect } = useDisconnect()
-  let [walletAddress, setWalletAddress] = useState<string | null>(null);
+  let sharedService = SharedService.getSharedServiceInstance();
+  const { disconnect, isSuccess } = useDisconnect();
+  let [walletAddress, setWalletAddress] = useState<string>('');
+
+  // useAccountEffect({
+  //   config,
+  //   async onConnect(data) {
+  //     console.log('Connected!', data)
+  //     if(account.address){
+  //       setWalletAddress(account.address)
+  //       await setWalletAddressInStorage();
+  //       sharedService.walletAddress$.next(account.address);
+  //     }
+  //   },
+  //   onDisconnect() {
+  //     console.log('Disconnected!')
+  //   },
+  // })
 
   async function setWalletAddressInStorage(){
     let response = await sharedService.setIndexDbItem(Keys.Wallet_Address, account.address);
@@ -31,18 +47,22 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    let walletSub = sharedService.walletAddress.subscribe((res) => {
-      setWalletAddress(res);
+    let openWalletConnectModal = sharedService.openWalletModal.subscribe((res) => {
+      if(res){
+        openWallet();
+      }
     });
-    return () => {
-      walletSub.unsubscribe();
-    }
-  }, [sharedService.walletAddress$]);
+    
+  }, [sharedService.openWalletModal$]);
 
   useEffect(() => {
     console.log('account info: ' + account);
-    setWalletAddressInStorage();
-    sharedService.walletAddress$.next(account.address);
+    if(account.address){
+      sharedService.abc = 10;
+      setWalletAddress(account.address)
+      sharedService.walletAddress$.next(account.address);
+      //setWalletAddressInStorage();
+    }
   }, [account]);
 
   function openWallet()
@@ -51,8 +71,9 @@ export default function Header() {
   }
   
   function diconnectWallet(){
-    disconnect();
-    sharedService.walletAddress$.next(null);
+    disconnect()
+    setWalletAddress('');
+    sharedService.walletAddress$.next('');
     sharedService.removeIndexDbItem(Keys.Wallet_Address);
   }
     return(
@@ -85,8 +106,8 @@ export default function Header() {
               </ul>
             </div>
             <div>
-              {walletAddress != null && <button>{walletAddress}</button>}
-              {walletAddress == null && <button onClick={()=> openWallet()}>Connect Wallet</button>}
+              {walletAddress != '' && <button>{walletAddress}</button>}
+              {walletAddress == '' && <button onClick={()=> openWallet()}>Connect Wallet</button>}
             </div>
             <button onClick={()=> diconnectWallet()}>diconnect</button>
           </div>

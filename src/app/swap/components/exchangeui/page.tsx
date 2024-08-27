@@ -23,13 +23,13 @@ export default function Exchangeui(props: propsType) {
 
     let [sendAmount, setSendAmount] = useState<number>(0);
     let [equAmountUSD, setequAmountUSD] = useState<number>(0);
-    let sharedService = new SharedService();
-    let [walletAddress, setWalletAddress] = useState<string>(null);
+    let sharedService = SharedService.getSharedServiceInstance();
+    let [walletAddress, setWalletAddress] = useState<string>('');
     const { open } = useWeb3Modal();
     let account = useAccount();
 
     function openWallet() {
-        open();
+        sharedService.openWalletModal$.next(true);
     } 
 
     async function getWalletAddressFromStorage()
@@ -40,9 +40,9 @@ export default function Exchangeui(props: propsType) {
         }
     }
 
-    async function setWalletAddressInStorage(){
-        let response = await sharedService.setIndexDbItem(Keys.Wallet_Address, account.address);
-    }
+    // async function setWalletAddressInStorage(){
+    //     let response = await sharedService.setIndexDbItem(Keys.Wallet_Address, account.address);
+    // }
 
     useEffect(()=>{
         console.log('exchange Ui loaded');
@@ -50,19 +50,21 @@ export default function Exchangeui(props: propsType) {
         getAvailableBalanceInWallet();
     }, []);
 
-    useEffect(()=>{
-        sharedService.walletAddress$.next(account.address);
-        setWalletAddressInStorage();
-    }, [account]);
+    // useEffect(()=>{
+    //     sharedService.walletAddress$.next(account.address);
+    //     setWalletAddressInStorage();
+    // }, [account]);
 
     useEffect(() => {
         let walletSub = sharedService.walletAddress.subscribe((res) => {
-          setWalletAddress(res);
-          getAvailableBalanceInWallet();
+                //if(res != null){
+                    setWalletAddress(res);
+                //}
+                //getAvailableBalanceInWallet();
         });
-        return () => {
-          walletSub.unsubscribe();
-        }
+        // return () => {
+        //   walletSub.unsubscribe();
+        // }
       }, [sharedService.walletAddress$]);
 
     function updateAmount(amount: number)
@@ -173,8 +175,8 @@ export default function Exchangeui(props: propsType) {
             </div>
 
             <div className="button-icon">
-                {walletAddress != null && <button className="theme-card btn">Excahnge</button>}
-                {walletAddress == null && <button className="theme-card btn" onClick={()=> openWallet()}>Connect Wallet</button>}
+                {walletAddress != '' && <button className="theme-card btn">Excahnge</button>}
+                {walletAddress == '' && <button className="theme-card btn" onClick={()=> openWallet()}>Connect Wallet</button>}
             </div>
         </div>
     );

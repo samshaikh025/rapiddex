@@ -2,9 +2,35 @@ import { openDB } from "idb";
 import { BehaviorSubject } from "rxjs";
 
 export class SharedService {
-  
+
+    // Hold a reference to the single created instance
+    // of the Singleton, initially set to null.
+    public static instance: SharedService | null = null;
+
+    // Make the constructor private to block instantiation
+    // outside of the class.
+    public constructor() {
+        // initialization code
+    }
+
+    // Provide a static method that allows access
+    // to the single instance.
+    public static getSharedServiceInstance(): SharedService {
+        // Check if an instance already exists.
+        // If not, create one.
+        if (this.instance === null) {
+            this.instance = new SharedService();
+        }
+        // Return the instance.
+        return this.instance;
+    }
+
+    public abc = 0;
     public walletAddress$ = new BehaviorSubject(null);
     public walletAddress = this.walletAddress$.asObservable();
+
+    public openWalletModal$ = new BehaviorSubject(null);
+    public openWalletModal = this.openWalletModal$.asObservable();
 
     DB_NAME = 'IndexDB';
     STORE_NAME = 'Store';

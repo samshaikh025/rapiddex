@@ -1,0 +1,154 @@
+.header{
+    position:fixed;
+    width:100%;
+    top:20px;
+    z-index:9
+}
+.w-48{
+    width:48px
+}
+.header .header-wrapper{
+    border: 1px solid var(--border-color-40);
+    padding:20px 30px;
+    background: var(--header-card);
+    border-radius:100px;
+}
+.header .header-wrapper .site-logo img{
+    width:auto;
+    height:40px
+}
+.header .header-wrapper .menu-wrapper{
+    gap:8px;
+}
+.header .header-wrapper .menu-wrapper a{
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 25px;
+    color:var(--black-color);
+    display:inline-block;
+    padding:8px 16px;
+    border-radius:100px
+}
+.header .header-wrapper .menu-wrapper a:hover,.header .header-wrapper .menu-wrapper a.active{
+    background-color:var(--primary-color-8)
+}
+.header .user-profile{
+    padding:.25rem 1rem;
+    border-bottom: 1px solid var(--border-color-40);
+    margin-bottom:8px;
+    padding-bottom:16px
+}
+.header .user-profile img{
+    width:40px; 
+    height:40px;
+    border-radius:100px;
+    border:1px solid var(--primary-color) ;
+    margin-right:12px
+}
+.header .user-profile label{
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 25px;
+    color: var(--black-color);
+}
+.header .user-profile span{
+    font-size: 14px;
+    color: var(--black-color);
+}
+.header .dropdown-menu{
+    min-width:250px;
+    top:20px !important
+}
+.theme-mode .checkbox {
+    opacity: 0;
+    position: absolute;
+}
+  
+.theme-mode .checkbox-label {
+    background-color: var(--primary-color);
+    width: 50px;
+    height: 26px;
+    border-radius: 50px;
+    position: relative;
+    padding: 5px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.theme-mode .fa-moon {color: #f1c40f;}
+
+.theme-mode .fa-sun {color: #f39c12;}
+
+.theme-mode .checkbox-label .ball {
+    background-color: #fff;
+    width: 22px;
+    height: 22px;
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    border-radius: 50%;
+    transition: transform 0.2s linear;
+}
+
+.theme-mode .checkbox:checked + .checkbox-label .ball {
+    transform: translateX(24px);
+}
+.coin-wrapper .coin{
+    min-width:50px;
+    width:50px;
+    height:50px;
+    border-radius:100px;
+    border:2px solid var(--primary-icon-color)
+}
+.coin-wrapper .coin-small{
+    width:24px;
+    height:24px;
+    border-radius:100px;
+    border:2px solid var(--white-color);
+    position: absolute;
+    bottom: 0;
+    left: 30px;
+}
+.change-btn{
+    min-width:30px;
+    height:30px;
+    color:var(--primary-color);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+.coin-sub-name{
+    font-size:12px
+}
+.transparent-input{
+    border:none;
+    background:transparent;
+    outline:none;
+    font-size:20px;
+    color:var(--black-color);
+    font-weight:600;
+    height:auto
+}
+.search-bar i{
+    position:absolute;
+    left:8px;
+    top:16px;
+    color:var(--border-color)
+}
+.search-bar input {
+    padding-left:36px
+}
+.coin-list-wrapper{
+    max-height:300px;
+    overflow:auto;
+}
+.coin-list-wrapper .inner-card:hover{
+    background: var(--primary-color-8);
+    cursor:pointer
+}
+.selcet-coin img{
+    min-width:50px;
+    height:50px
+}

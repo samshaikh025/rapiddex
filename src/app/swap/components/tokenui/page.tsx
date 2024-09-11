@@ -63,41 +63,60 @@ export default function Tokenui(props: propsType) {
       }, []);
 
     return (
-        <div className="exchange-section gap-top-setion swap-coin-section">
-            <div className="section-top">
-                <i className="fa-solid fa-arrow-left" role="button" onClick={()=> backCloseTokenUI()}></i> &nbsp;
-                <h3 className="section_title">Swap coin</h3>
-            </div>
-            <div className="searching-section button-with-icon" onClick={()=> props.openChainUI(true)}>
-                <span className="icon select-chain select"><i className="fa-solid fa-dice-d6"></i></span>
-                <button className="select-chain select">
-                    {props.dataSource == DataSource.From ? (props.sourceChain.chainName == '' ? 'Select Chain' : props.sourceChain.chainName) : (props.destChain.chainName == '' ? 'Select Chain' : props.destChain.chainName)}
-                </button>
-            </div>
-            <div className="searching-section input-with-text">
-                <span className="icon select-chain select"><i className="fa-solid fa-magnifying-glass"></i></span>
-                <input type="text" placeholder="select coin" onKeyUp={(e) => filterToken(e.currentTarget.value)}/>
-            </div>
-            <h6 className="section-heading small-heaading">coin list</h6>
-            <div className="coin-list">
-                {
-                    AvailableToken.map((token: Tokens, index) => (
-                        <div>
-                            <div className="coin-item" onClick={() => handleCloseTokenUI(token)}>
-                                <span className="icon">
-                                    <img src={token.logoURI} alt="" />
-                                </span>
-                                <div className="icon-detail-box">
-                                    <div className="icon-detail">
-                                        <h6 className="coin-text">{token.name}</h6>
-                                        <p className="coin-price">$0.5</p>
-                                    </div>
-                                    <a href="#" target="_blank" className="coin-info">Coin info</a>
-                                </div>
+        <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-coin-wrapper">
+            <div className="card">
+                <div className="p-24">
+                    <div className="d-flex align-items-center gap-3 mb-2">
+                        <div className="card-action-wrapper cursor-pointer" id="back-to-swap" onClick={() => backCloseTokenUI()}>
+                            <i className="fas fa-chevron-left"></i>
+                        </div>
+                        <div className="card-title">
+                            Exchange From
+                        </div>
+                    </div>
+
+                    <div className="inner-card w-100 py-3 px-3 d-flex flex-column gap-3">
+                        <div className="d-flex gap-3 w-100 align-items-center">
+                            <div className="selcet-coin">
+                                <img src="https://coin-images.coingecko.com/coins/images/35494/large/Blast.jpg?1719385662" alt="" />
+                            </div>
+                            <button className="btn primary-btn w-100" onClick={() => props.openChainUI(true)}>
+                                {props.dataSource == DataSource.From ? (props.sourceChain.chainName == '' ? 'Select Chain' :
+                                    props.sourceChain.chainName) : (props.destChain.chainName == '' ? 'Select Chain' :
+                                        props.destChain.chainName)}
+                            </button>
+                        </div>
+                        <div className="search-bar position-relative">
+                            <i className="fas fa-search"></i>
+                            <input type="text" className="w-100" placeholder="Search here" onKeyUp={(e) =>
+                                filterToken(e.currentTarget.value)} />
+                        </div>
+                        <div className="mt-2">
+                            <div className="card-title mb-3">
+                                Coin List
+                            </div>
+                            <div className="coin-list-wrapper d-flex flex-column gap-2">
+                                {
+                                    AvailableToken.map((token: Tokens, index) => (
+                                        <div className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3"
+                                            onClick={() => handleCloseTokenUI(token)}>
+                                            <div className="d-flex align-items-center gap-3">
+                                                <div className="position-relative coin-wrapper">
+                                                    <img src={token.logoURI} className="coin" alt="coin"/>
+                                                </div>
+                                                <div className="d-flex flex-column">
+                                                    <label className="coin-name d-block fw-600">{token.name}</label>
+                                                    <label className="coin-sub-name">Coin Info</label>
+                                                </div>
+                                            </div>
+                                            <label className=" fw-600">$ 0.5</label>
+                                        </div>
+                                    ))
+                                }
                             </div>
                         </div>
-                    ))
-                }
+                    </div>
+                </div>
             </div>
         </div>
     );

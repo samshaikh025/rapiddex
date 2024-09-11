@@ -99,84 +99,92 @@ export default function Exchangeui(props: propsType) {
     }
 
     return (
-        <div className="exchange-section gap-top-setion">
-            <div className="section-top">
-                <h3 className="section_title">Exchange</h3>
-                <span className="icon-small"><i className="fa-solid fa-gear"></i></span>
-            </div>
-            <div className="theme-card exchange-box">
-                <small className="exchange-text">From</small>
-                <div className="exchange-input exchange-from" onClick={()=>props.openTokenUI(DataSource.From)}>
-                    {/* <div className="exchange-info-box"> */}
-                        <div className="exchange-icon">
-                            <div className="icon-box">
-                                <span className="icon">
-                                    <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png" alt=""/>
-                                </span>
-                                <span className="icon  max-small-icon">
-                                    <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/arbitrum.svg" alt=""/>
-                                </span>
+        <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
+            <div className="card">
+                <div className="p-24">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                        <div className="card-title">
+                            Exchange
+                        </div>
+                        <div className="card-action-wrapper">
+                            <i className="fas fa-cog cursor-pointer"></i>
+                        </div>
+                    </div>
+                    <div className="d-flex align-items-center gap-3 position-relative">
+                        <div className="inner-card w-100 py-2 px-3" id="select-coin" onClick={() =>
+                            props.openTokenUI(DataSource.From)}>
+                            <label className="mb-2 fw-600">From</label>
+                            <div className="d-flex align-items-center gap-3">
+                                <div className="position-relative coin-wrapper">
+                                    <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+                                        className="coin" alt="coin" />
+                                    <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/arbitrum.svg"
+                                        className="coin-small" alt="coin" />
+                                </div>
+                                <div className="d-flex flex-column">
+                                    <label className="coin-name d-block fw-600">{props.sourceChain.chainId > 0 ?
+                                        props.sourceChain.chainName : 'Chain'}</label>
+                                    <label className="coin-sub-name">{props.sourceToken.name != '' ? props.sourceToken.name :
+                                        'Token'}</label>
+                                </div>
                             </div>
                         </div>
-                        <div className="exchange-info">
-                        <h5 className="exchange-info-heading">{props.sourceChain.chainId > 0 ? props.sourceChain.chainName : 'Select Chain'} </h5>
-                        <h5 className="exchange-info-heading">{props.sourceToken.name != '' ? props.sourceToken.name : 'Select Token'} </h5>
-                        <h5 className="exchange-info-heading">{props.sourceTokenAmount} </h5>
+                        <div className="change-btn position-absolute cursor-pointer inner-card d-flex align-items-center justify-content-center"
+                            onClick={() => interChangeFromTo()}>
+                            <i className="fas fa-exchange-alt"></i>
                         </div>
-                         {/* </div> */}
-                </div>
-            </div>
-            <div className="text-center">
-            <i className="fa-solid fa-arrows-rotate text-center" onClick={() => interChangeFromTo()}></i>
-            </div>
-            <div className="theme-card exchange-box" onClick={()=>props.openTokenUI(DataSource.To)}>
-                <small className="exchange-text">To</small>
-                <div className="exchange-input exchange-from">
-                   {/* <div className="exchange-info-box">  */}
-                        <div className="exchange-icon">
-                            <div className="icon-box">
-                                <span className="icon">
-                                    <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png" alt=""/>
-                                </span>
-                                <span className="icon  max-small-icon">
-                                    <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/arbitrum.svg" alt=""/>
-                                </span>
+                        <div className="inner-card w-100 py-2 px-3" onClick={() => props.openTokenUI(DataSource.To)}>
+                            <label className="mb-2 fw-600">To</label>
+                            <div className="d-flex align-items-center gap-3">
+                                <div className="position-relative coin-wrapper">
+                                    <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+                                        className="coin" alt="coin" />
+                                    <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/arbitrum.svg"
+                                        className="coin-small" alt="coin" />
+                                </div>
+                                <div className="d-flex flex-column">
+                                    <label className="coin-name d-block fw-600">{props.destChain.chainId > 0 ?
+                                        props.destChain.chainName : 'Chain'}</label>
+                                    <label className="coin-sub-name">{props.destToken.name != '' ? props.destToken.name :
+                                        'Token'}</label>
+                                </div>
                             </div>
                         </div>
-                        <div className="exchange-info">
-                        <h5 className="exchange-info-heading">{props.destChain.chainId > 0 ? props.destChain.chainName : 'Select Chain'} </h5>
-                        <h5 className="exchange-info-heading">{props.destToken.name != '' ? props.destToken.name : 'Select Token'} </h5>
-                        <h5 className="exchange-info-heading">{props.destTokenAmount} </h5>
-                        </div>
-                         {/* </div> */}
-                </div>
-            </div>
-            <div className="theme-card exchange-box">
-                <small className="exchange-text">send</small>
-                <div className="exchange-input exchange-from">
-                   {/* <div className="exchange-info-box"> */}
-                        <div className="exchange-icon">
-                            <div className="icon-box">
-                                <span className="icon">
-                                    <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png" alt=""/>
-                                </span>
-                                <span className="icon  max-small-icon">
-                                    <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/arbitrum.svg" alt=""/>
-                                </span>
+                    </div>
+                    <div className="inner-card w-100 py-2 px-3 mt-3">
+                        <label className="mb-2 fw-600">Send</label>
+                        <div className="d-flex align-items-center gap-3">
+                            <div className="position-relative coin-wrapper">
+                                <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+                                    className="coin" alt="coin" />
+                                <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/arbitrum.svg"
+                                    className="coin-small" alt="coin" />
+                            </div>
+                            <div className="d-flex flex-column pb-2">
+                                <input type="number" className="transparent-input" value={sendAmount} onKeyUp={(e) =>
+                                    updateAmount(parseFloat(e.currentTarget.value))} onChange={(e) =>
+                                        updateAmount(parseFloat(e.currentTarget.value))} />
+                                <label className="coin-sub-name">$ {equAmountUSD}</label>
                             </div>
                         </div>
-                        <div className="exchange-info">
-                            <input type="number" value={sendAmount} onKeyUp={(e) => updateAmount(parseFloat(e.currentTarget.value))} onChange={(e) => updateAmount(parseFloat(e.currentTarget.value))}/>
-                            <br></br>
-                            $ {equAmountUSD}
-                        </div>
-                        {/* </div>  */}
+                    </div>
+                    {
+                        walletAddress != '' &&
+                        <>
+                            <button className="btn primary-btn w-100 mt-3">
+                                Exchange
+                            </button>
+                        </>
+                    }
+                    {
+                        walletAddress == '' &&
+                        <>
+                            <button className="btn primary-btn w-100 mt-3" onClick={() => openWallet()}>
+                                Connect Wallet
+                            </button>
+                        </>
+                    }
                 </div>
-            </div>
-
-            <div className="button-icon">
-                {walletAddress != '' && <button className="theme-card btn">Excahnge</button>}
-                {walletAddress == '' && <button className="theme-card btn" onClick={()=> openWallet()}>Connect Wallet</button>}
             </div>
         </div>
     );

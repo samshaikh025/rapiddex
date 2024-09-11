@@ -1,0 +1,28 @@
+@media(min-width:992px){
+    .mobile-menu{
+        display:none
+    }
+}
+@media(min-width:769px){
+    .header .header-wrapper .site-logo .mobile-logo{
+        display:none
+    }
+}
+@media(max-width:991.98px){
+    .menu-wrapper{
+        display:none !important;
+    }
+    .btn {
+        font-size: 18px;
+        line-height: 22px;
+        padding: 0 16px 0 16px;
+    }
+}
+@media(max-width:768.98px){
+    .header .header-wrapper .site-logo .desktop-logo{
+        display:none
+    }
+    .header .header-wrapper {
+        padding: 20px 16px;
+    }
+}

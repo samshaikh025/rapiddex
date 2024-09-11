@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "./globals.css";//comment later
+import "../assets/css/global.css";
+import "../assets/css/style.css";
+import "../assets/css/responsive.css";
+import "../assets/fonts/fonts.css";
 import 'bootstrap/dist/css/bootstrap.css';
 import Header from "@/shared/Component/header/page";
 import { cookieToInitialState } from "wagmi";
@@ -23,7 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en">
     <head>
-      <title>RapidDex</title>
+      {/* <meta charset="UTF-8"/> */}
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+      <title>Rapid-dex</title>
       <link rel="preconnect" href="https://fonts.googleapis.com"/>
       <link rel="preconnect" href="https://fonts.gstatic.com"/>
       <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet"/>
@@ -32,11 +38,12 @@ export default function RootLayout({
     <body>
       <WagmiProviderComp initialState={initialState}>
         <Header/>
-        <div className="container">
+        <div className="content-wrapper">
             {children}
         </div>
       </WagmiProviderComp>
-
+      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     </body>
     </html>
   );

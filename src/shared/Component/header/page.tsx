@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { BehaviorSubject, Subject } from "rxjs";
 import { useAccount, useAccountEffect, useDisconnect } from "wagmi";
 import { config } from "../../../app/wagmi/config"
+import headerLogoDesktop from '../../../assets/images/logo.png';
+import headerLogoMobile from '../../../assets/images/logoIocn.png';
 
 export default function Header() {
 
@@ -77,40 +79,88 @@ export default function Header() {
     sharedService.removeIndexDbItem(Keys.Wallet_Address);
   }
     return(
-        <nav className="navbar navbar-expand-lg navbar-light ">
-          <div className="container">
-            <a className="navbar-brand" href="#">
-              <h2 className="icon">SwapDex</h2>
-            </a>
-            <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-              <span className="navbar-toggler-icon"></span>
-            </button>
-            <div className="collapse navbar-collapse justify-content-center" id="navbarSupportedContent">
-              <ul className="navbar-nav justify-content-cente mb-2 mb-lg-0">
-                <li className="nav-item">
-                  <a className="nav-link active" aria-current="page" href="/swap">Swap</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">loans</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">liqididy</a>
-                </li>
-
-                <li className="nav-item">
-                  <a className="nav-link" href="#">Stak</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">Stak</a>
-                </li>
-              </ul>
+        <section className="header">
+        <div className="container">
+            <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
+                <div className="site-logo">
+                    <a href="index.html">
+                        <img src={headerLogoDesktop.src} className="desktop-logo" alt="site-logo"/>
+                        <img src={headerLogoMobile.src} className="mobile-logo" alt="site-logo"/>
+                    </a>
+                </div>
+                <div className="menu-wrapper d-flex align-items-center">
+                    <a href="#" className="active">Swap</a>
+                    <a href="#">Loans</a>
+                    <a href="#">Liquidity</a>
+                    <a href="#">Stak</a>
+                </div>
+                <div className="btn-wrapper d-flex align-items-center gap-2">
+                    <div className="theme-mode">
+                        <input type="checkbox" className="checkbox" id="checkbox"/>
+                        <label htmlFor="checkbox" className="checkbox-label">
+                          <i className="fas fa-moon"></i>
+                          <i className="fas fa-sun"></i>
+                          <span className="ball"></span>
+                        </label>
+                    </div>
+                    <div className="dropdown">
+                        {
+                          walletAddress == '' && 
+                          <>
+                            <button className="btn primary-btn" onClick={()=> openWallet()}>
+                              Connect Wallet</button>
+                          </>
+                        }
+                        {
+                          walletAddress != '' && 
+                          <>
+                            <button className="btn primary-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                              {walletAddress && walletAddress?.length > 0 ? walletAddress.substring(0,4) + '...' + walletAddress.substring(37,42) : ''}
+                            </button>
+                            <ul className="dropdown-menu dropdown-menu-right">
+                              <div className="d-flex align-items-center user-profile">
+                                <img src="assets/images/avatar.svg" alt="avatar" />
+                                <div className="d-flex flex-column">
+                                  <label>John Carter</label>
+                                  <a href="#">
+                                    <span>View Profile</span>
+                                  </a>
+                                </div>
+                              </div>
+                              <li><a href="#" className="dropdown-item">Action</a></li>
+                              <li><a href="#" className="dropdown-item">Another action</a></li>
+                              <li><a role="button" className="dropdown-item" onClick={()=> diconnectWallet()}>Diconnect</a></li>
+                            </ul>
+                          </>
+                          }
+                        
+                    </div>                    
+                    <div className="dropdown">
+                        <button className="btn primary-btn dropdown-toggle w-48" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i className="fas fa-bars"></i>
+                        </button>
+                        <ul className="dropdown-menu dropdown-menu-right">
+                            <div className="d-flex align-items-center user-profile">
+                                <img src="assets/images/avatar.svg" alt="avatar"/>
+                                <div className="d-flex flex-column">
+                                    <label>John Carter</label>
+                                    <a href="#">
+                                        <span>View Profile</span>
+                                    </a>
+                                </div>
+                            </div>
+                            <li className="mobile-menu"><a href="#" className="dropdown-item active">Swap</a></li>
+                            <li className="mobile-menu"><a href="#" className="dropdown-item">Loans</a></li>
+                            <li className="mobile-menu"><a href="#" className="dropdown-item">Liquidity</a></li>
+                            <li className="mobile-menu"><a href="#" className="dropdown-item">Stak</a></li>
+                            <li><a href="#" className="dropdown-item">Action</a></li>
+                            <li><a href="#" className="dropdown-item">Another action</a></li>
+                            <li><a href="#" className="dropdown-item">Something else here</a></li>
+                        </ul>
+                    </div>                    
+                </div>
             </div>
-            <div>
-              {walletAddress != '' && <button>{walletAddress}</button>}
-              {walletAddress == '' && <button onClick={()=> openWallet()}>Connect Wallet</button>}
-            </div>
-            <button onClick={()=> diconnectWallet()}>diconnect</button>
-          </div>
-        </nav>
+        </div>
+        </section>
     )
 }

@@ -10,8 +10,10 @@ export class TokenBase {
 
 export class Chains{
     chainId: number = 0;
-    chainKey: string = '';
     chainName: string = '';
+    lifiName: string = '';
+    rangoName: string = '';
+    logoURI: string = '';
 }
 
 export class DLNChainResponse {

@@ -8,22 +8,22 @@ type propsType = {
     sourceChain: Chains,
     destChain: Chains,
     dataSource: string,
-    closeChainUI: (chain: ChainBase) => void
+    closeChainUI: (chain: ChainBase) => void,
+    chains: Chains[]
 }
 export default function Chainui(props: propsType) {
 
     let cryptoService = new CryptoService();
     let [AvailableChains, setAvailableChains] = useState<Chains[]>([]);
     let [masterAvailableChains, setMasterAvailableChains] = useState<Chains[]>([]);
+    let [showChainSpinner, setShowChainSpinner] = useState<boolean>(true);
     
-    async function getInitData()
+    async function setInitData(chains: Chains[])
     {
-        let chains = await cryptoService.GetAvailableChains();
+        //let chains = await cryptoService.GetAvailableChains();
+        setShowChainSpinner(false);
         setAvailableChains(chains);
         setMasterAvailableChains(chains);
-       
-        let lifiCoins = await cryptoService.GetCoinsForLifi();
-        let owltoCoins = await cryptoService.GetCoinsForOwlto();
     }
 
     function backFromChain(){
@@ -44,7 +44,7 @@ export default function Chainui(props: propsType) {
     }
 
     useEffect(() => {
-        getInitData();
+        setInitData(props.chains);
       }, []);
 
     return (
@@ -59,40 +59,54 @@ export default function Chainui(props: propsType) {
                             Available Chains
                         </div>
                     </div>
-
-                    <div className="inner-card w-100 py-3 px-3 d-flex flex-column gap-3">
-
-                        <div className="search-bar position-relative">
-                            <i className="fas fa-search"></i>
-                            <input type="text" className="w-100" placeholder="Search here"
-                                onKeyUp={(e) => filterChain(e.currentTarget.value)} />
-                        </div>
-                        <div className="mt-2">
-                            <div className="card-title mb-3">
-                                Chain List
+                    {
+                        showChainSpinner == true && 
+                        <>
+                            <div className="text-center">
+                                <div className="spinner-border" role="status">
+                                    <span className="sr-only">Loading...</span>
+                                </div>
                             </div>
-                            <div className="coin-list-wrapper d-flex flex-column gap-2">
-                                {
-                                    AvailableChains.map((chain: Chains, index) => (
-                                        <div className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3"
-                                            onClick={() => props.closeChainUI(chain)}>
-                                            <div className="d-flex align-items-center gap-3">
-                                                <div className="position-relative coin-wrapper">
-                                                    <img src="https://coin-images.coingecko.com/coins/images/35494/large/Blast.jpg?1719385662"
-                                                        alt="" className="coin"/>
+                        </>
+                    }
+                    {
+                        showChainSpinner == false && 
+                        <>
+                            <div className="inner-card w-100 py-3 px-3 d-flex flex-column gap-3">
+
+                                <div className="search-bar position-relative">
+                                    <i className="fas fa-search"></i>
+                                    <input type="text" className="w-100" placeholder="Search here"
+                                        onKeyUp={(e) => filterChain(e.currentTarget.value)} />
+                                </div>
+                                <div className="mt-2">
+                                    <div className="card-title mb-3">
+                                        Chain List
+                                    </div>
+                                    <div className="coin-list-wrapper d-flex flex-column gap-2">
+                                        {
+                                            AvailableChains.map((chain: Chains, index) => (
+                                                <div className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3"
+                                                    onClick={() => props.closeChainUI(chain)}>
+                                                    <div className="d-flex align-items-center gap-3">
+                                                        <div className="position-relative coin-wrapper">
+                                                            <img src={chain.logoURI}
+                                                                alt="" className="coin" />
+                                                        </div>
+                                                        <div className="d-flex flex-column">
+                                                            <label className="coin-name d-block fw-600">{chain.chainName}</label>
+                                                            <label className="coin-sub-name">Coin Info</label>
+                                                        </div>
+                                                    </div>
+                                                    <label className=" fw-600">$ 0.5</label>
                                                 </div>
-                                                <div className="d-flex flex-column">
-                                                    <label className="coin-name d-block fw-600">{chain.chainName}</label>
-                                                    <label className="coin-sub-name">Coin Info</label>
-                                                </div>
-                                            </div>
-                                            <label className=" fw-600">$ 0.5</label>
-                                        </div>
-                                    ))
-                                }
+                                            ))
+                                        }
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        </>
+                    }
                 </div>
             </div>
         </div>

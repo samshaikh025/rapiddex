@@ -1,8 +1,13 @@
+import { CryptoService } from "@/shared/Services/CryptoService";
 import Swapui from "./components/swapui/page";
 
-export default function Swap() {
+export default async function Swap() {
+
+    let cryptoService = new CryptoService();
+    let chains = await cryptoService.GetAvailableChains();
+    
     return (
-        <Swapui/>
+        <Swapui chains={JSON.parse(JSON.stringify(chains))}/>
     );
   }
   

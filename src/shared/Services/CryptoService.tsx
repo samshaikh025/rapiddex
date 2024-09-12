@@ -20,11 +20,10 @@ export class CryptoService {
 
     async GetAvailableTokens(selectedChain: Chains)
     {
-        this.SetLifiCoins = await this.GetLifiCoinFromIndexDB(selectedChain.chainId);
+        this.SetLifiCoins = await this.GetCoinsForLifi(selectedChain);
         //this.SetDlnCoins = await this.GetCoinsForDln(selectedChain.chainId);
-        this.SetRangoCoins  = await this.GetCoinsForRango(selectedChain.chainId);
-        this.SetOwltoCoins = await this.GetOwltoCoinFromIndexDB(selectedChain.chainId);
-
+        this.SetRangoCoins  = await this.GetCoinsForRango(selectedChain);
+        this.SetOwltoCoins = await this.GetCoinsForOwlto(selectedChain);
         this.SetLifiCoins?.map((coin: any)=>{
             let obj = new Tokens();
             obj.name = coin.name;
@@ -84,36 +83,29 @@ export class CryptoService {
         return this.AvailableCoins;
     }
 
-    async GetCoinsForLifi()
+    async GetCoinsForLifi(chain: Chains)
     {
         let lifiCoins = [];
-        let checkLifiCoins = await this.SharedService.getIndexDbItem(Keys.All_LIFI_COINS);
-        if(checkLifiCoins)
-        {
-            lifiCoins = checkLifiCoins;
-        }else{
-            let payLoad = {
-                apiType : 'GET',
-                apiUrl : `https://li.quest/v1/tokens`,
-                apiData : null
-            }
-            try{
-                let LIFICoinResult = await fetch('http://localhost:3000/api/common', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payLoad),
-        
-                });
-                const LIFICoinData = await LIFICoinResult.json();
-                lifiCoins = LIFICoinData?.Data?.tokens;
-                let data = await this.SharedService.setIndexDbItem(Keys.All_LIFI_COINS, lifiCoins);
-            }catch(error){
-                console.log(error);
-            }
+        let payLoad = {
+            apiType : 'GET',
+            apiUrl : `https://li.quest/v1/tokens?chains=${chain.lifiName}`,
+            apiData : null
         }
-        
+        try{
+            let LIFICoinResult = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+    
+            });
+            const LIFICoinData = await LIFICoinResult.json();
+            lifiCoins = LIFICoinData?.Data?.tokens[chain.chainId];
+            //let data = await this.SharedService.setIndexDbItem(Keys.All_LIFI_COINS, lifiCoins);
+        }catch(error){
+            console.log(error);
+        }
         return lifiCoins; 
     }
 
@@ -151,46 +143,56 @@ export class CryptoService {
         return dlnCoins; 
     }
 
-    async GetCoinsForRango(id: number)
+    async GetCoinsForRango(chain: Chains)
     {
         let rangoCoins = [];
+        //let checkLifiCoins = await this.SharedService.getIndexDbItem(Keys.All_LIFI_COINS);
+        let payLoad = {
+            apiType : 'GET',
+            apiUrl : `https://api.rango.exchange/basic/meta?apiKey=c6381a79-2817-4602-83bf-6a641a409e32&blockchains=${chain.rangoName}`,
+            apiData : null
+        }
         try{
-            let RangoCoinsData = await this.SharedService.getIndexDbItem(Keys.All_RANGO_COINS);
-            rangoCoins = RangoCoinsData.filter((x: any)=> x.chainId == id);
+            let RangoCoinResult = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+    
+            });
+            const RangoCoinData = await RangoCoinResult.json();
+            rangoCoins = RangoCoinData?.Data?.tokens;
+            //let data = await this.SharedService.setIndexDbItem(Keys.All_LIFI_COINS, lifiCoins);
         }catch(error){
             console.log(error);
         }
+        
         return rangoCoins; 
     }
 
-    async GetCoinsForOwlto()
+    async GetCoinsForOwlto(chain: Chains)
     {
         let owltCoins = [];
-        let checkOwltoCoins = await this.SharedService.getIndexDbItem(Keys.All_OWLTO_COINS);
-        if(checkOwltoCoins)
-        {
-            owltCoins = checkOwltoCoins;
-        }else{
-            let payLoad = {
-                apiType : 'GET',
-                apiUrl : `https://owlto.finance/api/config/all-tokens`,
-                apiData : null
-            }
-            try{
-                let LIFICoinResult = await fetch('http://localhost:3000/api/common', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payLoad),
-        
-                });
-                const OwltoCoinData = await LIFICoinResult.json();
-                owltCoins = OwltoCoinData?.Data?.msg;
-                let data = await this.SharedService.setIndexDbItem(Keys.All_OWLTO_COINS, owltCoins);
-            }catch(error){
-                console.log(error);
-            }
+        let payLoad = {
+            apiType : 'GET',
+            apiUrl : `https://owlto.finance/api/config/all-tokens`,
+            apiData : null
+        }
+        try{
+            let LIFICoinResult = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+    
+            });
+            const OwltoCoinData = await LIFICoinResult.json();
+            owltCoins = OwltoCoinData?.Data?.msg?.filter((x)=> x.chainId == chain.chainId);
+            //let data = await this.SharedService.setIndexDbItem(Keys.All_OWLTO_COINS, owltCoins);
+        }catch(error){
+            console.log(error);
         }
         
         return owltCoins; 
@@ -227,7 +229,8 @@ export class CryptoService {
 
     async GetAvailableChains()
     {
-        let chains = await this.SharedService.getIndexDbItem(Keys.All_AVAILABLE_CHAINS);
+        //let chains = await this.SharedService.getIndexDbItem(Keys.All_AVAILABLE_CHAINS);
+        let chains;
         if(chains)
         {
             return chains;
@@ -243,8 +246,10 @@ export class CryptoService {
 
                 let obj = new Chains();
                 obj.chainId = chain.id;
-                obj.chainKey = chain.key;
+                obj.lifiName = chain.key;
                 obj.chainName = chain.name;
+                obj.rangoName = '';
+                obj.logoURI = chain.logoURI;
 
                 this.AvailableChains.push(obj);
             });
@@ -259,11 +264,18 @@ export class CryptoService {
             // });
 
             this.SetRangoChains?.map((chain) => {
-                if (this.AvailableChains.filter(x => x.chainId == parseInt(chain.chainId)).length == 0) {
+                let includeLength = this.AvailableChains.filter(x => x.chainId == parseInt(chain.chainId)).length;
+                if (includeLength == 0) {
                     let obj = new Chains();
                     obj.chainId = parseInt(chain.chainId)
-                    obj.chainName = chain.name;
+                    obj.chainName = chain.displayName;
+                    obj.rangoName = chain.name;
+                    obj.lifiName = '';
+                    obj.logoURI = chain.logo;
                     this.AvailableChains.push(obj);
+                }else if(includeLength == 1){
+                    let index = this.AvailableChains?.findIndex(x => x.chainId == parseInt(chain.chainId));
+                    this.AvailableChains[index].rangoName = chain.name;
                 }
             });
 
@@ -271,14 +283,16 @@ export class CryptoService {
                 if (this.AvailableChains.filter(x => x.chainId == chain.chainId).length == 0) {
                     let obj = new Chains();
                     obj.chainId = chain.chainId;
-                    obj.chainKey = chain.aliasName;
                     obj.chainName = chain.aliasName;
+                    obj.lifiName = '';
+                    obj.rangoName = '';
+                    obj.logoURI = chain.icon;
 
                     this.AvailableChains.push(obj);
                 }
             });
 
-            let res = await this.SharedService.setIndexDbItem(Keys.All_AVAILABLE_CHAINS, this.AvailableChains)
+            //let res = await this.SharedService.setIndexDbItem(Keys.All_AVAILABLE_CHAINS, this.AvailableChains)
             return this.AvailableChains;
         }
     }
@@ -355,7 +369,7 @@ export class CryptoService {
             });
             const RangoChainData = await RangoChainResult.json();
             rangoChains = RangoChainData.Data.blockchains.filter((x:any)=> x.type == 'EVM'); 
-            let rangoCoins = await this.GetAndStoreAllRangoCoins(RangoChainData.Data.tokens,rangoChains);
+            //let rangoCoins = await this.GetAndStoreAllRangoCoins(RangoChainData.Data.tokens,rangoChains);
         }catch(error)
         {
             console.log(error);

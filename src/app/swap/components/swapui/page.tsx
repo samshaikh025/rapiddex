@@ -6,8 +6,10 @@ import Chainui from "../chainui/page";
 import { ChainBase, Chains, TokenBase, Tokens } from "@/shared/Models/Common.model";
 import { DataSource } from "@/shared/Enum/Common.enum";
 import { CryptoService } from "@/shared/Services/CryptoService";
-
-export default function Swapui() {
+type propsType = {
+    chains: Chains[]
+}
+export default function Swapui(props:propsType) {
 
     const [showExchangeUI, setShowExchangeUI] = useState<boolean>(true);
     const [showChainUI, setshowChainUI] = useState<boolean>(false);
@@ -74,7 +76,7 @@ export default function Swapui() {
                     <div className="row justify-content-center">
                         {showExchangeUI && <Exchangeui openTokenUI={(dataSource: string) => OpenTokenUI(dataSource)} sourceChain={sourceChain} destChain={destChain} dataSource={dataSource} sourceToken={sourceToken} destToken={destToken} sourceTokenAmount={sourceTokenAmount} destTokenAmount={destTokenAmount} interChangeData={() => InterChangeData()} />}
                         {(!showExchangeUI && !showChainUI) && <Tokenui openChainUI={(isShow: boolean) => OpenChainUI(isShow)} closeTokenUI={(token: Tokens) => CloseTokenUI(token)} sourceChain={sourceChain} destChain={destChain} dataSource={dataSource} sourceToken={sourceToken} destToken={destToken} />}
-                        {(!showExchangeUI && showChainUI) && <Chainui closeChainUI={(chain: Chains) => CloseChainUI(chain)} sourceChain={sourceChain} destChain={destChain} dataSource={dataSource} />}
+                        {(!showExchangeUI && showChainUI) && <Chainui closeChainUI={(chain: Chains) => CloseChainUI(chain)} sourceChain={sourceChain} destChain={destChain} dataSource={dataSource} chains={props.chains}/>}
                     </div>
                 </div>
             </div>

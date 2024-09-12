@@ -116,9 +116,9 @@ export default function Exchangeui(props: propsType) {
                             <label className="mb-2 fw-600">From</label>
                             <div className="d-flex align-items-center gap-3">
                                 <div className="position-relative coin-wrapper">
-                                    <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+                                    <img src={props.sourceChain.logoURI}
                                         className="coin" alt="coin" />
-                                    <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/arbitrum.svg"
+                                    <img src={props.sourceToken.logoURI}
                                         className="coin-small" alt="coin" />
                                 </div>
                                 <div className="d-flex flex-column">
@@ -137,9 +137,9 @@ export default function Exchangeui(props: propsType) {
                             <label className="mb-2 fw-600">To</label>
                             <div className="d-flex align-items-center gap-3">
                                 <div className="position-relative coin-wrapper">
-                                    <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+                                    <img src={props.destChain.logoURI}
                                         className="coin" alt="coin" />
-                                    <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/arbitrum.svg"
+                                    <img src={props.destToken.logoURI}
                                         className="coin-small" alt="coin" />
                                 </div>
                                 <div className="d-flex flex-column">
@@ -155,9 +155,9 @@ export default function Exchangeui(props: propsType) {
                         <label className="mb-2 fw-600">Send</label>
                         <div className="d-flex align-items-center gap-3">
                             <div className="position-relative coin-wrapper">
-                                <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
+                                <img src={props.sourceChain.logoURI}
                                     className="coin" alt="coin" />
-                                <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/arbitrum.svg"
+                                <img src={props.sourceToken.logoURI}
                                     className="coin-small" alt="coin" />
                             </div>
                             <div className="d-flex flex-column pb-2">

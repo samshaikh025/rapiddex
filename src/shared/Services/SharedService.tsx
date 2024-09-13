@@ -26,7 +26,7 @@ export class SharedService {
     }
 
     public abc = 0;
-    public walletAddress$ = new BehaviorSubject(null);
+    public walletAddress$ = new BehaviorSubject('');
     public walletAddress = this.walletAddress$.asObservable();
 
     public openWalletModal$ = new BehaviorSubject(null);

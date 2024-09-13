@@ -46,8 +46,8 @@ export default function Exchangeui(props: propsType) {
 
     useEffect(()=>{
         console.log('exchange Ui loaded');
-        getWalletAddressFromStorage();
-        getAvailableBalanceInWallet();
+        //getWalletAddressFromStorage();
+        //getAvailableBalanceInWallet();
     }, []);
 
     // useEffect(()=>{

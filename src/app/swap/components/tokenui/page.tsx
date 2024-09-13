@@ -2,6 +2,7 @@ import { DataSource } from "@/shared/Enum/Common.enum";
 import { ChainBase, Chains, TokenBase, Tokens } from "@/shared/Models/Common.model";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import { useEffect, useState } from "react";
+import Skeleton from 'react-loading-skeleton'
 
 type propsType = {
     sourceChain: Chains ,
@@ -100,11 +101,20 @@ export default function Tokenui(props: propsType) {
                             {
                                 showCoinSpinner == true && 
                                 <>
-                                    <div className="text-center">
-                                        <div className="spinner-border" role="status">
-                                            <span className="sr-only">Loading...</span>
+                                    {Array.from({ length: 3 }, (_, i) => (
+                                        <div className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3 mb-2">
+                                            <div className="d-flex align-items-center gap-3">
+                                                <div className="position-relative coin-wrapper">
+                                                    <Skeleton circle={true} width={50} height={50} />
+                                                </div>
+                                                <div className="d-flex flex-column">
+                                                    <Skeleton width={100} height={10} />
+                                                    <Skeleton width={100} height={10} />
+                                                </div>
+                                            </div>
+                                            <Skeleton width={50} height={10} />
                                         </div>
-                                    </div>
+                                    ))}
                                 </>
                             }
                             {

@@ -6,6 +6,8 @@ import Chainui from "../chainui/page";
 import { ChainBase, Chains, TokenBase, Tokens } from "@/shared/Models/Common.model";
 import { DataSource } from "@/shared/Enum/Common.enum";
 import { CryptoService } from "@/shared/Services/CryptoService";
+import 'react-loading-skeleton/dist/skeleton.css'
+
 type propsType = {
     chains: Chains[]
 }

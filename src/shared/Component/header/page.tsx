@@ -45,7 +45,7 @@ export default function Header() {
   }
 
   useEffect(() => {
-    getWalletAddressFromStorage();
+    //getWalletAddressFromStorage();
   }, []);
 
   useEffect(() => {
@@ -60,7 +60,6 @@ export default function Header() {
   useEffect(() => {
     console.log('account info: ' + account);
     if(account.address){
-      sharedService.abc = 10;
       setWalletAddress(account.address)
       sharedService.walletAddress$.next(account.address);
       //setWalletAddressInStorage();
@@ -76,7 +75,7 @@ export default function Header() {
     disconnect()
     setWalletAddress('');
     sharedService.walletAddress$.next('');
-    sharedService.removeIndexDbItem(Keys.Wallet_Address);
+    //sharedService.removeIndexDbItem(Keys.Wallet_Address);
   }
     return(
         <section className="header">

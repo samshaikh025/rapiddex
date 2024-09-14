@@ -56,6 +56,11 @@ export class SharedService {
         }
     }
 
+    removeData(key:string)
+    {
+      localStorage.removeItem(key)
+    }
+
     async setIndexDbItem(key: string, value: any) {
         const db = await this.getDB();
         return db.put(this.STORE_NAME, value, key);

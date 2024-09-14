@@ -1,7 +1,9 @@
 
 import { Keys } from "../Enum/Common.enum";
-import { Chains, Tokens, DLNChainResponse } from '../Models/Common.model';
+import { Chains, Tokens, DLNChainResponse, ResponseMobulaPricing, PathShowViewModel } from '../Models/Common.model';
+import { RequestLifiPath, ResponseLifiPath } from "../Models/Lifi";
 import { SharedService } from "./SharedService";
+import { UtilityService } from "./UtilityService";
 export class CryptoService {
     
     AvailableChains : Chains[] = [];
@@ -17,6 +19,7 @@ export class CryptoService {
     SharedService = new SharedService();
     constructor(){
     }
+    utilityService =new UtilityService();
 
     async GetAvailableTokens(selectedChain: Chains)
     {
@@ -30,7 +33,7 @@ export class CryptoService {
             obj.address = coin.address;
             obj.symbol = coin.symbol;
             obj.logoURI = coin.logoURI;
-
+            obj.decimal = coin.decimals;
             this.AvailableCoins.push(obj);
         })
 
@@ -57,7 +60,7 @@ export class CryptoService {
                 obj.address = coin.address;
                 obj.symbol = coin.symbol;
                 obj.logoURI = coin.image;
-
+                obj.decimal = coin.decimal;
                 this.AvailableCoins.push(obj);
             }    
         })
@@ -71,7 +74,7 @@ export class CryptoService {
                 obj.address = coin.address;
                 obj.symbol = coin.symbol;
                 obj.logoURI = coin.icon;
-
+                obj.decimal = coin.decimal;
                 this.AvailableCoins.push(obj);
             }    
         })
@@ -445,4 +448,332 @@ export class CryptoService {
         
         return amountUSD; 
     }
+
+    async GetTokenData(token: Tokens)
+    {
+        debugger
+        let amountUSD = 0;
+        let TokenData : ResponseMobulaPricing;
+        let query = token.address == '0x0000000000000000000000000000000000000000' ? 'symbol='+ token.symbol : 'asset='+ token.address;
+        let payLoad = {
+            apiType : 'GET',
+            apiUrl : `https://api.mobula.io/api/1/market/data?${query}`,
+            apiData : null
+        }
+        try{
+            let tokenExec = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+    
+            });
+            const TokenResponse = await tokenExec.json();
+            
+            TokenData  = TokenResponse?.Data;
+        }catch(error){
+            console.log(error);
+        }
+        
+        return TokenData;
+    }
+
+    // Getting Lifi Path FASTEST
+
+    async GetFASTESTLifiPathFromChoosenChains(sourceChain: Chains,destChain: Chains,sourceToken: Tokens,destToken: Tokens,amount:number){
+
+        var requestLifiPath = new RequestLifiPath();
+    
+        requestLifiPath.fromChain = "";
+    
+        var requestLifiPath = new RequestLifiPath();
+    
+        requestLifiPath.fromChain = sourceChain.chainId.toString();
+        requestLifiPath.toChain = destChain.chainId.toString();
+        requestLifiPath.fromToken = sourceToken.address;
+        requestLifiPath.toToken = destToken.address;
+        requestLifiPath.fromAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
+        requestLifiPath.toAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
+
+        
+
+        
+
+
+
+        
+
+        
+        requestLifiPath.fromAmount = (await this.utilityService.convertToDecimals(amount,sourceToken.decimal)).toString();
+        requestLifiPath.order = "FASTEST";
+        requestLifiPath.slippage = 0.005;
+        requestLifiPath.integrator = "TestIntegrator";
+        requestLifiPath.fee = 0.02;
+        requestLifiPath.referrer = "TestReferrer";
+        requestLifiPath.allowBridges = ["hop", "multichain", "connext"];
+        requestLifiPath.allowExchanges = ["1inch", "paraswap", "openocean", "0x"];
+        requestLifiPath.denyBridges = [];
+        requestLifiPath.denyExchanges = [];
+        requestLifiPath.preferBridges = ["hop"];
+        requestLifiPath.preferExchanges = ["1inch"];
+        requestLifiPath.allowDestinationCall = true;
+        requestLifiPath.fromAmountForGas = "100000";
+        requestLifiPath.maxPriceImpact = 0.15;
+    
+        const baseUrl = "https://li.quest/v1/quote";
+        const params = new URLSearchParams({
+          fromChain: requestLifiPath.fromChain,
+          toChain: requestLifiPath.toChain,
+          fromToken: requestLifiPath.fromToken,
+          toToken: requestLifiPath.toToken,
+          fromAddress: requestLifiPath.fromAddress,
+          toAddress: requestLifiPath.toAddress || requestLifiPath.fromAddress,
+
+          
+          fromAmount: requestLifiPath.fromAmount,
+          
+          order:requestLifiPath.order
+        });
+    
+    
+    
+        var url =  `${baseUrl}?${params.toString()}`;
+    
+        let payLoad = {
+          apiType: "GET",
+          apiUrl:
+            url,
+          apiData: null,
+        };
+    
+        
+        let data = await fetch("http://localhost:3000/api/common", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payLoad),
+        });
+    
+    
+        return await data.json();
+    
+    
+      }
+
+      // Getting Lifi Path CHEAPEST
+
+      async GetCHEAPESTLifiPathFromChoosenChains(sourceChain: Chains,destChain: Chains,sourceToken: Tokens,destToken: Tokens,amount:number){
+
+        var requestLifiPath = new RequestLifiPath();
+    
+        requestLifiPath.fromChain = "";
+    
+        var requestLifiPath = new RequestLifiPath();
+    
+        requestLifiPath.fromChain = sourceChain.chainId.toString();
+        requestLifiPath.toChain = destChain.chainId.toString();
+        requestLifiPath.fromToken = sourceToken.address;
+        requestLifiPath.toToken = destToken.address;
+        requestLifiPath.fromAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
+        requestLifiPath.toAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
+
+        
+
+        
+
+
+
+        
+
+        
+        requestLifiPath.fromAmount = (await this.utilityService.convertToDecimals(amount,sourceToken.decimal)).toString();
+        requestLifiPath.order = "CHEAPEST";
+        requestLifiPath.slippage = 0.005;
+        requestLifiPath.integrator = "TestIntegrator";
+        requestLifiPath.fee = 0.02;
+        requestLifiPath.referrer = "TestReferrer";
+        requestLifiPath.allowBridges = ["hop", "multichain", "connext"];
+        requestLifiPath.allowExchanges = ["1inch", "paraswap", "openocean", "0x"];
+        requestLifiPath.denyBridges = [];
+        requestLifiPath.denyExchanges = [];
+        requestLifiPath.preferBridges = ["hop"];
+        requestLifiPath.preferExchanges = ["1inch"];
+        requestLifiPath.allowDestinationCall = true;
+        requestLifiPath.fromAmountForGas = "100000";
+        requestLifiPath.maxPriceImpact = 0.15;
+    
+        const baseUrl = "https://li.quest/v1/quote";
+        const params = new URLSearchParams({
+          fromChain: requestLifiPath.fromChain,
+          toChain: requestLifiPath.toChain,
+          fromToken: requestLifiPath.fromToken,
+          toToken: requestLifiPath.toToken,
+          fromAddress: requestLifiPath.fromAddress,
+          toAddress: requestLifiPath.toAddress || requestLifiPath.fromAddress,
+          fromAmount: requestLifiPath.fromAmount,
+          order:requestLifiPath.order
+        });
+    
+    
+    
+        var url =  `${baseUrl}?${params.toString()}`;
+    
+        let payLoad = {
+          apiType: "GET",
+          apiUrl:
+            url,
+          apiData: null,
+        };
+    
+        
+        let data = await fetch("http://localhost:3000/api/common", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payLoad),
+        });
+    
+    
+        return await data.json();
+    
+    
+      }
+
+
+      
+
+      // Getting Quotes
+
+  async GetBestPathFromChoosenChains(sourceChain: Chains,destChain: Chains,sourceToken: Tokens,destToken: Tokens,amount:number) {
+
+    debugger
+
+    try
+    {
+
+        //let TokenData = await this.GetTokenData(sourceToken);
+
+        
+
+        
+
+    
+        let pathShow : PathShowViewModel[] = [];
+
+    //Lifi Path FASTEST
+
+    {
+
+    let lifiPath : ResponseLifiPath = (await this.GetFASTESTLifiPathFromChoosenChains(sourceChain,destChain,sourceToken,destToken,amount)).Data;
+
+    console.log(lifiPath);
+
+    
+    let pathShowViewModel :  PathShowViewModel = new PathShowViewModel();
+
+    pathShowViewModel.estTime = (await this.utilityService.formatDuration(lifiPath.estimate.executionDuration)).toString();
+
+    let gasafee = 0;
+
+
+    lifiPath.estimate.feeCosts.forEach((de)=>{
+                  
+           gasafee = Number(de.amountUSD) + gasafee;
+
+    });
+
+    pathShowViewModel.gasafee = gasafee.toString() + " USD";
+
+    pathShowViewModel.fromChain = sourceChain.chainName;
+
+    pathShowViewModel.fromToken = sourceToken.symbol;
+
+    pathShowViewModel.fromAmount = amount.toString();
+
+    pathShowViewModel.toChain = destChain.chainName;
+
+    pathShowViewModel.toToken = destToken.symbol;
+
+    pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmount,lifiPath.action.toToken.decimals)).toString();
+
+    pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmountMin,lifiPath.action.toToken.decimals)).toString();
+
+    pathShowViewModel.aggregator = "lifi";
+
+    pathShowViewModel.aggregatorOrderType = "FASTEST"
+
+    pathShow.push(pathShowViewModel);
+
+
+
+    }
+
+
+
+
+    //Lifi Path CHEAPEST
+
+
+    {
+
+        let lifiPath : ResponseLifiPath = (await this.GetCHEAPESTLifiPathFromChoosenChains(sourceChain,destChain,sourceToken,destToken,amount)).Data;
+
+    console.log(lifiPath);
+
+    
+    let pathShowViewModel :  PathShowViewModel = new PathShowViewModel();
+
+    pathShowViewModel.estTime = (await this.utilityService.formatDuration(lifiPath.estimate.executionDuration)).toString();
+
+    let gasafee = 0;
+
+
+    lifiPath.estimate.feeCosts.forEach((de)=>{
+                  
+           gasafee = Number(de.amountUSD) + gasafee;
+
+    });
+
+    pathShowViewModel.gasafee = gasafee.toString() + " USD";
+
+    pathShowViewModel.fromChain = sourceChain.chainName;
+
+    pathShowViewModel.fromToken = sourceToken.symbol;
+
+    pathShowViewModel.fromAmount = amount.toString();
+
+    pathShowViewModel.toChain = destChain.chainName;
+
+    pathShowViewModel.toToken = destToken.symbol;
+
+    pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmount,lifiPath.action.toToken.decimals)).toString();
+
+    pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmountMin,lifiPath.action.toToken.decimals)).toString();
+
+    pathShowViewModel.aggregator = "lifi";
+
+    pathShowViewModel.aggregatorOrderType = "CHEAPEST"
+
+    pathShow.push(pathShowViewModel);
+
+        
+    }
+
+    return pathShow;
+
+    }
+    catch(error)
+    {
+        console.log(error);
+    }
+  
+    
+
+    
+    
+  }
+    
 }

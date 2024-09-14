@@ -7,6 +7,9 @@ import { useEffect, useState } from "react";
 import { useAccount, useBalance, useDisconnect } from "wagmi";
 import { getBalance } from "wagmi/actions";
 
+import { CryptoService } from "@/shared/Services/CryptoService";
+import Pathshow from "../pathshow/page";
+
 type propsType = {
     sourceChain: Chains,
     destChain: Chains,
@@ -19,6 +22,11 @@ type propsType = {
     interChangeData: () => void
 }
 
+
+
+
+
+
 export default function Exchangeui(props: propsType) {
 
     let [sendAmount, setSendAmount] = useState<number>(0);
@@ -27,6 +35,8 @@ export default function Exchangeui(props: propsType) {
     let [walletAddress, setWalletAddress] = useState<string>('');
     const { open } = useWeb3Modal();
     let account = useAccount();
+
+    const [pathshow,setpathshow] = useState<boolean>(false);
 
     function openWallet() {
         sharedService.openWalletModal$.next(true);
@@ -67,9 +77,18 @@ export default function Exchangeui(props: propsType) {
         // }
       }, [sharedService.walletAddress$]);
 
-    function updateAmount(amount: number)
+    async function updateAmount(amount: number)
     {
         try{
+
+            if(!isNaN(amount))
+                {
+                    setpathshow(true);
+                }
+                else
+                {
+                    setpathshow(false);
+                }
             setSendAmount(amount);
             setequAmountUSD(0);
             if(props.sourceTokenAmount > 0 && amount > 0)
@@ -188,128 +207,14 @@ export default function Exchangeui(props: propsType) {
                     </div>
                 </div>
             </div>
-            <div className="col-lg-7 col-md-12 col-sm-12 col-12">
-                <div className="card">
-                    <div className="p-24">                       
-                        <div className="d-flex justify-content-between align-items-center mb-2 gap-3 flex-wrap-reverse">
-                            <div className="card-title">
-                                Select route
-                                <p className="mt-2 font-16 mb-0">
-                                    Sorted by estimated output minus gas fees
-                                </p>
-                            </div>
-                            <div className="card-action-wrapper d-flex align-items-center gap-2">
-                                <div className="dropdown">
-                                    <button className="btn primary-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Maximum Return
-                                    </button>
-                                    {/* <ul className="dropdown-menu">
-                                        <li><a className="" href="#">Fastest Transfer</a></li>
-                                    </ul> */}
-                                </div>
-                                <i className="fas fa-redo-alt"></i>
-                            </div>
-                        </div>
-                        <div className="d-flex flex-column gap-1">
+            
+        
 
-                            <div className="inner-card w-100 py-2 mt-3">
-                                <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap px-3 pb-2 bottom-border-line">
-                                    <div className="d-flex align-items-center gap-2">
-                                        <label className="font-16"><span className="fw-600">Est:</span> 18 mins</label>
-                                        <label className="font-16"><span className="fw-600">Gas Fees:</span> $0.542</label>
-                                    </div>
-                                    <div className="d-flex align-items-center gap-2 flex-wrap">
-                                        <label className="best-return fw-600 px-2 py-1">Best Return</label>
-                                        <label className="faster fw-600 px-2 py-1">Faster</label>
-                                    </div>
-                                </div>
-                                <div className="px-3 d-flex justify-content-between py-2 middle-align-card">
-                                    <div>
-                                        <label className="fw-600">From</label>
-                                        <div className="d-flex align-items-center gap-3">
-                                            <div className="position-relative coin-wrapper">
-                                                <img src="" className="coin" alt="coin"/>
-                                                <img src="" className="coin-small" alt="coin"/>
-                                            </div>
-                                            <div className="d-flex flex-column">
-                                                <label className="coin-name d-block fw-600">Ethereum</label>
-                                                <label className="coin-sub-name">0.5 USDC</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="relative center-card-with-line d-flex align-items-center gap-2 inner-card px-3 py-2 my-3">
-                                        <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" width="100%" height="100%"/>
-                                        <label className="font-16 fw-600">Cricle CCTP</label>
-                                    </div>
-                                    <div>
-                                        <label className="fw-600 d-block">To</label>
-                                        <div className="d-flex align-items-center gap-3">
-                                            <div className="d-flex flex-column">
-                                                <label className="coin-name d-block fw-600">Ethereum</label>
-                                                <label className="coin-sub-name">0.5 USDC</label>
-                                            </div>
-                                            <div className="position-relative coin-wrapper">
-                                                <img src="" className="coin" alt="coin"/>
-                                                <img src="" className="coin-small" alt="coin"/>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap px-3 pt-2 top-border-line">
-                                    <i className="fas fa-bolt primary-text"></i>  <label className="font-16"><span className="fw-600">$0.708</span> higher output than any other route</label>
-                                </div>
-                            </div>
-                            <div className="inner-card w-100 py-2 mt-3">
-                                <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap px-3 pb-2 bottom-border-line">
-                                    <div className="d-flex align-items-center gap-2">
-                                        <label className="font-16"><span className="fw-600">Est:</span> 18 mins</label>
-                                        <label className="font-16"><span className="fw-600">Gas Fees:</span> $0.542</label>
-                                    </div>
-                                    <div className="d-flex align-items-center gap-2 flex-wrap">
-                                        <label className="best-return fw-600 px-2 py-1">Best Return</label>
-                                        <label className="faster fw-600 px-2 py-1">Faster</label>
-                                    </div>
-                                </div>
-                                <div className="px-3 d-flex justify-content-between py-2 middle-align-card">
-                                    <div>
-                                        <label className="fw-600">From</label>
-                                        <div className="d-flex align-items-center gap-3">
-                                            <div className="position-relative coin-wrapper">
-                                                <img src="" className="coin" alt="coin"/>
-                                                <img src="" className="coin-small" alt="coin"/>
-                                            </div>
-                                            <div className="d-flex flex-column">
-                                                <label className="coin-name d-block fw-600">Ethereum</label>
-                                                <label className="coin-sub-name">0.5 USDC</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="relative center-card-with-line d-flex align-items-center gap-2 inner-card px-3 py-2 my-3">
-                                        <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" width="100%" height="100%"/>
-                                        <label className="font-16 fw-600">Cricle CCTP</label>
-                                    </div>
-                                    <div>
-                                        <label className="fw-600 d-block">To</label>
-                                        <div className="d-flex align-items-center gap-3">
-                                            <div className="d-flex flex-column">
-                                                <label className="coin-name d-block fw-600">Ethereum</label>
-                                                <label className="coin-sub-name">0.5 USDC</label>
-                                            </div>
-                                            <div className="position-relative coin-wrapper">
-                                                <img src="" className="coin" alt="coin"/>
-                                                <img src="" className="coin-small" alt="coin"/>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap px-3 pt-2 top-border-line">
-                                    <i className="fas fa-bolt primary-text"></i>  <label className="font-16"><span className="fw-600">$0.708</span> higher output than any other route</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        {pathshow  && <Pathshow Amountpathshow = {sendAmount} destChain={props.destChain} sourceChain={props.sourceChain} sourceToken={props.sourceToken} destToken={props.destToken}></Pathshow>}
+
+
+
+
         </>
     );
   }

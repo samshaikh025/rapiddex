@@ -74,7 +74,12 @@ body {
 {
 	background-color: var(--primary-color);
 }
-
+.primary-text{
+  color:var(--primary-color);
+}
+.font-16{
+  font-size:16px
+}
 .fw-600 {
   font-weight: 600;
 }

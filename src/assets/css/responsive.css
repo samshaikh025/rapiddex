@@ -26,3 +26,11 @@
         padding: 20px 16px;
     }
 }
+@media(max-width:600.98px){
+    .middle-align-card{
+        flex-direction:column !important
+    }
+    .center-card-with-line{
+        justify-content:center
+    }
+}

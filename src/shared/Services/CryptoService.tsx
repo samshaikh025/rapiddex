@@ -1,5 +1,5 @@
 
-import { Keys } from "../Enum/Common.enum";
+import { Keys, SwapProvider } from "../Enum/Common.enum";
 import { Chains, Tokens, DLNChainResponse, ResponseMobulaPricing, PathShowViewModel } from '../Models/Common.model';
 import { RequestLifiPath, ResponseLifiPath } from "../Models/Lifi";
 import { SharedService } from "./SharedService";
@@ -91,8 +91,9 @@ export class CryptoService {
         let lifiCoins = [];
         let payLoad = {
             apiType : 'GET',
-            apiUrl : `https://li.quest/v1/tokens?chains=${chain.lifiName}`,
-            apiData : null
+            apiUrl : `tokens?chains=${chain.lifiName}`,
+            apiData : null,
+            apiProvider: SwapProvider.LIFI
         }
         try{
             let LIFICoinResult = await fetch('http://localhost:3000/api/common', {
@@ -152,8 +153,9 @@ export class CryptoService {
         //let checkLifiCoins = await this.SharedService.getIndexDbItem(Keys.All_LIFI_COINS);
         let payLoad = {
             apiType : 'GET',
-            apiUrl : `https://api.rango.exchange/basic/meta?apiKey=c6381a79-2817-4602-83bf-6a641a409e32&blockchains=${chain.rangoName}`,
-            apiData : null
+            apiUrl : `basic/meta?blockchains=${chain.rangoName}`,
+            apiData : null,
+            apiProvider: SwapProvider.RANGO
         }
         try{
             let RangoCoinResult = await fetch('http://localhost:3000/api/common', {
@@ -179,8 +181,9 @@ export class CryptoService {
         let owltCoins = [];
         let payLoad = {
             apiType : 'GET',
-            apiUrl : `https://owlto.finance/api/config/all-tokens`,
-            apiData : null
+            apiUrl : `config/all-tokens`,
+            apiData : null,
+            apiProvider: SwapProvider.OWLTO
         }
         try{
             let LIFICoinResult = await fetch('http://localhost:3000/api/common', {
@@ -200,45 +203,9 @@ export class CryptoService {
         
         return owltCoins; 
     }
-
-    async GetLifiCoinFromIndexDB(id:number)
-    {
-        let lifiCoins = [];
-        let data = await this.SharedService.getIndexDbItem(Keys.All_LIFI_COINS);
-        try{
-            lifiCoins = data[id];
-        }catch(error){
-            console.log(error);
-        }
-
-        return lifiCoins;
-    }
     
-    async GetOwltoCoinFromIndexDB(id:number)
-    {
-        let owltoCoins = [];
-        let data = await this.SharedService.getIndexDbItem(Keys.All_OWLTO_COINS);
-        try{
-            if(data.length > 0)
-            {
-                owltoCoins = data.filter((x: any) => x.chainId == id);
-            }
-        }catch(error){
-            console.log(error);
-        }
-
-        return owltoCoins;
-    }
-
     async GetAvailableChains()
     {
-        //let chains = await this.SharedService.getIndexDbItem(Keys.All_AVAILABLE_CHAINS);
-        let chains;
-        if(chains)
-        {
-            return chains;
-        }else
-        {
             this.AvailableChains = [];
             this.SetLifiChains = await this.GetLifiChains();
             //this.SetDlnChains = await this.GetDlnChains();
@@ -297,7 +264,6 @@ export class CryptoService {
 
             //let res = await this.SharedService.setIndexDbItem(Keys.All_AVAILABLE_CHAINS, this.AvailableChains)
             return this.AvailableChains;
-        }
     }
 
     async GetLifiChains()
@@ -305,8 +271,9 @@ export class CryptoService {
         let lifiChains = [];
         let payLoad = {
             apiType : 'GET',
-            apiUrl : 'https://li.quest/v1/chains',
-            apiData : null
+            apiUrl : 'chains',
+            apiData : null,
+            apiProvider: SwapProvider.LIFI
         }
         try{
             let LIFIChainResult = await fetch('http://localhost:3000/api/common', {
@@ -315,7 +282,6 @@ export class CryptoService {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payLoad),
-    
             });
             const LIFIChainData = await LIFIChainResult.json();
             lifiChains = LIFIChainData.Data?.chains; 
@@ -358,8 +324,9 @@ export class CryptoService {
         let rangoChains = [];
         let payLoad = {
             apiType : 'GET',
-            apiUrl : 'https://api.rango.exchange/basic/meta?apiKey=c6381a79-2817-4602-83bf-6a641a409e32',
-            apiData : null
+            apiUrl : 'basic/meta',
+            apiData : null,
+            apiProvider: SwapProvider.RANGO
         }
         try{
             let RangoChainResult = await fetch('http://localhost:3000/api/common', {
@@ -372,7 +339,6 @@ export class CryptoService {
             });
             const RangoChainData = await RangoChainResult.json();
             rangoChains = RangoChainData.Data.blockchains.filter((x:any)=> x.type == 'EVM'); 
-            //let rangoCoins = await this.GetAndStoreAllRangoCoins(RangoChainData.Data.tokens,rangoChains);
         }catch(error)
         {
             console.log(error);
@@ -386,8 +352,9 @@ export class CryptoService {
         let owltoChains = [];
         let payLoad = {
             apiType : 'GET',
-            apiUrl : 'https://owlto.finance/api/config/all-chains',
-            apiData : null
+            apiUrl : 'config/all-chains',
+            apiData : null,
+            apiProvider: SwapProvider.OWLTO
         }
         try{
             let OwltoChainResult = await fetch('http://localhost:3000/api/common', {
@@ -395,8 +362,7 @@ export class CryptoService {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(payLoad),
-    
+                body: JSON.stringify(payLoad)
             });
             const OwltoChainData = await OwltoChainResult.json();
             owltoChains = OwltoChainData.Data.msg;
@@ -408,57 +374,16 @@ export class CryptoService {
         return owltoChains;
     }
 
-    async GetAndStoreAllRangoCoins(rangoAllCoins: any, rangoAvailableChains: any){
-        let allRangoCoins: any[] = [];
-        try{
-            rangoAvailableChains.map((chain:any)=> {
-                let allCoinsForChain = rangoAllCoins.filter((x: any)=> x.chainId == parseInt(chain.chainId));
-                allRangoCoins = [...allRangoCoins, ...allCoinsForChain];
-            });
-            await this.SharedService.setIndexDbItem(Keys.All_RANGO_COINS, allRangoCoins);
-        }catch(error){
-            console.log(error);
-        }
-        
-    }
-
-    async GetTokenValue(token: Tokens)
-    {
-        let amountUSD = 0;
-        let query = token.address == '0x0000000000000000000000000000000000000000' ? 'symbol='+ token.symbol : 'asset='+ token.address;
-        let payLoad = {
-            apiType : 'GET',
-            apiUrl : `https://api.mobula.io/api/1/market/data?${query}`,
-            apiData : null
-        }
-        try{
-            let tokenExec = await fetch('http://localhost:3000/api/common', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payLoad),
-    
-            });
-            const TokenResponse = await tokenExec.json();
-            amountUSD = TokenResponse?.Data?.data?.price;
-        }catch(error){
-            console.log(error);
-        }
-        
-        return amountUSD; 
-    }
-
     async GetTokenData(token: Tokens)
     {
-        debugger
         let amountUSD = 0;
         let TokenData : ResponseMobulaPricing;
         let query = token.address == '0x0000000000000000000000000000000000000000' ? 'symbol='+ token.symbol : 'asset='+ token.address;
         let payLoad = {
             apiType : 'GET',
-            apiUrl : `https://api.mobula.io/api/1/market/data?${query}`,
-            apiData : null
+            apiUrl : `market/data?${query}`,
+            apiData : null,
+            apiProvider: SwapProvider.MOBULA
         }
         try{
             let tokenExec = await fetch('http://localhost:3000/api/common', {
@@ -480,7 +405,6 @@ export class CryptoService {
     }
 
     // Getting Lifi Path FASTEST
-
     async GetFASTESTLifiPathFromChoosenChains(sourceChain: Chains,destChain: Chains,sourceToken: Tokens,destToken: Tokens,amount:number){
 
         var requestLifiPath = new RequestLifiPath();
@@ -495,16 +419,6 @@ export class CryptoService {
         requestLifiPath.toToken = destToken.address;
         requestLifiPath.fromAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
         requestLifiPath.toAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
-
-        
-
-        
-
-
-
-        
-
-        
         requestLifiPath.fromAmount = (await this.utilityService.convertToDecimals(amount,sourceToken.decimal)).toString();
         requestLifiPath.order = "FASTEST";
         requestLifiPath.slippage = 0.005;
@@ -521,7 +435,6 @@ export class CryptoService {
         requestLifiPath.fromAmountForGas = "100000";
         requestLifiPath.maxPriceImpact = 0.15;
     
-        const baseUrl = "https://li.quest/v1/quote";
         const params = new URLSearchParams({
           fromChain: requestLifiPath.fromChain,
           toChain: requestLifiPath.toChain,
@@ -529,25 +442,19 @@ export class CryptoService {
           toToken: requestLifiPath.toToken,
           fromAddress: requestLifiPath.fromAddress,
           toAddress: requestLifiPath.toAddress || requestLifiPath.fromAddress,
-
-          
           fromAmount: requestLifiPath.fromAmount,
-          
           order:requestLifiPath.order
         });
     
-    
-    
-        var url =  `${baseUrl}?${params.toString()}`;
+        var url =  `quote?${params.toString()}`;
     
         let payLoad = {
           apiType: "GET",
-          apiUrl:
-            url,
+          apiUrl: url,
           apiData: null,
+          apiProvider: SwapProvider.LIFI
         };
     
-        
         let data = await fetch("http://localhost:3000/api/common", {
           method: "POST",
           headers: {
@@ -556,15 +463,12 @@ export class CryptoService {
           body: JSON.stringify(payLoad),
         });
     
-    
         return await data.json();
-    
     
       }
 
-      // Getting Lifi Path CHEAPEST
-
-      async GetCHEAPESTLifiPathFromChoosenChains(sourceChain: Chains,destChain: Chains,sourceToken: Tokens,destToken: Tokens,amount:number){
+    // Getting Lifi Path CHEAPEST
+    async GetCHEAPESTLifiPathFromChoosenChains(sourceChain: Chains,destChain: Chains,sourceToken: Tokens,destToken: Tokens,amount:number){
 
         var requestLifiPath = new RequestLifiPath();
     
@@ -578,16 +482,6 @@ export class CryptoService {
         requestLifiPath.toToken = destToken.address;
         requestLifiPath.fromAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
         requestLifiPath.toAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
-
-        
-
-        
-
-
-
-        
-
-        
         requestLifiPath.fromAmount = (await this.utilityService.convertToDecimals(amount,sourceToken.decimal)).toString();
         requestLifiPath.order = "CHEAPEST";
         requestLifiPath.slippage = 0.005;
@@ -604,7 +498,6 @@ export class CryptoService {
         requestLifiPath.fromAmountForGas = "100000";
         requestLifiPath.maxPriceImpact = 0.15;
     
-        const baseUrl = "https://li.quest/v1/quote";
         const params = new URLSearchParams({
           fromChain: requestLifiPath.fromChain,
           toChain: requestLifiPath.toChain,
@@ -616,17 +509,14 @@ export class CryptoService {
           order:requestLifiPath.order
         });
     
-    
-    
-        var url =  `${baseUrl}?${params.toString()}`;
+        var url =  `quote?${params.toString()}`;
     
         let payLoad = {
           apiType: "GET",
-          apiUrl:
-            url,
+          apiUrl: url,
           apiData: null,
+          apiProvider: SwapProvider.LIFI
         };
-    
         
         let data = await fetch("http://localhost:3000/api/common", {
           method: "POST",
@@ -636,144 +526,70 @@ export class CryptoService {
           body: JSON.stringify(payLoad),
         });
     
-    
         return await data.json();
-    
-    
+    }
+
+    // Getting Quotes
+    async GetBestPathFromChoosenChains(sourceChain: Chains,destChain: Chains,sourceToken: Tokens,destToken: Tokens,amount:number) {
+      try {
+          //let TokenData = await this.GetTokenData(sourceToken);
+          let pathShow: PathShowViewModel[] = [];
+          //Lifi Path FASTEST
+          {
+              let lifiPath: ResponseLifiPath = (await this.GetFASTESTLifiPathFromChoosenChains(sourceChain, destChain, sourceToken, destToken, amount)).Data;
+              let pathShowViewModel: PathShowViewModel = new PathShowViewModel();
+              pathShowViewModel.estTime = (await this.utilityService.formatDuration(lifiPath.estimate.executionDuration)).toString();
+
+              let gasafee = 0;
+              lifiPath.estimate.feeCosts.forEach((de) => {
+
+                  gasafee = Number(de.amountUSD) + gasafee;
+
+              });
+
+              pathShowViewModel.gasafee = gasafee.toString() + " USD";
+              pathShowViewModel.fromChain = sourceChain.chainName;
+              pathShowViewModel.fromToken = sourceToken.symbol;
+              pathShowViewModel.fromAmount = amount.toString();
+              pathShowViewModel.toChain = destChain.chainName;
+              pathShowViewModel.toToken = destToken.symbol;
+              pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmount, lifiPath.action.toToken.decimals)).toString();
+              pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmountMin, lifiPath.action.toToken.decimals)).toString();
+              pathShowViewModel.aggregator = "lifi";
+              pathShowViewModel.aggregatorOrderType = "FASTEST"
+              pathShow.push(pathShowViewModel);
+          }
+
+          //Lifi Path CHEAPEST
+          {
+              let lifiPath: ResponseLifiPath = (await this.GetCHEAPESTLifiPathFromChoosenChains(sourceChain, destChain, sourceToken, destToken, amount)).Data;
+              let pathShowViewModel: PathShowViewModel = new PathShowViewModel();
+              pathShowViewModel.estTime = (await this.utilityService.formatDuration(lifiPath.estimate.executionDuration)).toString();
+
+              let gasafee = 0;
+              lifiPath.estimate.feeCosts.forEach((de) => {
+
+                  gasafee = Number(de.amountUSD) + gasafee;
+
+              });
+
+              pathShowViewModel.gasafee = gasafee.toString() + " USD";
+              pathShowViewModel.fromChain = sourceChain.chainName;
+              pathShowViewModel.fromToken = sourceToken.symbol;
+              pathShowViewModel.fromAmount = amount.toString();
+              pathShowViewModel.toChain = destChain.chainName;
+              pathShowViewModel.toToken = destToken.symbol;
+              pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmount, lifiPath.action.toToken.decimals)).toString();
+              pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmountMin, lifiPath.action.toToken.decimals)).toString();
+              pathShowViewModel.aggregator = "lifi";
+              pathShowViewModel.aggregatorOrderType = "CHEAPEST"
+              pathShow.push(pathShowViewModel);
+          }
+          return pathShow;
       }
-
-
-      
-
-      // Getting Quotes
-
-  async GetBestPathFromChoosenChains(sourceChain: Chains,destChain: Chains,sourceToken: Tokens,destToken: Tokens,amount:number) {
-
-    debugger
-
-    try
-    {
-
-        //let TokenData = await this.GetTokenData(sourceToken);
-
-        
-
-        
-
-    
-        let pathShow : PathShowViewModel[] = [];
-
-    //Lifi Path FASTEST
-
-    {
-
-    let lifiPath : ResponseLifiPath = (await this.GetFASTESTLifiPathFromChoosenChains(sourceChain,destChain,sourceToken,destToken,amount)).Data;
-
-    console.log(lifiPath);
-
-    
-    let pathShowViewModel :  PathShowViewModel = new PathShowViewModel();
-
-    pathShowViewModel.estTime = (await this.utilityService.formatDuration(lifiPath.estimate.executionDuration)).toString();
-
-    let gasafee = 0;
-
-
-    lifiPath.estimate.feeCosts.forEach((de)=>{
-                  
-           gasafee = Number(de.amountUSD) + gasafee;
-
-    });
-
-    pathShowViewModel.gasafee = gasafee.toString() + " USD";
-
-    pathShowViewModel.fromChain = sourceChain.chainName;
-
-    pathShowViewModel.fromToken = sourceToken.symbol;
-
-    pathShowViewModel.fromAmount = amount.toString();
-
-    pathShowViewModel.toChain = destChain.chainName;
-
-    pathShowViewModel.toToken = destToken.symbol;
-
-    pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmount,lifiPath.action.toToken.decimals)).toString();
-
-    pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmountMin,lifiPath.action.toToken.decimals)).toString();
-
-    pathShowViewModel.aggregator = "lifi";
-
-    pathShowViewModel.aggregatorOrderType = "FASTEST"
-
-    pathShow.push(pathShowViewModel);
-
-
-
+      catch (error) {
+          console.log(error);
+      }
     }
-
-
-
-
-    //Lifi Path CHEAPEST
-
-
-    {
-
-        let lifiPath : ResponseLifiPath = (await this.GetCHEAPESTLifiPathFromChoosenChains(sourceChain,destChain,sourceToken,destToken,amount)).Data;
-
-    console.log(lifiPath);
-
-    
-    let pathShowViewModel :  PathShowViewModel = new PathShowViewModel();
-
-    pathShowViewModel.estTime = (await this.utilityService.formatDuration(lifiPath.estimate.executionDuration)).toString();
-
-    let gasafee = 0;
-
-
-    lifiPath.estimate.feeCosts.forEach((de)=>{
-                  
-           gasafee = Number(de.amountUSD) + gasafee;
-
-    });
-
-    pathShowViewModel.gasafee = gasafee.toString() + " USD";
-
-    pathShowViewModel.fromChain = sourceChain.chainName;
-
-    pathShowViewModel.fromToken = sourceToken.symbol;
-
-    pathShowViewModel.fromAmount = amount.toString();
-
-    pathShowViewModel.toChain = destChain.chainName;
-
-    pathShowViewModel.toToken = destToken.symbol;
-
-    pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmount,lifiPath.action.toToken.decimals)).toString();
-
-    pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmountMin,lifiPath.action.toToken.decimals)).toString();
-
-    pathShowViewModel.aggregator = "lifi";
-
-    pathShowViewModel.aggregatorOrderType = "CHEAPEST"
-
-    pathShow.push(pathShowViewModel);
-
-        
-    }
-
-    return pathShow;
-
-    }
-    catch(error)
-    {
-        console.log(error);
-    }
-  
-    
-
-    
-    
-  }
     
 }

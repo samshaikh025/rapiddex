@@ -22,7 +22,7 @@ export default function Swapui(props:propsType) {
     const [sourceToken, setSourceToken] = useState<Tokens>(new Tokens());
     const [sourceTokenAmount, setSourceTokenAmount] = useState<number>(0);
     const [destToken, setDestToken] = useState<Tokens>(new Tokens());
-    const [destTokenAmount, setDestTokenAmount] = useState<number>(Number);
+    const [destTokenAmount, setDestTokenAmount] = useState<number>(0);
     let cryptoService = new CryptoService();
     function OpenTokenUI(dataSource: string) {
         setDataSource(dataSource);
@@ -32,12 +32,12 @@ export default function Swapui(props:propsType) {
     async function CloseTokenUI(token: Tokens) {
         if (dataSource == DataSource.From) {
             setSourceToken(token);
-            let amount = (await cryptoService.GetTokenData(token)).data.price;
-            setSourceTokenAmount(amount);
+            let amount = (await cryptoService.GetTokenData(token))?.data?.price;
+            setSourceTokenAmount(amount );
             console.log('Source token amount = ' + amount);
         } else if (dataSource == DataSource.To) {
             setDestToken(token);
-            let amount = (await cryptoService.GetTokenData(token)).data.price;
+            let amount = (await cryptoService.GetTokenData(token))?.data?.price;
             setDestTokenAmount(amount);
         }
         setShowExchangeUI(true);

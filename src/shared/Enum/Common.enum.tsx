@@ -11,3 +11,10 @@ export enum Keys {
     All_DLN_CHAINS = 'All_DLN_Chains',
     Wallet_Address = 'Wallet_Address'
 }
+
+export enum SwapProvider {
+    LIFI = 0,
+    RANGO = 1,
+    OWLTO = 2,
+    MOBULA = 3
+}

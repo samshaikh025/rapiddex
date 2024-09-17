@@ -22,14 +22,9 @@ export class UtilityService {
             return 0;
         }
     }
-    
-
-
-
 
     async  formatDuration(seconds) {
         let result;
-        
         if (seconds < 1) {
             // Convert to milliseconds
             const milliseconds = Math.round(seconds * 1000);

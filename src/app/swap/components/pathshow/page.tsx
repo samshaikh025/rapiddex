@@ -81,64 +81,60 @@ export default function Pathshow(props: PropsType) {
                 <div className="inner-card w-100 py-2 mt-3" key={i}>
                     <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap px-3 pb-2 bottom-border-line">
                       <div className="d-flex align-items-center gap-2">
-                          <Skeleton width={100} height={10} />
-                          <Skeleton width={100} height={10} />
-                          <Skeleton width={100} height={10} />
-                          <Skeleton width={100} height={10} />
+                          <Skeleton width={50} height={10} />
+                          <Skeleton width={50} height={10} />
+                          <Skeleton width={50} height={10} />
+                          <Skeleton width={50} height={10} />
                       </div>
                       <div className="d-flex align-items-center gap-2 flex-wrap">
-                        <Skeleton width={50} height={10} />
-                        <Skeleton width={50} height={10} />
+                        <Skeleton width={60} height={20} />
+                        <Skeleton width={60} height={20} />
                       </div>
                     </div>
                     <div className="px-3 d-flex justify-content-between py-2 middle-align-card">
                       <div>
-                        <Skeleton width={50} height={20} />
+                        <Skeleton width={50} height={10} />
                         <div className="d-flex align-items-center gap-3">
                           <div className="position-relative coin-wrapper">
-                          <Skeleton width={50} height={20} circle={true} />
-                          <Skeleton width={50} height={20} circle={true} />
+                          <Skeleton width={50} height={50} circle={true} />
                           </div>
                           <div className="d-flex flex-column">
                             <label className="coin-name d-block fw-600">
-                            <Skeleton width={50} height={20} />
+                            <Skeleton width={50} height={10} />
                             </label>
                             <label className="coin-sub-name">
-                            <Skeleton width={50} height={20} />
+                            <Skeleton width={30} height={10} />
                             </label>
                           </div>
                         </div>
                       </div>
                       <div className="relative center-card-with-line d-flex align-items-center gap-2 inner-card px-3 py-2 my-3">
-                      <Skeleton width={50} height={20} circle={true} />
+                      <Skeleton width={30} height={30} circle={true} />
                         <label className="font-16 fw-600">
-                        <Skeleton width={50} height={20} />
+                        <Skeleton width={30} height={10} />
                         </label>
                       </div>
                       <div>
-                        <label className="fw-600 d-block">To</label>
+                        <Skeleton width={50} height={10} />
                         <div className="d-flex align-items-center gap-3">
                           <div className="d-flex flex-column">
                             <label className="coin-name d-block fw-600">
-                            <Skeleton width={50} height={20} />
+                            <Skeleton width={50} height={10} />
                             </label>
                             <label className="coin-sub-name">
-                            <Skeleton width={50} height={20} />
+                            <Skeleton width={30} height={10} />
                             </label>
                           </div>
                           <div className="position-relative coin-wrapper">
-                          <Skeleton width={50} height={20} circle={true} />
-                          <Skeleton width={50} height={20} circle={true} />
+                          <Skeleton width={50} height={50} circle={true} />
                           </div>
                         </div>
                       </div>
                     </div>
                     <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap px-3 pt-2 top-border-line">
-                      <i className="fas fa-bolt primary-text"></i>{" "}
-                      <label className="font-16">
-                        <span className="fw-600"> <Skeleton width={50} height={20} /></span> 
-                        <Skeleton width={50} height={20} />
-                      </label>
+                      <Skeleton width={25} height={25} circle={true} />
+                        <Skeleton width={50} height={10} /> 
+                        <Skeleton width={90} height={10} />
                     </div>
                   </div>
               ))}

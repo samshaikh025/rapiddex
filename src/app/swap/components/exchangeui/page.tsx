@@ -22,15 +22,10 @@ type propsType = {
     interChangeData: () => void
 }
 
-
-
-
-
-
 export default function Exchangeui(props: propsType) {
 
-    let [sendAmount, setSendAmount] = useState<number>(0);
-    let [equAmountUSD, setequAmountUSD] = useState<number>(0);
+    let [sendAmount, setSendAmount] = useState<number | null>(null);
+    let [equAmountUSD, setequAmountUSD] = useState<number | null>(null);
     let sharedService = SharedService.getSharedServiceInstance();
     let [walletAddress, setWalletAddress] = useState<string>('');
     const { open } = useWeb3Modal();
@@ -79,18 +74,18 @@ export default function Exchangeui(props: propsType) {
 
     async function updateAmount(amount: number)
     {
-        try{
-
+        try
+        {
             if(!isNaN(amount))
-                {
-                    setpathshow(true);
-                }
-                else
-                {
-                    setpathshow(false);
-                }
+            {
+                setpathshow(true);
+            }
+            else
+            {
+                setpathshow(false);
+            }
             setSendAmount(amount);
-            setequAmountUSD(0);
+            setequAmountUSD(null);
             if(props.sourceTokenAmount > 0 && amount > 0)
             {
                 let eq = (amount * props.sourceTokenAmount);
@@ -100,12 +95,11 @@ export default function Exchangeui(props: propsType) {
         {
 
         }
-       
     }
 
     function interChangeFromTo(){
-        setSendAmount(0);
-        setequAmountUSD(0);
+        setSendAmount(null);
+        setequAmountUSD(null);
         props.interChangeData();
     }
 
@@ -182,8 +176,8 @@ export default function Exchangeui(props: propsType) {
                                 </div>
                                 <div className="d-flex flex-column pb-2">
                                     <input type="number" className="transparent-input" value={sendAmount} onKeyUp={(e) =>
-                                        updateAmount(parseFloat(e.currentTarget.value))} onChange={(e) =>
-                                            updateAmount(parseFloat(e.currentTarget.value))} />
+                                        updateAmount(parseFloat(e.currentTarget.value))} 
+                                        onChange={(e) => updateAmount(parseFloat(e.currentTarget.value))} placeholder="0"/>
                                     <label className="coin-sub-name">$ {equAmountUSD}</label>
                                 </div>
                             </div>
@@ -207,14 +201,7 @@ export default function Exchangeui(props: propsType) {
                     </div>
                 </div>
             </div>
-            
-        
-
-        {pathshow  && <Pathshow Amountpathshow = {sendAmount} destChain={props.destChain} sourceChain={props.sourceChain} sourceToken={props.sourceToken} destToken={props.destToken}></Pathshow>}
-
-
-
-
+            {pathshow  && <Pathshow Amountpathshow = {sendAmount} destChain={props.destChain} sourceChain={props.sourceChain} sourceToken={props.sourceToken} destToken={props.destToken}></Pathshow>}
         </>
     );
   }

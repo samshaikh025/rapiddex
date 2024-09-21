@@ -2,6 +2,7 @@
 import { Keys, SwapProvider } from "../Enum/Common.enum";
 import { Chains, Tokens, DLNChainResponse, ResponseMobulaPricing, PathShowViewModel } from '../Models/Common.model';
 import { RequestLifiPath, ResponseLifiPath } from "../Models/Lifi";
+import { RequestRangoPath } from "../Models/Rango";
 import { SharedService } from "./SharedService";
 import { UtilityService } from "./UtilityService";
 export class CryptoService {
@@ -408,7 +409,8 @@ export class CryptoService {
         try {
           const [fastestPath, cheapestPath] = await Promise.all([
             this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, "FASTEST"),
-            this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST")
+            this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST"),
+            this.getRangoPath(sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST")
           ]);
 
           
@@ -425,7 +427,7 @@ export class CryptoService {
     
        async getLifiPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<ResponseLifiPath> {
         const requestLifiPath = await this.createLifiPathRequest(sourceChain, destChain, sourceToken, destToken, amount, order);
-        const params = this.createUrlParams(requestLifiPath);
+        const params = this.createLifiUrlParams(requestLifiPath);
         const url = `quote?${params.toString()}`;
     
         const payLoad = {
@@ -433,6 +435,28 @@ export class CryptoService {
           apiUrl: url,
           apiData: null,
           apiProvider: SwapProvider.LIFI
+        };
+    
+        const response = await fetch("http://localhost:3000/api/common", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payLoad),
+        });
+    
+        const jsonResponse = await response.json();
+        return jsonResponse.Data;
+      }
+
+      async getRangoPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<ResponseLifiPath> {
+        const requestRangoPath = await this.createRangoPathRequest(sourceChain, destChain, sourceToken, destToken, amount, order);
+        const params = this.createRangoUrlParams(requestRangoPath);
+        const url = `basic/quote?${params.toString()}`;
+    
+        const payLoad = {
+          apiType: "GET",
+          apiUrl: url,
+          apiData: null,
+          apiProvider: SwapProvider.RANGO
         };
     
         const response = await fetch("http://localhost:3000/api/common", {
@@ -470,8 +494,21 @@ export class CryptoService {
         requestLifiPath.maxPriceImpact = 0.15;
         return requestLifiPath;
       }
+
+      async createRangoPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<RequestRangoPath> {
+        
+        const requestRangoPath = new RequestRangoPath();
+
+        
+        requestRangoPath.from = sourceChain.rangoName.toString()+"."+sourceToken.symbol+"--"+sourceToken.address;
+        requestRangoPath.to = destChain.rangoName.toString()+"."+destToken.symbol+"--"+destToken.address;
+        
+        requestRangoPath.amount = Number(await this.utilityService.convertToDecimals(amount, sourceToken.decimal));
+        
+        return requestRangoPath;
+      }
     
-       createUrlParams(requestLifiPath: RequestLifiPath): URLSearchParams {
+       createLifiUrlParams(requestLifiPath: RequestLifiPath): URLSearchParams {
         return new URLSearchParams({
           fromChain: requestLifiPath.fromChain,
           toChain: requestLifiPath.toChain,
@@ -481,6 +518,14 @@ export class CryptoService {
           toAddress: requestLifiPath.toAddress || requestLifiPath.fromAddress,
           fromAmount: requestLifiPath.fromAmount,
           order: requestLifiPath.order
+        });
+      }
+
+      createRangoUrlParams(requestRangoPath: RequestRangoPath): URLSearchParams {
+        return new URLSearchParams({
+          from:requestRangoPath.from,
+          to:requestRangoPath.to,
+          amount:requestRangoPath.amount.toString()
         });
       }
     

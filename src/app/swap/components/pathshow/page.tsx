@@ -20,7 +20,7 @@ export default function Pathshow(props: PropsType) {
       if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
         const cryptoService = new CryptoService();
         try {
-          const result = await cryptoService.GetBestPathFromChoosenChains(
+          const result = await cryptoService.getBestPathFromChosenChains(
             props.sourceChain,
             props.destChain,
             props.sourceToken,

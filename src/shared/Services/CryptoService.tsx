@@ -410,6 +410,8 @@ export class CryptoService {
             this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, "FASTEST"),
             this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST")
           ]);
+
+          
     
           return [
             await this.createPathShowViewModel(fastestPath, sourceChain, destChain, sourceToken, destToken, amount, "FASTEST"),

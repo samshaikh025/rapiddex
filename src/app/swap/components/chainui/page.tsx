@@ -1,3 +1,4 @@
+"use client"
 import { DataSource } from "@/shared/Enum/Common.enum";
 import { ChainBase, Chains } from "@/shared/Models/Common.model";
 import { CryptoService } from "@/shared/Services/CryptoService";
@@ -64,7 +65,7 @@ export default function Chainui(props: propsType) {
                         showChainSpinner == true && 
                         <>
                             {Array.from({ length: 3 }, (_, i) => (
-                                <div className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3 mb-2">
+                                <div key={i} className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3 mb-2">
                                     <div className="d-flex align-items-center gap-3">
                                         <div className="position-relative coin-wrapper">
                                             <Skeleton circle={true} width={50} height={50} />
@@ -96,7 +97,7 @@ export default function Chainui(props: propsType) {
                                     <div className="coin-list-wrapper d-flex flex-column gap-2">
                                         {
                                             AvailableChains.map((chain: Chains, index) => (
-                                                <div className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3"
+                                                <div key={index} className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3"
                                                     onClick={() => props.closeChainUI(chain)}>
                                                     <div className="d-flex align-items-center gap-3">
                                                         <div className="position-relative coin-wrapper">

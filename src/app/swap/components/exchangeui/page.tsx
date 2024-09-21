@@ -1,3 +1,4 @@
+"use client"
 import { config } from "@/app/wagmi/config";
 import { DataSource, Keys } from "@/shared/Enum/Common.enum";
 import { Chains, Tokens } from "@/shared/Models/Common.model";

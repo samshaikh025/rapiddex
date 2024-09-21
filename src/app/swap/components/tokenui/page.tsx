@@ -1,3 +1,4 @@
+"use client"
 import { PredifineTokensContext } from "@/shared/Context/CommonContext";
 import { DataSource } from "@/shared/Enum/Common.enum";
 import { ChainBase, Chains, PreDefinedTokensForChains, TokenBase, Tokens } from "@/shared/Models/Common.model";
@@ -138,7 +139,7 @@ export default function Tokenui(props: propsType) {
                                     showCoinSpinner == true && 
                                     <>
                                         {Array.from({ length: 3 }, (_, i) => (
-                                            <div className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3 mb-2">
+                                            <div key={i} className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3 mb-2">
                                                 <div className="d-flex align-items-center gap-3">
                                                     <div className="position-relative coin-wrapper">
                                                         <Skeleton circle={true} width={50} height={50} />
@@ -166,7 +167,7 @@ export default function Tokenui(props: propsType) {
                                             >
                                                 {
                                                     AvailableToken.map((token: Tokens, index) => (
-                                                        <div className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3"
+                                                        <div key={index} className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3"
                                                             onClick={() => handleCloseTokenUI(token)}>
                                                             <div className="d-flex align-items-center gap-3">
                                                                 <div className="position-relative coin-wrapper">

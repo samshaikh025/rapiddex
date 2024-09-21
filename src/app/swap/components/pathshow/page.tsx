@@ -1,3 +1,4 @@
+"use client"
 import React, { useState, useEffect } from 'react';
 import { Chains, PathShowViewModel, Tokens } from '@/shared/Models/Common.model';
 import { CryptoService } from '@/shared/Services/CryptoService';
@@ -146,7 +147,7 @@ export default function Pathshow(props: PropsType) {
                 {
                   availablePaths.length > 0 &&
                   availablePaths.map((pathshow, index) => (
-                  <div className="inner-card w-100 py-2 mt-3">
+                  <div key={index} className="inner-card w-100 py-2 mt-3">
                     <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap px-3 pb-2 bottom-border-line">
                       <div className="d-flex align-items-center gap-2">
                         <label className="font-16">

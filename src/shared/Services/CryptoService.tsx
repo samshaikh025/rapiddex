@@ -23,6 +23,11 @@ export class CryptoService {
 
     async GetAvailableTokens(selectedChain: Chains)
     {
+        this.SetLifiCoins = [];
+        //this.SetDlnCoins = [];
+        this.SetRangoCoins  = [];
+        this.SetOwltoCoins = [];
+        this.AvailableCoins = [];
         this.SetLifiCoins = await this.GetCoinsForLifi(selectedChain);
         //this.SetDlnCoins = await this.GetCoinsForDln(selectedChain.chainId);
         this.SetRangoCoins  = await this.GetCoinsForRango(selectedChain);
@@ -78,11 +83,6 @@ export class CryptoService {
                 this.AvailableCoins.push(obj);
             }    
         })
-
-        console.log('Lifi Coins :' + this.SetLifiCoins?.length 
-            + ' DlnCoins :' + this.SetDlnCoins?.length +
-            + ' RangoCoins :' + this.SetRangoChains?.length +
-             ' AvailableCoins: ' + this.AvailableCoins?.length)
         return this.AvailableCoins;
     }
 

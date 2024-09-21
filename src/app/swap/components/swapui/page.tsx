@@ -38,7 +38,6 @@ export default function Swapui(props:propsType) {
             setSourceToken(token);
             let amount = (await cryptoService.GetTokenData(token))?.data?.price;
             setSourceTokenAmount(amount );
-            console.log('Source token amount = ' + amount);
         } else if (dataSource == DataSource.To) {
             setDestToken(token);
             let amount = (await cryptoService.GetTokenData(token))?.data?.price;
@@ -59,7 +58,6 @@ export default function Swapui(props:propsType) {
             setDestToken(new Tokens());
         }
         setshowChainUI(false);
-        console.log('selected chain: ', chain.chainId)
     }
 
     function InterChangeData() {

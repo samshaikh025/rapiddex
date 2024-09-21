@@ -50,7 +50,6 @@ export default function Exchangeui(props: propsType) {
     // }
 
     useEffect(()=>{
-        console.log('exchange Ui loaded');
         //getWalletAddressFromStorage();
         //getAvailableBalanceInWallet();
     }, []);
@@ -108,7 +107,6 @@ export default function Exchangeui(props: propsType) {
             address: walletAddress as `0x${string}`,//or as Address(viem) 
           });
           let amount = await balance;
-          console.log('wallet address:',amount)
     }
 
     return (

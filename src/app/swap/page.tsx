@@ -12,7 +12,7 @@ export default async function Swap() {
     let predefineChains = PredefineChains;
     
     for(let i=0; i< predefineChains.length ; i++){
-        let coins = await cryptoService.GetAvailableTokens(chains[0]);
+        let coins = await cryptoService.GetAvailableTokens(predefineChains[i]);
         preDefinedTokensForChains.push({
             chainId: predefineChains[i].chainId,
             tokens: JSON.parse(JSON.stringify(coins))

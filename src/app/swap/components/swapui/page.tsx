@@ -3,13 +3,16 @@ import { useState } from "react";
 import Exchangeui from "../exchangeui/page";
 import Tokenui from "../tokenui/page";
 import Chainui from "../chainui/page";
-import { ChainBase, Chains, TokenBase, Tokens } from "@/shared/Models/Common.model";
+import { ChainBase, Chains, PreDefinedTokensForChains, TokenBase, Tokens } from "@/shared/Models/Common.model";
 import { DataSource } from "@/shared/Enum/Common.enum";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import 'react-loading-skeleton/dist/skeleton.css'
+import { json } from "node:stream/consumers";
+import { PredifineTokensContext } from "@/shared/Context/CommonContext";
 
 type propsType = {
-    chains: Chains[]
+    chains: Chains[],
+    preDefinedTokensForChains: PreDefinedTokensForChains[]
 }
 export default function Swapui(props:propsType) {
 
@@ -23,6 +26,7 @@ export default function Swapui(props:propsType) {
     const [sourceTokenAmount, setSourceTokenAmount] = useState<number>(0);
     const [destToken, setDestToken] = useState<Tokens>(new Tokens());
     const [destTokenAmount, setDestTokenAmount] = useState<number>(0);
+    const preDefineData = props.preDefinedTokensForChains;
     let cryptoService = new CryptoService();
     function OpenTokenUI(dataSource: string) {
         setDataSource(dataSource);
@@ -76,9 +80,34 @@ export default function Swapui(props:propsType) {
             <div className="exchange-wrapper">
                 <div className="container">
                     <div className="row justify-content-center">
-                        {showExchangeUI && <Exchangeui openTokenUI={(dataSource: string) => OpenTokenUI(dataSource)} sourceChain={sourceChain} destChain={destChain} dataSource={dataSource} sourceToken={sourceToken} destToken={destToken} sourceTokenAmount={sourceTokenAmount} destTokenAmount={destTokenAmount} interChangeData={() => InterChangeData()} />}
-                        {(!showExchangeUI && !showChainUI) && <Tokenui openChainUI={(isShow: boolean) => OpenChainUI(isShow)} closeTokenUI={(token: Tokens) => CloseTokenUI(token)} sourceChain={sourceChain} destChain={destChain} dataSource={dataSource} sourceToken={sourceToken} destToken={destToken} />}
-                        {(!showExchangeUI && showChainUI) && <Chainui closeChainUI={(chain: Chains) => CloseChainUI(chain)} sourceChain={sourceChain} destChain={destChain} dataSource={dataSource} chains={props.chains}/>}
+                        <PredifineTokensContext.Provider value={props.preDefinedTokensForChains}>
+                            {showExchangeUI && 
+                                <Exchangeui openTokenUI={(dataSource: string) => 
+                                        OpenTokenUI(dataSource)} 
+                                        sourceChain={sourceChain} 
+                                        destChain={destChain} 
+                                        dataSource={dataSource} 
+                                        sourceToken={sourceToken} 
+                                        destToken={destToken} 
+                                        sourceTokenAmount={sourceTokenAmount} 
+                                        destTokenAmount={destTokenAmount} 
+                                        interChangeData={() => InterChangeData()} />}
+                            {(!showExchangeUI && !showChainUI) &&
+                                <Tokenui openChainUI={(isShow: boolean) => OpenChainUI(isShow)} 
+                                    closeTokenUI={(token: Tokens) => CloseTokenUI(token)} 
+                                    sourceChain={sourceChain} 
+                                    destChain={destChain} 
+                                    dataSource={dataSource} 
+                                    sourceToken={sourceToken} 
+                                    destToken={destToken} />
+                            }
+                            {(!showExchangeUI && showChainUI) && 
+                                <Chainui closeChainUI={(chain: Chains) => CloseChainUI(chain)} 
+                                    sourceChain={sourceChain} 
+                                    destChain={destChain} 
+                                    dataSource={dataSource} 
+                                    chains={props.chains} />}
+                        </PredifineTokensContext.Provider>
                     </div>
                 </div>
             </div>

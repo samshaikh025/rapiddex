@@ -1,7 +1,9 @@
+import { PredifineTokensContext } from "@/shared/Context/CommonContext";
 import { DataSource } from "@/shared/Enum/Common.enum";
-import { ChainBase, Chains, TokenBase, Tokens } from "@/shared/Models/Common.model";
+import { ChainBase, Chains, PreDefinedTokensForChains, TokenBase, Tokens } from "@/shared/Models/Common.model";
 import { CryptoService } from "@/shared/Services/CryptoService";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import InfiniteScroll from "react-infinite-scroll-component";
 import Skeleton from 'react-loading-skeleton'
 
 type propsType = {
@@ -19,6 +21,9 @@ export default function Tokenui(props: propsType) {
     let [AvailableToken, setAvailableToken] = useState<Tokens[]>([]);
     let [masterAvailableToken, setMasterAvailableToken] = useState<Tokens[]>([]);
     let [showCoinSpinner, setShowCoinSpinner] = useState<boolean>(false);
+    const preDefineTokensContextData = useContext(PredifineTokensContext);
+    let [hasMoreData, setHasMoreData] = useState<boolean>(false);
+    let defaultListSize = 20;
     async function getCoinsByChain(){
         let tokens: Tokens[] = [];
         let chainDataSource = new Chains();
@@ -27,16 +32,22 @@ export default function Tokenui(props: propsType) {
             if(chainDataSource.chainId > 0)
             {
                 setShowCoinSpinner(true);
-                tokens = await cryptoService.GetAvailableTokens(chainDataSource);
+                if(preDefineTokensContextData && preDefineTokensContextData.length > 0 && preDefineTokensContextData.findIndex(x =>x.chainId == chainDataSource.chainId) > -1){
+                    tokens = await preDefineTokensContextData?.find(x=> x.chainId == chainDataSource.chainId)?.tokens;
+                }else{
+                    tokens = await cryptoService.GetAvailableTokens(chainDataSource);
+                }
                 setShowCoinSpinner(false);
-                setAvailableToken(tokens);
-                setMasterAvailableToken(tokens);
+                if(tokens && tokens.length > 0)
+                {
+                    setMasterAvailableToken(tokens);
+                    setAvailableToken(tokens.slice(0,defaultListSize));
+                    setHasMoreData(true);
+                }
             }
         }catch(error){
 
         }
-        
-        
     }
     
     async function backCloseTokenUI()
@@ -49,16 +60,40 @@ export default function Tokenui(props: propsType) {
         await props.closeTokenUI(token)
     }
 
-    function filterToken(tokenValue: string)
+    async function filterToken(tokenValue: string)
     {
+        let chainDataSource = props.dataSource == DataSource.From ? props.sourceChain : props.destChain;
+        let masterData = [];
+        setMasterAvailableToken([]);
         setAvailableToken([]);
-        if(tokenValue == '')
-        {
-            setAvailableToken(masterAvailableToken);
+        setShowCoinSpinner(true);
+        setHasMoreData(false);
+        
+        if(preDefineTokensContextData && preDefineTokensContextData.length > 0 && preDefineTokensContextData.findIndex(x =>x.chainId == chainDataSource.chainId) > -1){
+            masterData = await preDefineTokensContextData?.find(x=> x.chainId == chainDataSource.chainId)?.tokens;
         }else{
-            let filter = masterAvailableToken.filter(x=> x.name?.toLowerCase()?.includes(tokenValue));
-            setAvailableToken(filter);
+            masterData = await cryptoService.GetAvailableTokens(chainDataSource);
         }
+        setShowCoinSpinner(false);
+        if(masterData && masterData.length > 0)
+        {
+            if(tokenValue.length > 0){
+                masterData = masterData.filter(x => x.name?.toLowerCase()?.includes(tokenValue));
+            }
+            setMasterAvailableToken(masterData);
+            setAvailableToken(masterData.slice(0,defaultListSize));
+            setHasMoreData(true);
+        }
+    }
+
+    function fetchMoreData(){
+        setTimeout(() => {
+            if(AvailableToken.length < masterAvailableToken.length){
+                setAvailableToken([...AvailableToken, ...masterAvailableToken.slice(AvailableToken.length, AvailableToken.length + defaultListSize)]);
+            }else{
+                setHasMoreData(false);
+            }
+          }, 1500);
     }
 
     useEffect(() => {
@@ -121,24 +156,32 @@ export default function Tokenui(props: propsType) {
                                 {
                                 showCoinSpinner == false && 
                                 <>
-                                        <div className="coin-list-wrapper d-flex flex-column gap-2">
-                                            {
-                                                AvailableToken.map((token: Tokens, index) => (
-                                                    <div className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3"
-                                                        onClick={() => handleCloseTokenUI(token)}>
-                                                        <div className="d-flex align-items-center gap-3">
-                                                            <div className="position-relative coin-wrapper">
-                                                                <img src={token.logoURI} className="coin" alt="coin" />
+                                        <div id="scrollableCoinDiv" className="coin-list-wrapper d-flex flex-column gap-2">
+                                            <InfiniteScroll
+                                                dataLength={AvailableToken?.length}
+                                                next={fetchMoreData}
+                                                hasMore={hasMoreData}
+                                                loader={<span className="text-center mt-2">Loading...</span>}
+                                                scrollableTarget="scrollableCoinDiv"
+                                            >
+                                                {
+                                                    AvailableToken.map((token: Tokens, index) => (
+                                                        <div className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3"
+                                                            onClick={() => handleCloseTokenUI(token)}>
+                                                            <div className="d-flex align-items-center gap-3">
+                                                                <div className="position-relative coin-wrapper">
+                                                                    <img src={token.logoURI} className="coin" alt="coin" />
+                                                                </div>
+                                                                <div className="d-flex flex-column">
+                                                                    <label className="coin-name d-block fw-600">{token.name}</label>
+                                                                    <label className="coin-sub-name">Coin Info</label>
+                                                                </div>
                                                             </div>
-                                                            <div className="d-flex flex-column">
-                                                                <label className="coin-name d-block fw-600">{token.name}</label>
-                                                                <label className="coin-sub-name">Coin Info</label>
-                                                            </div>
+                                                            <label className=" fw-600">$ 0.5</label>
                                                         </div>
-                                                        <label className=" fw-600">$ 0.5</label>
-                                                    </div>
-                                                ))
-                                            }
+                                                    ))
+                                                }
+                                            </InfiniteScroll>
                                         </div>
                                 </> 
                                 }

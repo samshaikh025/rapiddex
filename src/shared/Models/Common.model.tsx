@@ -77,3 +77,8 @@ export class PathShowViewModel{
       circulating_supply: string;
     }
   }
+
+  export class PreDefinedTokensForChains{
+    chainId: number = 0;
+    tokens: Tokens[] = [];
+  } 

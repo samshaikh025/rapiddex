@@ -34,7 +34,6 @@ export default function Header() {
 
   useAccountEffect({
     onConnect(data) {
-      console.log('Connected!', data)
       let addressExist = sharedService.getData(Keys.Wallet_Address);
       if(!addressExist && data.address){
         sharedService.setData(Keys.Wallet_Address, data.address);
@@ -96,7 +95,6 @@ export default function Header() {
   
   function diconnectWallet(){
     disconnect();
-    console.log('Disconnected!')
     sharedService.removeData(Keys.Wallet_Address);
     setWalletAddress('');
     sharedService.walletAddress$.next('');

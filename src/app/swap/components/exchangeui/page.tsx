@@ -129,10 +129,12 @@ export default function Exchangeui(props: propsType) {
                                 <label className="mb-2 fw-600">From</label>
                                 <div className="d-flex align-items-center gap-3">
                                     <div className="position-relative coin-wrapper">
-                                        <img src={props.sourceChain.logoURI}
-                                            className="coin" alt="coin" />
-                                        <img src={props.sourceToken.logoURI}
-                                            className="coin-small" alt="coin" />
+                                        <div className="coin"></div>
+                                        <div className="coin-small"></div>
+                                        {/* <img src={props.sourceChain.logoURI}
+                                            className="coin" alt="coin" /> */}
+                                        {/* <img src={props.sourceToken.logoURI}
+                                            className="coin-small" alt="coin" /> */}
                                     </div>
                                     <div className="d-flex flex-column">
                                         <label className="coin-name d-block fw-600">{props.sourceChain.chainId > 0 ?
@@ -150,10 +152,12 @@ export default function Exchangeui(props: propsType) {
                                 <label className="mb-2 fw-600">To</label>
                                 <div className="d-flex align-items-center gap-3">
                                     <div className="position-relative coin-wrapper">
-                                        <img src={props.destChain.logoURI}
+                                        {/* <img src={props.destChain.logoURI}
                                             className="coin" alt="coin" />
                                         <img src={props.destToken.logoURI}
-                                            className="coin-small" alt="coin" />
+                                            className="coin-small" alt="coin" /> */}
+                                        <div className="coin"></div>
+                                        <div className="coin-small"></div>
                                     </div>
                                     <div className="d-flex flex-column">
                                         <label className="coin-name d-block fw-600">{props.destChain.chainId > 0 ?
@@ -168,10 +172,12 @@ export default function Exchangeui(props: propsType) {
                             <label className="mb-2 fw-600">Send</label>
                             <div className="d-flex align-items-center gap-3">
                                 <div className="position-relative coin-wrapper">
-                                    <img src={props.sourceChain.logoURI}
+                                    {/* <img src={props.sourceChain.logoURI}
                                         className="coin" alt="coin" />
                                     <img src={props.sourceToken.logoURI}
-                                        className="coin-small" alt="coin" />
+                                        className="coin-small" alt="coin" /> */}
+                                    <div className="coin"></div>
+                                    <div className="coin-small"></div>
                                 </div>
                                 <div className="d-flex flex-column pb-2">
                                     <input type="number" className="transparent-input" value={sendAmount} onKeyUp={(e) =>

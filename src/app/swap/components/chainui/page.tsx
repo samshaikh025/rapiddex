@@ -101,8 +101,10 @@ export default function Chainui(props: propsType) {
                                                     onClick={() => props.closeChainUI(chain)}>
                                                     <div className="d-flex align-items-center gap-3">
                                                         <div className="position-relative coin-wrapper">
-                                                            <img src={chain.logoURI}
-                                                                alt="" className="coin" />
+                                                            {/* <img src={chain.logoURI}
+                                                                alt="" className="coin" /> */}
+                                                                <div className="coin"></div>
+                                                                <div className="coin-small"></div>
                                                         </div>
                                                         <div className="d-flex flex-column">
                                                             <label className="coin-name d-block fw-600">{chain.chainName}</label>

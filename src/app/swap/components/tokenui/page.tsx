@@ -117,8 +117,10 @@ export default function Tokenui(props: propsType) {
 
                         <div className="inner-card w-100 py-3 px-3 d-flex flex-column gap-3">
                             <div className="d-flex gap-3 w-100 align-items-center">
-                                <div className="selcet-coin">
-                                    <img src={props.dataSource == DataSource.From ? props.sourceChain.logoURI : props.destChain.logoURI} alt="" />
+                                <div className="selcet-coin coin-wrapper">
+                                    <div className="coin"></div>
+                                    <div className="coin-small"></div>
+                                    {/* <img src={props.dataSource == DataSource.From ? props.sourceChain.logoURI : props.destChain.logoURI} alt="" /> */}
                                 </div>
                                 <button className="btn primary-btn w-100" onClick={() => props.openChainUI(true)}>
                                     {props.dataSource == DataSource.From ? (props.sourceChain.chainName == '' ? 'Select Chain' :
@@ -171,7 +173,9 @@ export default function Tokenui(props: propsType) {
                                                             onClick={() => handleCloseTokenUI(token)}>
                                                             <div className="d-flex align-items-center gap-3">
                                                                 <div className="position-relative coin-wrapper">
-                                                                    <img src={token.logoURI} className="coin" alt="coin" />
+                                                                    {/* <img src={token.logoURI} className="coin" alt="coin" /> */}
+                                                                    <div className="coin"></div>
+                                                                    <div className="coin-small"></div>
                                                                 </div>
                                                                 <div className="d-flex flex-column">
                                                                     <label className="coin-name d-block fw-600">{token.name}</label>

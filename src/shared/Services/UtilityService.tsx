@@ -1,5 +1,9 @@
 import { ethers } from 'ethers';
 
+import { BigNumberish } from 'ethers';
+import { Chain } from 'viem';
+import { Chains, TokenBase, Tokens } from '../Models/Common.model';
+
 export class UtilityService {
     async convertToDecimals(amount: number, decimals: number): Promise<string> {
         try {
@@ -44,6 +48,35 @@ export class UtilityService {
         
         return result;
     }
+    // Function to convert hexadecimal to decimal
+async  hexToDecimal(hexValue) {
+    try {
+        // Convert the hex value to BigNumber
+        const decimalValue = BigInt(hexValue);
+        // Return the decimal value as a string
+        return decimalValue;
+    } catch (error) {
+        console.error('Invalid hexadecimal value:', error);
+        return null;
+    }
+}
+
+async checkCoinNative(chain:Chains,token:Tokens)
+{
+
+    let value= await this.hexToDecimal(token.address)
+
+    if (value === BigInt(0)) {
+        return true;
+      }
+
+      return false;
+    
+    
+    
+       
+
+}
 }
 
 

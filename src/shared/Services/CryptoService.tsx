@@ -2,7 +2,8 @@
 import { Keys, SwapProvider } from "../Enum/Common.enum";
 import { Chains, Tokens, DLNChainResponse, ResponseMobulaPricing, PathShowViewModel } from '../Models/Common.model';
 import { RequestLifiPath, ResponseLifiPath } from "../Models/Lifi";
-import { RequestRangoPath } from "../Models/Rango";
+import { RequestOwltoPath, ResponseOwltoPath } from "../Models/Owlto";
+import { RequestRangoPath, ResponseRangoPath } from "../Models/Rango";
 import { SharedService } from "./SharedService";
 import { UtilityService } from "./UtilityService";
 export class CryptoService {
@@ -171,7 +172,7 @@ export class CryptoService {
             rangoCoins = RangoCoinData?.Data?.tokens;
             //let data = await this.SharedService.setIndexDbItem(Keys.All_LIFI_COINS, lifiCoins);
         }catch(error){
-            console.log(error);
+            console.log(chain.rangoName,error);
         }
         
         return rangoCoins; 
@@ -207,6 +208,7 @@ export class CryptoService {
     
     async GetAvailableChains()
     {
+        debugger;
             this.AvailableChains = [];
             this.SetLifiChains = await this.GetLifiChains();
             //this.SetDlnChains = await this.GetDlnChains();
@@ -221,6 +223,7 @@ export class CryptoService {
                 obj.chainName = chain.name;
                 obj.rangoName = '';
                 obj.logoURI = chain.logoURI;
+                
 
                 this.AvailableChains.push(obj);
             });
@@ -243,6 +246,7 @@ export class CryptoService {
                     obj.rangoName = chain.name;
                     obj.lifiName = '';
                     obj.logoURI = chain.logo;
+                    
                     this.AvailableChains.push(obj);
                 }else if(includeLength == 1){
                     let index = this.AvailableChains?.findIndex(x => x.chainId == parseInt(chain.chainId));
@@ -258,6 +262,7 @@ export class CryptoService {
                     obj.lifiName = '';
                     obj.rangoName = '';
                     obj.logoURI = chain.icon;
+                    
 
                     this.AvailableChains.push(obj);
                 }
@@ -407,7 +412,7 @@ export class CryptoService {
 
     async getBestPathFromChosenChains(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number) {
         try {
-          const [fastestPath, cheapestPath] = await Promise.all([
+          const [fastestPath, cheapestPath,rangoPath] = await Promise.all([
             this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, "FASTEST"),
             this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST"),
             this.getRangoPath(sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST")
@@ -417,7 +422,8 @@ export class CryptoService {
     
           return [
             await this.createPathShowViewModel(fastestPath, sourceChain, destChain, sourceToken, destToken, amount, "FASTEST"),
-            await this.createPathShowViewModel(cheapestPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST")
+            await this.createPathShowViewModel(cheapestPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST"),
+            await this.createRangoPathShowViewModel(rangoPath,sourceChain,destChain,sourceToken,destToken,amount,"Rango")
           ];
         } catch (error) {
           console.error("Error in getBestPathFromChosenChains:", error);
@@ -447,7 +453,7 @@ export class CryptoService {
         return jsonResponse.Data;
       }
 
-      async getRangoPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<ResponseLifiPath> {
+      async getRangoPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<ResponseRangoPath> {
         const requestRangoPath = await this.createRangoPathRequest(sourceChain, destChain, sourceToken, destToken, amount, order);
         const params = this.createRangoUrlParams(requestRangoPath);
         const url = `basic/quote?${params.toString()}`;
@@ -499,13 +505,56 @@ export class CryptoService {
         
         const requestRangoPath = new RequestRangoPath();
 
+        let tokenfrom = "";
+        let tokento="";
+          
+        let sourceNative=await this.utilityService.checkCoinNative(sourceChain,sourceToken);
+        let destNative=await this.utilityService.checkCoinNative(destChain,destToken);
+
+        if(sourceNative == true)
+        {
+
+            tokenfrom = sourceToken.symbol;
+
+        }
+        else
+        {
+            tokenfrom = +sourceToken.symbol+"--"+sourceToken.address;
+        }
+
+        if(destNative == true)
+        {
+            tokento = destToken.symbol
+        }
+        else
+        {
+            tokento = destToken.symbol+"--"+destToken.address;
+        }
+
+
+
+
         
-        requestRangoPath.from = sourceChain.rangoName.toString()+"."+sourceToken.symbol+"--"+sourceToken.address;
-        requestRangoPath.to = destChain.rangoName.toString()+"."+destToken.symbol+"--"+destToken.address;
+        requestRangoPath.from = sourceChain.rangoName.toString()+"."+tokenfrom;
+        requestRangoPath.to = destChain.rangoName.toString()+"."+tokento;
         
         requestRangoPath.amount = Number(await this.utilityService.convertToDecimals(amount, sourceToken.decimal));
         
         return requestRangoPath;
+      }
+
+      async createOwltoPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<RequestOwltoPath> {
+        const requestOwltoPath = new RequestOwltoPath();
+
+        requestOwltoPath.from_chainid=sourceChain.chainId;
+        requestOwltoPath.to_chainid=destChain.chainId;
+        requestOwltoPath.user="0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
+        
+        requestOwltoPath.token=sourceToken.symbol;
+
+
+        
+        return requestOwltoPath;
       }
     
        createLifiUrlParams(requestLifiPath: RequestLifiPath): URLSearchParams {
@@ -528,6 +577,16 @@ export class CryptoService {
           amount:requestRangoPath.amount.toString()
         });
       }
+
+      createOwltoUrlParams(requestRangoPath: RequestOwltoPath): URLSearchParams {
+        return new URLSearchParams({
+            token:requestRangoPath.token,
+            from_chainid:requestRangoPath.from_chainid.toString(),
+            to_chainid:requestRangoPath.to_chainid.toString(),
+            user:requestRangoPath.user
+
+        });
+      }
     
        async createPathShowViewModel(lifiPath: ResponseLifiPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
         const pathShowViewModel = new PathShowViewModel();
@@ -544,5 +603,39 @@ export class CryptoService {
         pathShowViewModel.aggregatorOrderType = orderType;
         return pathShowViewModel;
       }
+
+      async createRangoPathShowViewModel(responseRangoPath: ResponseRangoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
+        const pathShowViewModel = new PathShowViewModel();
+        pathShowViewModel.estTime = await this.utilityService.formatDuration(responseRangoPath.route.estimatedTimeInSeconds);
+        pathShowViewModel.gasafee = responseRangoPath.route.feeUsd + " USD";
+        pathShowViewModel.fromChain = sourceChain.chainName;
+        pathShowViewModel.fromToken = sourceToken.symbol;
+        pathShowViewModel.fromAmount = amount.toString();
+        pathShowViewModel.toChain = destChain.chainName;
+        pathShowViewModel.toToken = destToken.symbol;
+        pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(responseRangoPath.route.outputAmount.toString(), destToken.decimal)).toString();
+        pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(responseRangoPath.route.outputAmountMin.toString(), destToken.decimal)).toString();;
+        pathShowViewModel.aggregator = "rango";
+        pathShowViewModel.aggregatorOrderType = orderType;
+        return pathShowViewModel;
+      }
     
+
+
+      async createOwltoPathShowViewModel(responseOwltoPath: ResponseOwltoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
+        const pathShowViewModel = new PathShowViewModel();
+        pathShowViewModel.estTime = "less than 1 min";
+        pathShowViewModel.gasafee = (Number(responseOwltoPath.msg.dtc) + Number(amount) * Number(responseOwltoPath.msg.bridge_fee_ratio) ) + " " + sourceToken.symbol;
+        pathShowViewModel.fromChain = sourceChain.chainName;
+        pathShowViewModel.fromToken = sourceToken.symbol;
+        pathShowViewModel.fromAmount = amount.toString();
+        pathShowViewModel.toChain = destChain.chainName;
+        pathShowViewModel.toToken = destToken.symbol;
+        pathShowViewModel.toAmount = (amount).toString();
+        pathShowViewModel.receivedAmount = (amount).toString();;
+        pathShowViewModel.aggregator = "Owlto";
+        pathShowViewModel.aggregatorOrderType = orderType;
+        return pathShowViewModel;
+      }
+
 }

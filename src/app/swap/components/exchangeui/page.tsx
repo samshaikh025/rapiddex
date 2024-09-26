@@ -10,6 +10,7 @@ import { getBalance } from "wagmi/actions";
 
 import { CryptoService } from "@/shared/Services/CryptoService";
 import Pathshow from "../pathshow/page";
+import { UtilityService } from "@/shared/Services/UtilityService";
 
 type propsType = {
     sourceChain: Chains,
@@ -20,15 +21,16 @@ type propsType = {
     sourceTokenAmount: number,
     destTokenAmount: number,
     openTokenUI: (dataSource: string) => void;
-    interChangeData: () => void
+    interChangeData: () => void,
+    passSendAmount: (amount: number | null) => void
 }
 
 export default function Exchangeui(props: propsType) {
-
-    let [sendAmount, setSendAmount] = useState<number | null>(null);
+    let [sendAmount, setSendAmount] = useState<string>('');
     let [equAmountUSD, setequAmountUSD] = useState<number | null>(null);
     let sharedService = SharedService.getSharedServiceInstance();
     let [walletAddress, setWalletAddress] = useState<string>('');
+    let utilityService = new UtilityService();
     const { open } = useWeb3Modal();
     let account = useAccount();
 
@@ -72,25 +74,25 @@ export default function Exchangeui(props: propsType) {
         // }
       }, [sharedService.walletAddress$]);
 
-    async function updateAmount(amount: number)
+    async function updateAmount(amount)
     {
         try
         {
-            if(!isNaN(amount))
-            {
-                setpathshow(true);
-            }
-            else
-            {
-                setpathshow(false);
-            }
             setSendAmount(amount);
-            setequAmountUSD(null);
-            if(props.sourceTokenAmount > 0 && amount > 0)
+            if(!utilityService.isNullOrEmpty(amount) && !isNaN(amount))
             {
-                let eq = (amount * props.sourceTokenAmount);
-                setequAmountUSD(eq);
-            } 
+                props.passSendAmount(Number(amount));
+                setequAmountUSD(null);
+                if(props.sourceTokenAmount > 0 && Number(amount) > 0)
+                {
+                    let eq = (amount * props.sourceTokenAmount);
+                    setequAmountUSD(eq);
+                }
+            }else {
+                setequAmountUSD(null);
+                props.passSendAmount(null);
+            }
+             
         }catch(error)
         {
 
@@ -98,8 +100,8 @@ export default function Exchangeui(props: propsType) {
     }
 
     function interChangeFromTo(){
-        setSendAmount(null);
         setequAmountUSD(null);
+        props.passSendAmount(null);
         props.interChangeData();
     }
 
@@ -129,10 +131,13 @@ export default function Exchangeui(props: propsType) {
                                 <label className="mb-2 fw-600">From</label>
                                 <div className="d-flex align-items-center gap-3">
                                     <div className="position-relative coin-wrapper">
-                                        <img src={props.sourceChain.logoURI}
-                                            className="coin" alt="coin" />
-                                        <img src={props.sourceToken.logoURI}
-                                            className="coin-small" alt="coin" />
+                                        { utilityService.isNullOrEmpty(props.sourceChain.logoURI) && <div className="coin"></div> }
+                                        { utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <div className="coin-small"></div> }
+                                        
+                                        { !utilityService.isNullOrEmpty(props.sourceChain.logoURI) && <img src={props.sourceChain.logoURI}
+                                            className="coin" alt="coin" /> }
+                                        { !utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <img src={props.sourceToken.logoURI}
+                                            className="coin-small" alt="coin" /> }
                                     </div>
                                     <div className="d-flex flex-column">
                                         <label className="coin-name d-block fw-600">{props.sourceChain.chainId > 0 ?
@@ -150,10 +155,14 @@ export default function Exchangeui(props: propsType) {
                                 <label className="mb-2 fw-600">To</label>
                                 <div className="d-flex align-items-center gap-3">
                                     <div className="position-relative coin-wrapper">
-                                        <img src={props.destChain.logoURI}
-                                            className="coin" alt="coin" />
-                                        <img src={props.destToken.logoURI}
-                                            className="coin-small" alt="coin" />
+
+                                        {utilityService.isNullOrEmpty(props.destChain.logoURI) && <div className="coin"></div>}
+                                        {utilityService.isNullOrEmpty(props.destToken.logoURI) && <div className="coin-small"></div>}
+
+                                        {!utilityService.isNullOrEmpty(props.destChain.logoURI) && <img src={props.destChain.logoURI}
+                                            className="coin" alt="coin" />}
+                                        {!utilityService.isNullOrEmpty(props.destToken.logoURI) && <img src={props.destToken.logoURI}
+                                            className="coin-small" alt="coin" />}
                                     </div>
                                     <div className="d-flex flex-column">
                                         <label className="coin-name d-block fw-600">{props.destChain.chainId > 0 ?
@@ -168,16 +177,19 @@ export default function Exchangeui(props: propsType) {
                             <label className="mb-2 fw-600">Send</label>
                             <div className="d-flex align-items-center gap-3">
                                 <div className="position-relative coin-wrapper">
-                                    <img src={props.sourceChain.logoURI}
-                                        className="coin" alt="coin" />
-                                    <img src={props.sourceToken.logoURI}
-                                        className="coin-small" alt="coin" />
+                                    {utilityService.isNullOrEmpty(props.sourceChain.logoURI) && <div className="coin"></div>}
+                                    {utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <div className="coin-small"></div>}
+
+                                    {!utilityService.isNullOrEmpty(props.sourceChain.logoURI) && <img src={props.sourceChain.logoURI}
+                                        className="coin" alt="coin" />}
+                                    {!utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <img src={props.sourceToken.logoURI}
+                                        className="coin-small" alt="coin" />}
                                 </div>
                                 <div className="d-flex flex-column pb-2">
-                                    <input type="number" className="transparent-input" value={sendAmount} onKeyUp={(e) =>
-                                        updateAmount(parseFloat(e.currentTarget.value))} 
-                                        onChange={(e) => updateAmount(parseFloat(e.currentTarget.value))} placeholder="0"/>
+                                    <input type="text" className="transparent-input" onKeyUp={(e) =>
+                                        updateAmount(e.currentTarget.value)} placeholder="0"/>
                                     <label className="coin-sub-name">$ {equAmountUSD}</label>
+                                    {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
                                 </div>
                             </div>
                         </div>
@@ -200,7 +212,6 @@ export default function Exchangeui(props: propsType) {
                     </div>
                 </div>
             </div>
-            {pathshow  && <Pathshow Amountpathshow = {sendAmount} destChain={props.destChain} sourceChain={props.sourceChain} sourceToken={props.sourceToken} destToken={props.destToken}></Pathshow>}
         </>
     );
   }

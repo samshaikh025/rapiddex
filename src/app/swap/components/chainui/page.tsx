@@ -87,13 +87,13 @@ export default function Chainui(props: propsType) {
 
                                 <div className="search-bar position-relative">
                                     <i className="fas fa-search"></i>
-                                    <input type="text" className="w-100" placeholder="Search here"
+                                    <input type="text" className="w-100" placeholder="Search By Chain Name"
                                         onKeyUp={(e) => filterChain(e.currentTarget.value)} />
                                 </div>
                                 <div className="mt-2">
-                                    <div className="card-title mb-3">
+                                    {/* <div className="card-title mb-3">
                                         Chain List
-                                    </div>
+                                    </div> */}
                                     <div className="coin-list-wrapper d-flex flex-column gap-2">
                                         {
                                             AvailableChains.map((chain: Chains, index) => (

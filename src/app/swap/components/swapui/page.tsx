@@ -9,6 +9,7 @@ import { CryptoService } from "@/shared/Services/CryptoService";
 import 'react-loading-skeleton/dist/skeleton.css'
 import { json } from "node:stream/consumers";
 import { PredifineTokensContext } from "@/shared/Context/CommonContext";
+import Pathshow from "../pathshow/page";
 
 type propsType = {
     chains: Chains[],
@@ -26,6 +27,7 @@ export default function Swapui(props:propsType) {
     const [sourceTokenAmount, setSourceTokenAmount] = useState<number>(0);
     const [destToken, setDestToken] = useState<Tokens>(new Tokens());
     const [destTokenAmount, setDestTokenAmount] = useState<number>(0);
+    let [sendAmount, setSendAmount] = useState<number | null>(null);
     const preDefineData = props.preDefinedTokensForChains;
     let cryptoService = new CryptoService();
     function OpenTokenUI(dataSource: string) {
@@ -37,7 +39,7 @@ export default function Swapui(props:propsType) {
         if (dataSource == DataSource.From) {
             setSourceToken(token);
             let amount = (await cryptoService.GetTokenData(token))?.data?.price;
-            setSourceTokenAmount(amount );
+            setSourceTokenAmount(amount);
         } else if (dataSource == DataSource.To) {
             setDestToken(token);
             let amount = (await cryptoService.GetTokenData(token))?.data?.price;
@@ -53,6 +55,7 @@ export default function Swapui(props:propsType) {
         if (dataSource == DataSource.From) {
             setSourceChain(chain);
             setSourceToken(new Tokens());
+            setSendAmount(null);
         } else if (dataSource == DataSource.To) {
             setDestChain(chain);
             setDestToken(new Tokens());
@@ -89,7 +92,8 @@ export default function Swapui(props:propsType) {
                                         destToken={destToken} 
                                         sourceTokenAmount={sourceTokenAmount} 
                                         destTokenAmount={destTokenAmount} 
-                                        interChangeData={() => InterChangeData()} />}
+                                        interChangeData={() => InterChangeData()} 
+                                        passSendAmount ={(amount: number | null) => setSendAmount(amount)}/>}
                             {(!showExchangeUI && !showChainUI) &&
                                 <Tokenui openChainUI={(isShow: boolean) => OpenChainUI(isShow)} 
                                     closeTokenUI={(token: Tokens) => CloseTokenUI(token)} 
@@ -105,6 +109,12 @@ export default function Swapui(props:propsType) {
                                     destChain={destChain} 
                                     dataSource={dataSource} 
                                     chains={props.chains} />}
+                            {(showExchangeUI && sendAmount != null && sendAmount > 0) && 
+                                <Pathshow Amountpathshow = {sendAmount} 
+                                destChain={destChain} 
+                                sourceChain={sourceChain} 
+                                sourceToken={sourceToken} 
+                                destToken={destToken} />}        
                         </PredifineTokensContext.Provider>
                     </div>
                 </div>

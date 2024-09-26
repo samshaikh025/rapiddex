@@ -63,19 +63,16 @@ async  hexToDecimal(hexValue) {
 
 async checkCoinNative(chain:Chains,token:Tokens)
 {
-
-    let value= await this.hexToDecimal(token.address)
+    let value = await this.hexToDecimal(token.address)
 
     if (value === BigInt(0)) {
         return true;
-      }
+    }
+    return false;
+}
 
-      return false;
-    
-    
-    
-       
-
+isNullOrEmpty(str:any){
+    return (str == null || str == '' || str == undefined || str?.length == 0) ? true : false;
 }
 }
 

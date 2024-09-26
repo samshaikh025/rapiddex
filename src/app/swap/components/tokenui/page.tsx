@@ -3,6 +3,7 @@ import { PredifineTokensContext } from "@/shared/Context/CommonContext";
 import { DataSource } from "@/shared/Enum/Common.enum";
 import { ChainBase, Chains, PreDefinedTokensForChains, TokenBase, Tokens } from "@/shared/Models/Common.model";
 import { CryptoService } from "@/shared/Services/CryptoService";
+import { UtilityService } from "@/shared/Services/UtilityService";
 import { useContext, useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Skeleton from 'react-loading-skeleton'
@@ -25,6 +26,9 @@ export default function Tokenui(props: propsType) {
     const preDefineTokensContextData = useContext(PredifineTokensContext);
     let [hasMoreData, setHasMoreData] = useState<boolean>(false);
     let defaultListSize = 20;
+    let utilityService = new UtilityService();
+    let chainImageURL = '';
+    chainImageURL = props.dataSource ==DataSource.From ? props.sourceChain.logoURI : props.destChain.logoURI;
     async function getCoinsByChain(){
         let tokens: Tokens[] = [];
         let chainDataSource = new Chains();
@@ -117,8 +121,9 @@ export default function Tokenui(props: propsType) {
 
                         <div className="inner-card w-100 py-3 px-3 d-flex flex-column gap-3">
                             <div className="d-flex gap-3 w-100 align-items-center">
-                                <div className="selcet-coin">
-                                    <img src={props.dataSource == DataSource.From ? props.sourceChain.logoURI : props.destChain.logoURI} alt="" />
+                                <div className="selcet-coin coin-wrapper">
+                                { utilityService.isNullOrEmpty(chainImageURL) && <div className="coin"></div>}
+                                { !utilityService.isNullOrEmpty(chainImageURL) && <img src={chainImageURL} className="coin" alt="" />}
                                 </div>
                                 <button className="btn primary-btn w-100" onClick={() => props.openChainUI(true)}>
                                     {props.dataSource == DataSource.From ? (props.sourceChain.chainName == '' ? 'Select Chain' :
@@ -128,13 +133,13 @@ export default function Tokenui(props: propsType) {
                             </div>
                             <div className="search-bar position-relative">
                                 <i className="fas fa-search"></i>
-                                <input type="text" className="w-100" placeholder="Search here" onKeyUp={(e) =>
+                                <input type="text" className="w-100" placeholder="Search By Token Name" onKeyUp={(e) =>
                                     filterToken(e.currentTarget.value)} />
                             </div>
                             <div className="mt-2">
-                                <div className="card-title mb-3">
+                                {/* <div className="card-title mb-3">
                                     Coin List
-                                </div>
+                                </div> */}
                                 {
                                     showCoinSpinner == true && 
                                     <>

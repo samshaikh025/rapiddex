@@ -16,6 +16,14 @@ export default function Header() {
   let sharedService = SharedService.getSharedServiceInstance();
   const { disconnect, isSuccess } = useDisconnect();
   let [walletAddress, setWalletAddress] = useState<string>('');
+  let [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+  function toggleTheme(status: boolean)
+  {
+    let mode = status == true ? 'LIGHT' : 'DARK';
+    setIsDarkMode(status);
+    sharedService.setTheme(mode);
+    sharedService.setData(Keys.THEME, mode);    
+  };
 
   // useAccountEffect({
   //   config,
@@ -60,6 +68,10 @@ export default function Header() {
 
   useEffect(() => {
     getWalletAddressFromStorageAndSet();
+    let theme = sharedService.getData(Keys.THEME);
+    if(theme && theme == 'DARK'){
+      setIsDarkMode(false);
+    }
   }, []);
 
   function getWalletAddressFromStorageAndSet(){
@@ -118,12 +130,12 @@ export default function Header() {
                 </div>
                 <div className="btn-wrapper d-flex align-items-center gap-2">
                     <div className="theme-mode">
-                        <input type="checkbox" className="checkbox" id="checkbox"/>
-                        <label htmlFor="checkbox" className="checkbox-label">
-                          <i className="fas fa-moon"></i>
-                          <i className="fas fa-sun"></i>
-                          <span className="ball"></span>
-                        </label>
+                      <input type="checkbox" className="checkbox" id="checkbox" checked={isDarkMode} onChange={(e)=>toggleTheme(e.currentTarget.checked)} />
+                      <label htmlFor="checkbox" className="checkbox-label"> 
+                        <i className="fas fa-sun"></i>
+                        <i className="fas fa-moon"></i>
+                        <span className="ball"></span>
+                      </label>
                     </div>
                     <div className="dropdown">
                         {

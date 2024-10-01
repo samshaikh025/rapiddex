@@ -1,7 +1,7 @@
 "use client"
 import { config } from "@/app/wagmi/config";
 import { DataSource, Keys } from "@/shared/Enum/Common.enum";
-import { Chains, Tokens } from "@/shared/Models/Common.model";
+import { Chains, PathShowViewModel, Tokens } from "@/shared/Models/Common.model";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useState } from "react";
@@ -21,16 +21,18 @@ type propsType = {
     sourceTokenAmount: number,
     destTokenAmount: number,
     openTokenUI: (dataSource: string) => void;
-    interChangeData: () => void,
-    passSendAmount: (amount: number | null) => void
+    interChangeData: () => void
 }
 
 export default function Exchangeui(props: propsType) {
-    let [sendAmount, setSendAmount] = useState<string>('');
+    let [sendAmount, setSendAmount] = useState<number | null>();
     let [equAmountUSD, setequAmountUSD] = useState<number | null>(null);
     let sharedService = SharedService.getSharedServiceInstance();
     let [walletAddress, setWalletAddress] = useState<string>('');
     let utilityService = new UtilityService();
+    let [totalAvailablePath, setTotalAvailablePath] = useState<number>(0);
+    let [selectedPath, setSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
+
     const { open } = useWeb3Modal();
     let account = useAccount();
 
@@ -78,10 +80,9 @@ export default function Exchangeui(props: propsType) {
     {
         try
         {
-            setSendAmount(amount);
             if(!utilityService.isNullOrEmpty(amount) && !isNaN(amount))
             {
-                props.passSendAmount(Number(amount));
+                setSendAmount(Number(amount));
                 setequAmountUSD(null);
                 if(props.sourceTokenAmount > 0 && Number(amount) > 0)
                 {
@@ -89,8 +90,8 @@ export default function Exchangeui(props: propsType) {
                     setequAmountUSD(eq);
                 }
             }else {
+                setSendAmount(null);
                 setequAmountUSD(null);
-                props.passSendAmount(null);
             }
              
         }catch(error)
@@ -100,8 +101,8 @@ export default function Exchangeui(props: propsType) {
     }
 
     function interChangeFromTo(){
+        setSendAmount(null);
         setequAmountUSD(null);
-        props.passSendAmount(null);
         props.interChangeData();
     }
 
@@ -110,6 +111,17 @@ export default function Exchangeui(props: propsType) {
             address: walletAddress as `0x${string}`,//or as Address(viem) 
           });
           let amount = await balance;
+    }
+
+    function getInitData(data: PathShowViewModel[]){
+        setTotalAvailablePath(data.length);
+        if(data.length > 0){
+            setSelectedPath(data[0]);
+        }
+    }
+
+    function getSelectedPath (data: PathShowViewModel){
+        setSelectedPath(data);
     }
 
     return (
@@ -193,6 +205,15 @@ export default function Exchangeui(props: propsType) {
                                 </div>
                             </div>
                         </div>
+                        <button className="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">
+                            All Path
+                        </button>
+                        {
+                            totalAvailablePath == 0 && <div className="text-center mt-3">No path found</div>
+                        }
+                        {
+                            (totalAvailablePath > 0 && selectedPath.pathId > 0) && <div className="text-center mt-3">Selected Path: {selectedPath.pathId}</div>
+                        }
                         {
                             walletAddress != '' &&
                             <>
@@ -209,6 +230,16 @@ export default function Exchangeui(props: propsType) {
                                 </button>
                             </>
                         }
+                        
+                        {(sendAmount != null && sendAmount > 0) &&
+                            <Pathshow Amountpathshow={sendAmount}
+                                destChain={props.destChain}
+                                sourceChain={props.sourceChain}
+                                sourceToken={props.sourceToken}
+                                destToken={props.destToken} 
+                                sendInitData={(result: PathShowViewModel[]) => getInitData(result)}
+                                sendSelectedPath={(result: PathShowViewModel) => getSelectedPath(result)}/>
+                        } 
                     </div>
                 </div>
             </div>

@@ -10,18 +10,21 @@ type PropsType = {
   destChain: Chains;
   sourceToken: Tokens;
   destToken: Tokens;
+  sendInitData: (data: PathShowViewModel[]) => void;
+  sendSelectedPath: (data: PathShowViewModel) => void;
 };
 
 export default function Pathshow(props: PropsType) {
-  const [pathShowSpinner, setPathShowSpinner] = useState<boolean>(true);
+  const [pathShowSpinner, setPathShowSpinner] = useState<boolean>(false);
   let [availablePaths, setAvailablePaths] = useState<PathShowViewModel[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
         const cryptoService = new CryptoService();
+        setPathShowSpinner(true);
         try {
-          const result = await cryptoService.getBestPathFromChosenChains(
+          let result = await cryptoService.getBestPathFromChosenChains(
             props.sourceChain,
             props.destChain,
             props.sourceToken,
@@ -29,6 +32,11 @@ export default function Pathshow(props: PropsType) {
             props.Amountpathshow
           );
           if(result && result.length > 0){
+            //result = result.slice(0,2);
+            result.forEach((item, index)=>{
+              item.pathId = index + 1;
+            });
+            props.sendInitData(result);
             setAvailablePaths(result);
             setPathShowSpinner(false);
           }
@@ -45,7 +53,8 @@ export default function Pathshow(props: PropsType) {
 
 
   return (
-    <div className="col-lg-7 col-md-12 col-sm-12 col-12">
+    <>
+    <div className="col-lg-7 col-md-12 col-sm-12 col-12 d-none d-lg-block">
       <div className="card">
         <div className="p-24">
           <div className="d-flex justify-content-between align-items-center mb-2 gap-3 flex-wrap-reverse">
@@ -147,7 +156,7 @@ export default function Pathshow(props: PropsType) {
                 {
                   availablePaths.length > 0 &&
                   availablePaths.map((pathshow, index) => (
-                  <div key={index} className="inner-card w-100 py-2 mt-3">
+                  <div key={index} className="inner-card w-100 py-2 mt-3" onClick={() => props.sendSelectedPath(pathshow)}>
                     <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap px-3 pb-2 bottom-border-line">
                       <div className="d-flex align-items-center gap-2">
                         <label className="font-16">
@@ -245,5 +254,82 @@ export default function Pathshow(props: PropsType) {
         </div>
       </div>
     </div>
+      <div className="offcanvas offcanvas-bottom" id="offcanvasBottom"  data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{height: '70%'}}>
+        <div className="offcanvas-header">
+          <h5 className="offcanvas-title" id="offcanvasBottomLabel">Available Paths</h5>
+          <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div className="offcanvas-body small">
+            {
+              availablePaths.length > 0 &&
+              availablePaths.map((pathshow, index) => (
+                <div key={index} className="inner-card w-100 py-2 mt-3" onClick={() => props.sendSelectedPath(pathshow)}>
+                  <div className="px-3 d-flex justify-content-between py-2 middle-align-card">
+                    <div>
+                      <label className="fw-600">From</label>
+                      <div className="d-flex align-items-center gap-3">
+                        <div className="position-relative coin-wrapper">
+                          <img
+                            src={props.sourceChain.logoURI}
+                            className="coin"
+                            alt="coin"
+                          />
+                          <img
+                            src={props.sourceToken.logoURI}
+                            className="coin-small"
+                            alt="coin"
+                          />
+                        </div>
+                        <div className="d-flex flex-column">
+                          <label className="coin-name d-block fw-600">
+                            {pathshow.fromChain}
+                          </label>
+                          <label className="coin-sub-name">
+                            {pathshow.fromToken}
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="relative center-card-with-line d-flex align-items-center gap-2 inner-card px-3 py-2 my-3">
+                      <img
+                        src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg"
+                        width="100%"
+                        height="100%"
+                      />
+                      <label className="font-16 fw-600">
+                        {pathshow.aggregator}
+                      </label>
+                    </div>
+                    <div>
+                      <label className="fw-600 d-block">To</label>
+                      <div className="d-flex align-items-center gap-3">
+                        <div className="d-flex flex-column">
+                          <label className="coin-name d-block fw-600">
+                            {pathshow.toChain}
+                          </label>
+                          <label className="coin-sub-name">
+                            {pathshow.toToken}
+                          </label>
+                        </div>
+                        <div className="position-relative coin-wrapper">
+                          <img
+                            src={props.destChain.logoURI}
+                            className="coin"
+                            alt="coin"
+                          />
+                          <img
+                            src={props.destToken.logoURI}
+                            className="coin-small"
+                            alt="coin"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+        </div>
+      </div>
+    </>
   );
 }

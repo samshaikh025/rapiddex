@@ -31,6 +31,7 @@ export class Tokens{
 }
 
 export class PathShowViewModel{
+    pathId:number;
     estTime:string;
     gasafee:string;
     fromChain:string;

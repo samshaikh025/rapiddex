@@ -27,7 +27,6 @@ export default function Swapui(props:propsType) {
     const [sourceTokenAmount, setSourceTokenAmount] = useState<number>(0);
     const [destToken, setDestToken] = useState<Tokens>(new Tokens());
     const [destTokenAmount, setDestTokenAmount] = useState<number>(0);
-    let [sendAmount, setSendAmount] = useState<number | null>(null);
     const preDefineData = props.preDefinedTokensForChains;
     let cryptoService = new CryptoService();
     function OpenTokenUI(dataSource: string) {
@@ -55,7 +54,6 @@ export default function Swapui(props:propsType) {
         if (dataSource == DataSource.From) {
             setSourceChain(chain);
             setSourceToken(new Tokens());
-            setSendAmount(null);
         } else if (dataSource == DataSource.To) {
             setDestChain(chain);
             setDestToken(new Tokens());
@@ -92,8 +90,7 @@ export default function Swapui(props:propsType) {
                                         destToken={destToken} 
                                         sourceTokenAmount={sourceTokenAmount} 
                                         destTokenAmount={destTokenAmount} 
-                                        interChangeData={() => InterChangeData()} 
-                                        passSendAmount ={(amount: number | null) => setSendAmount(amount)}/>}
+                                        interChangeData={() => InterChangeData()}/>}
                             {(!showExchangeUI && !showChainUI) &&
                                 <Tokenui openChainUI={(isShow: boolean) => OpenChainUI(isShow)} 
                                     closeTokenUI={(token: Tokens) => CloseTokenUI(token)} 
@@ -108,13 +105,7 @@ export default function Swapui(props:propsType) {
                                     sourceChain={sourceChain} 
                                     destChain={destChain} 
                                     dataSource={dataSource} 
-                                    chains={props.chains} />}
-                            {(showExchangeUI && sendAmount != null && sendAmount > 0) && 
-                                <Pathshow Amountpathshow = {sendAmount} 
-                                destChain={destChain} 
-                                sourceChain={sourceChain} 
-                                sourceToken={sourceToken} 
-                                destToken={destToken} />}        
+                                    chains={props.chains} />}       
                         </PredifineTokensContext.Provider>
                     </div>
                 </div>

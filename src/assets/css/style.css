@@ -2,7 +2,7 @@
     position:fixed;
     width:100%;
     top:16px;
-    z-index:9
+    z-index:1
 }
 .w-48{
     width:48px
@@ -186,4 +186,26 @@
 .faster{
     background-color:#32d5831a; 
     color:#32d583; 
+}
+.modal-backdrop.show{
+    z-index:1
+}
+.add-scroll-bar{
+    max-height:400px;
+    overflow:auto
+}
+.active-card{
+    border:2px solid #5244d2
+}
+.selcet-coin.coin-wrapper{
+    mask:none !important
+}
+.coin-list-wrapper.coin-wrapper{
+    mask:none   
+}
+.font-medium{
+    font-weight:600
+}
+.fw-400{
+    font-weight:400 !important
 }

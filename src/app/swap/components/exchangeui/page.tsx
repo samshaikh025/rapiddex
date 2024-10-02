@@ -205,9 +205,29 @@ export default function Exchangeui(props: propsType) {
                                 </div>
                             </div>
                         </div>
-                        <button className="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">
-                            All Path
-                        </button>
+
+
+                        <label className="d-block text-end mt-2" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">All Path</label>
+
+                        <div className="inner-card w-100 py-2 px-3 mt-2">
+                            <div className="d-flex align-items-center gap-3">
+                                <div className="selcet-coin coin-wrapper">
+                                    <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/ethereum.svg" className="coin" alt="" />
+                                </div>
+                                <div className="d-flex flex-column">
+                                    <label className="coin-name d-block fw-600">Ethereum <span className="pl-2 fw-400">~ 17 mins </span> <label className="faster fw-600 px-2 py-1">
+                          faster
+                        </label></label>
+                                    <div className="mt-0.5 d-flex items-center text-sm">
+                                        <p className="m-0 flex p-0 font-medium primary-text">Est. Output:
+                                            <span className="">
+                                                <span><span className="px-1 fw-400">0.3 </span>
+                                                </span>
+                                                USDC</span>
+                                            </p><span className="">&nbsp;</span><p className="m-0 p-0 font-medium primary-text"><span>Gas Fees: </span> <span className="fw-400">$5.179</span></p></div>
+                                </div>
+                            </div>    
+                        </div>
                         {
                             totalAvailablePath == 0 && <div className="text-center mt-3">No path found</div>
                         }
@@ -231,18 +251,20 @@ export default function Exchangeui(props: propsType) {
                             </>
                         }
                         
-                        {(sendAmount != null && sendAmount > 0) &&
-                            <Pathshow Amountpathshow={sendAmount}
-                                destChain={props.destChain}
-                                sourceChain={props.sourceChain}
-                                sourceToken={props.sourceToken}
-                                destToken={props.destToken} 
-                                sendInitData={(result: PathShowViewModel[]) => getInitData(result)}
-                                sendSelectedPath={(result: PathShowViewModel) => getSelectedPath(result)}/>
-                        } 
+                        
                     </div>
                 </div>
             </div>
+           
+                {(sendAmount != null && sendAmount > 0) &&
+                    <Pathshow Amountpathshow={sendAmount}
+                    destChain={props.destChain}
+                    sourceChain={props.sourceChain}
+                    sourceToken={props.sourceToken}
+                    destToken={props.destToken} 
+                    sendInitData={(result: PathShowViewModel[]) => getInitData(result)}
+                    sendSelectedPath={(result: PathShowViewModel) => getSelectedPath(result)}/>
+                } 
         </>
     );
   }

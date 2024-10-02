@@ -84,11 +84,11 @@ export default function Pathshow(props: PropsType) {
           {
             pathShowSpinner == true && 
             <>
-            <div className="d-flex flex-column gap-1">
+            <div className="d-flex flex-column gap-3 add-scroll-bar mt-4">
 
             </div>
               {Array.from({ length: 2 }, (_, i) => (
-                <div className="inner-card w-100 py-2 mt-3" key={i}>
+                <div className="inner-card w-100 py-2 active-card" key={i}>
                     <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap px-3 pb-2 bottom-border-line">
                       <div className="d-flex align-items-center gap-2">
                           <Skeleton width={50} height={10} />
@@ -152,11 +152,11 @@ export default function Pathshow(props: PropsType) {
           }
           {pathShowSpinner == false && (
             <>
-              <div className="d-flex flex-column gap-1">
+              <div className="d-flex flex-column gap-3 add-scroll-bar mt-4">
                 {
                   availablePaths.length > 0 &&
                   availablePaths.map((pathshow, index) => (
-                  <div key={index} className="inner-card w-100 py-2 mt-3" onClick={() => props.sendSelectedPath(pathshow)}>
+                  <div key={index} className="inner-card w-100 py-2" onClick={() => props.sendSelectedPath(pathshow)}>
                     <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap px-3 pb-2 bottom-border-line">
                       <div className="d-flex align-items-center gap-2">
                         <label className="font-16">
@@ -254,82 +254,93 @@ export default function Pathshow(props: PropsType) {
         </div>
       </div>
     </div>
-      <div className="offcanvas offcanvas-bottom" id="offcanvasBottom"  data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{height: '70%'}}>
-        <div className="offcanvas-header">
-          <h5 className="offcanvas-title" id="offcanvasBottomLabel">Available Paths</h5>
-          <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div className="offcanvas-body small">
-            {
-              availablePaths.length > 0 &&
-              availablePaths.map((pathshow, index) => (
-                <div key={index} className="inner-card w-100 py-2 mt-3" onClick={() => props.sendSelectedPath(pathshow)}>
-                  <div className="px-3 d-flex justify-content-between py-2 middle-align-card">
-                    <div>
-                      <label className="fw-600">From</label>
-                      <div className="d-flex align-items-center gap-3">
-                        <div className="position-relative coin-wrapper">
-                          <img
-                            src={props.sourceChain.logoURI}
-                            className="coin"
-                            alt="coin"
-                          />
-                          <img
-                            src={props.sourceToken.logoURI}
-                            className="coin-small"
-                            alt="coin"
-                          />
-                        </div>
-                        <div className="d-flex flex-column">
-                          <label className="coin-name d-block fw-600">
-                            {pathshow.fromChain}
-                          </label>
-                          <label className="coin-sub-name">
-                            {pathshow.fromToken}
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="relative center-card-with-line d-flex align-items-center gap-2 inner-card px-3 py-2 my-3">
-                      <img
-                        src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg"
-                        width="100%"
-                        height="100%"
-                      />
-                      <label className="font-16 fw-600">
-                        {pathshow.aggregator}
-                      </label>
-                    </div>
-                    <div>
-                      <label className="fw-600 d-block">To</label>
-                      <div className="d-flex align-items-center gap-3">
-                        <div className="d-flex flex-column">
-                          <label className="coin-name d-block fw-600">
-                            {pathshow.toChain}
-                          </label>
-                          <label className="coin-sub-name">
-                            {pathshow.toToken}
-                          </label>
-                        </div>
-                        <div className="position-relative coin-wrapper">
-                          <img
-                            src={props.destChain.logoURI}
-                            className="coin"
-                            alt="coin"
-                          />
-                          <img
-                            src={props.destToken.logoURI}
-                            className="coin-small"
-                            alt="coin"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-        </div>
+    <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasBottom"  data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{height: '50%'}}>
+      <div className="offcanvas-header">
+        <h5 className="offcanvas-title" id="offcanvasBottomLabel">Available Paths</h5>
+        <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
       </div>
+      <div className="offcanvas-body small">
+            <div className='d-flex gap-3 flex-column add-scroll-bar'>
+
+            <div className="inner-card w-100 py-2 px-3 mt-2">
+                <div className="d-flex align-items-center gap-3">
+                    <div className="selcet-coin coin-wrapper">
+                        <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/ethereum.svg" className="coin" alt="" />
+                    </div>
+                    <div className="d-flex flex-column">
+                        <label className="coin-name d-block fw-600">Ethereum <span className="pl-2 fw-400">~ 17 mins </span> <label className="faster fw-600 px-2 py-1">
+              faster
+            </label></label>
+                        <div className="mt-0.5 d-flex items-center text-sm">
+                            <p className="m-0 flex p-0 font-medium primary-text">Est. Output:
+                                <span className="">
+                                    <span><span className="px-1 fw-400">0.3 </span>
+                                    </span>
+                                    USDC</span>
+                                </p><span className="">&nbsp;</span><p className="m-0 p-0 font-medium primary-text"><span>Gas Fees: </span> <span className="fw-400">$5.179</span></p></div>
+                    </div>
+                </div>    
+            </div>
+            <div className="inner-card w-100 py-2 px-3 mt-2">
+                <div className="d-flex align-items-center gap-3">
+                    <div className="selcet-coin coin-wrapper">
+                        <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/ethereum.svg" className="coin" alt="" />
+                    </div>
+                    <div className="d-flex flex-column">
+                        <label className="coin-name d-block fw-600">Ethereum <span className="pl-2 fw-400">~ 17 mins </span> <label className="faster fw-600 px-2 py-1">
+              faster
+            </label></label>
+                        <div className="mt-0.5 d-flex items-center text-sm">
+                            <p className="m-0 flex p-0 font-medium primary-text">Est. Output:
+                                <span className="">
+                                    <span><span className="px-1 fw-400">0.3 </span>
+                                    </span>
+                                    USDC</span>
+                                </p><span className="">&nbsp;</span><p className="m-0 p-0 font-medium primary-text"><span>Gas Fees: </span> <span className="fw-400">$5.179</span></p></div>
+                    </div>
+                </div>    
+            </div>
+            <div className="inner-card w-100 py-2 px-3 mt-2">
+                <div className="d-flex align-items-center gap-3">
+                    <div className="selcet-coin coin-wrapper">
+                        <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/ethereum.svg" className="coin" alt="" />
+                    </div>
+                    <div className="d-flex flex-column">
+                        <label className="coin-name d-block fw-600">Ethereum <span className="pl-2 fw-400">~ 17 mins </span> <label className="faster fw-600 px-2 py-1">
+              faster
+            </label></label>
+                        <div className="mt-0.5 d-flex items-center text-sm">
+                            <p className="m-0 flex p-0 font-medium primary-text">Est. Output:
+                                <span className="">
+                                    <span><span className="px-1 fw-400">0.3 </span>
+                                    </span>
+                                    USDC</span>
+                                </p><span className="">&nbsp;</span><p className="m-0 p-0 font-medium primary-text"><span>Gas Fees: </span> <span className="fw-400">$5.179</span></p></div>
+                    </div>
+                </div>    
+            </div>
+            <div className="inner-card w-100 py-2 px-3 mt-2">
+                <div className="d-flex align-items-center gap-3">
+                    <div className="selcet-coin coin-wrapper">
+                        <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/ethereum.svg" className="coin" alt="" />
+                    </div>
+                    <div className="d-flex flex-column">
+                        <label className="coin-name d-block fw-600">Ethereum <span className="pl-2 fw-400">~ 17 mins </span> <label className="faster fw-600 px-2 py-1">
+              faster
+            </label></label>
+                        <div className="mt-0.5 d-flex items-center text-sm">
+                            <p className="m-0 flex p-0 font-medium primary-text">Est. Output:
+                                <span className="">
+                                    <span><span className="px-1 fw-400">0.3 </span>
+                                    </span>
+                                    USDC</span>
+                                </p><span className="">&nbsp;</span><p className="m-0 p-0 font-medium primary-text"><span>Gas Fees: </span> <span className="fw-400">$5.179</span></p></div>
+                    </div>
+                </div>    
+            </div>
+            </div>
+      </div>
+    </div>
     </>
   );
 }

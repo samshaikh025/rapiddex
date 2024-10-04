@@ -216,7 +216,7 @@ export default function Exchangeui(props: propsType) {
                         {
                             totalAvailablePath > 0 && 
                             <>
-                                <label className="d-block d-md-none text-end mt-2" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">View All {totalAvailablePath} Routes</label>
+                                <label className="d-block d-md-none text-end mt-2 primary-text" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">View All {totalAvailablePath} Routes</label>
                             </>
                         }
                         {

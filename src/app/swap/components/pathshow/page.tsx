@@ -268,8 +268,10 @@ export default function Pathshow(props: PropsType) {
     }
     <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasBottom"  data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{height: '50%'}}>
       <div className="offcanvas-header">
-        <h5 className="offcanvas-title" id="offcanvasBottomLabel">Showing {availablePaths.length} Routes</h5>
-        <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <h5 className="offcanvas-title primary-text" id="offcanvasBottomLabel">Showing {availablePaths.length} Routes</h5>
+        <button type="button" className="btn-close text-reset primary-text" data-bs-dismiss="offcanvas" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>
+        </button>
       </div>
       <div className="offcanvas-body small">
             <div className='d-flex gap-3 flex-column add-scroll-bar'>

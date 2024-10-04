@@ -209,3 +209,38 @@
 .fw-400{
     font-weight:400 !important
 }
+.offcanvas{
+    background-color:var(--body-bg)
+}
+.modal-backdrop{
+    position:absolute;
+    background-color:#fff;
+    top:0;
+    right:0;
+    bottom:0;
+    left:0;
+    display:none
+}
+.custom-backgrop.show:before{
+    content:'';
+    position:absolute;
+    background-color:#fff;
+    top: -100vh;
+    right:0;
+    bottom:0;
+    left:0;
+    opacity:0.5;
+    height:100vh;
+    z-index:0
+}
+.btn-close{
+    background:var(--white-color);
+    color:var(--primary-color);
+    display:flex;
+    align-items:center;
+    justofy-content:center
+}
+.selcet-coin.coin-wrapper .coin, .infinite-scroll-component .coin-wrapper .coin{
+    mask:unset !important;
+    mask:none !important;
+}

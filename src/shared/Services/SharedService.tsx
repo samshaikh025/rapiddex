@@ -96,8 +96,8 @@ export class SharedService {
         root.style.setProperty('--primary-icon-color', '#BC9FED');
         root.style.setProperty('--white-color', '#ffffff');
         root.style.setProperty('--black-color', '#ffffff');
-        root.style.setProperty('--border-color', '#d5d5ee');
-        root.style.setProperty('--border-color-40', '#BC9FED');
+        root.style.setProperty('--border-color', '#ffffff1f');
+        root.style.setProperty('--border-color-40', '#ffffff1f');
         root.style.setProperty('--outer-card-bg', 'linear-gradient(210.96deg, rgba(32, 20, 96, 0.61) 0.01%, rgba(49, 30, 95, 0.7) 42.05%, rgba(57, 33, 113, 0.1) 104.81%)');
         root.style.setProperty('--inner-card-bg', '#372A77');
         root.style.setProperty('--header-card', '#0f0d1d');

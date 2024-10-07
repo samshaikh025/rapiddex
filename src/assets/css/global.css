@@ -19,6 +19,7 @@
 
   --box-shadow: 0px 20px 69px 0px #dfdcffd8;
   --inner-card-box-shadow: 50px 38px 102.37px 0px #78769424;
+  --offcanvas: #fff;
 
  
    /* --body-bg: radial-gradient(123.22% 129.67% at 100.89% -5.6%, #05040B 0%, #060316 100%);
@@ -250,4 +251,7 @@ input{
     height:48px;
     border-radius:8px;
     border:1px solid var(--border-color);
+}
+.text-bold{
+  font-weight:600
 }

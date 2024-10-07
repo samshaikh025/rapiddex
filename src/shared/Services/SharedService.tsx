@@ -103,11 +103,13 @@ export class SharedService {
         root.style.setProperty('--header-card', '#0f0d1d');
         root.style.setProperty('--box-shadow', '0px 20px 69px 0px #080711D8');
         root.style.setProperty('--inner-card-box-shadow', '50px 38px 102.37px 0px #78769424');
+        root.style.setProperty('--offcanvas', '#0f0d1d');
+        root.style.setProperty('--active-card', '#fff');
       } 
       else if(mode == 'LIGHT')
-      {
-        //light
-        root.style.setProperty('--body-bg', 'radial-gradient(123.22% 129.67% at 100.89% -5.6%,#fbfbfd 0%,#f2f2ff 100%)');
+        {
+          //light
+          root.style.setProperty('--body-bg', 'radial-gradient(123.22% 129.67% at 100.89% -5.6%,#fbfbfd 0%,#f2f2ff 100%)');
         root.style.setProperty('--primary-color', '#5244d2');
         root.style.setProperty('--primary-color-8', '#5244d214');
         root.style.setProperty('--primary-icon-color', '#7851bc');
@@ -120,6 +122,8 @@ export class SharedService {
         root.style.setProperty('--header-card', 'linear-gradient(90deg, #f3f3ff 29.59%, #f2f2ff 100%)');
         root.style.setProperty('--box-shadow', '0px 20px 69px 0px #dfdcffd8');
         root.style.setProperty('--inner-card-box-shadow', '50px 38px 102.37px 0px #78769424');
+        root.style.setProperty('--offcanvas', '#fff');
+        root.style.setProperty('--active-card', '#5244d2');
       }
     }
 }

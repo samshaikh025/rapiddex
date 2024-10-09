@@ -18,6 +18,7 @@ type PropsType = {
 export default function Pathshow(props: PropsType) {
   const [pathShowSpinner, setPathShowSpinner] = useState<boolean>(false);
   let [availablePaths, setAvailablePaths] = useState<PathShowViewModel[]>([]);
+  let [currentSelectedPath, setCurrentSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,6 +40,7 @@ export default function Pathshow(props: PropsType) {
               item.pathId = index + 1;
             });
             props.sendInitData(result);
+            setCurrentSelectedPath(result[0]);
             setAvailablePaths(result);
             setPathShowSpinner(false);
             props.isPathLoadingParent(false);
@@ -56,6 +58,7 @@ export default function Pathshow(props: PropsType) {
   }, [props.Amountpathshow, props.sourceChain, props.destChain, props.sourceToken, props.destToken]);
 
   function sendSelectedPathToParent(path: PathShowViewModel){
+    setCurrentSelectedPath(path);
     props.sendSelectedPath(path);
     //close offcanvas
     //document.getElementById('offcanvasBottom').classList.remove('show')
@@ -166,7 +169,7 @@ export default function Pathshow(props: PropsType) {
                       {
                         availablePaths.length > 0 &&
                         availablePaths.map((pathshow, index) => (
-                          <div key={index} className="inner-card w-100 py-2" onClick={() => props.sendSelectedPath(pathshow)}>
+                          <div key={index} className={`inner-card w-100 py-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`}  onClick={() => sendSelectedPathToParent(pathshow)}>
                             <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap px-3 pb-2 bottom-border-line">
                               <div className="d-flex align-items-center gap-2">
                                 <label className="font-16">
@@ -278,7 +281,7 @@ export default function Pathshow(props: PropsType) {
             {
               availablePaths.length > 0 &&
               availablePaths.map((pathshow, index) => (
-                <div className="inner-card w-100 py-2 px-3 mt-2" data-bs-dismiss="offcanvas" aria-label="Close" onClick={() => sendSelectedPathToParent(pathshow)}>
+                <div className={`inner-card w-100 py-2 px-3 mt-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} data-bs-dismiss="offcanvas" aria-label="Close" onClick={() => sendSelectedPathToParent(pathshow)}>
                   <div className="d-flex align-items-center gap-3">
                     <div className="selcet-coin coin-wrapper">
                       <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/ethereum.svg" className="coin" alt="" />

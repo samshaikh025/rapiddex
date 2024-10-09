@@ -4,7 +4,7 @@ import { DataSource, Keys } from "@/shared/Enum/Common.enum";
 import { Chains, PathShowViewModel, Tokens } from "@/shared/Models/Common.model";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAccount, useBalance, useDisconnect } from "wagmi";
 import { getBalance } from "wagmi/actions";
 
@@ -35,6 +35,7 @@ export default function Exchangeui(props: propsType) {
     let [totalAvailablePath, setTotalAvailablePath] = useState<number>(0);
     let [isPathShow, setIsPathShow] = useState<boolean>(false);
     let [selectedPath, setSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
+    let amountTextBoxRef = useRef<HTMLInputElement>(null);
 
     const { open } = useWeb3Modal();
     let account = useAccount();
@@ -106,6 +107,7 @@ export default function Exchangeui(props: propsType) {
     function interChangeFromTo(){
         setSendAmount(null);
         setequAmountUSD(null);
+        amountTextBoxRef.current.value = '';
         props.interChangeData();
     }
 
@@ -205,7 +207,7 @@ export default function Exchangeui(props: propsType) {
                                         className="coin-small" alt="coin" />}
                                 </div>
                                 <div className="d-flex flex-column pb-2">
-                                    <input type="text" className="transparent-input" onKeyUp={(e) =>
+                                    <input type="text" ref={amountTextBoxRef} className="transparent-input" onKeyUp={(e) =>
                                         updateAmount(e.currentTarget.value)} placeholder="0"/>
                                     {(equAmountUSD != null && equAmountUSD > 0) && <label className="coin-sub-name">$ {equAmountUSD}</label>} 
                                     {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
@@ -216,7 +218,7 @@ export default function Exchangeui(props: propsType) {
                         {
                             totalAvailablePath > 0 && 
                             <>
-                                <label className="d-block d-lg-none text-end mt-2 primary-text text-bold" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">View All {totalAvailablePath} Routes <i class="fa-solid fa-chevron-right"></i></label>
+                                <label className="d-block d-lg-none text-end mt-2 primary-text text-bold" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">View All {totalAvailablePath} Routes <i className="fa-solid fa-chevron-right"></i></label>
                             </>
                         }
                         {

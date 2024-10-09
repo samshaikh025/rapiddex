@@ -147,9 +147,9 @@
 }
 .search-bar i{
     position:absolute;
-    left:8px;
+    left:12px;
     top:16px;
-    color:var(--border-color)
+    color:#d5d5ee;
 }
 .search-bar input {
     padding-left:36px
@@ -195,7 +195,7 @@
     overflow:auto
 }
 .active-card{
-    border:2px solid #5244d2
+    border:2px solid var(--active-card)
 }
 .selcet-coin.coin-wrapper{
     mask:none !important
@@ -210,7 +210,7 @@
     font-weight:400 !important
 }
 .offcanvas{
-    background-color:var(--body-bg)
+    background-color:var(--offcanvas)
 }
 .modal-backdrop{
     position:absolute;
@@ -224,14 +224,14 @@
 .custom-backgrop.show:before{
     content:'';
     position:absolute;
-    background-color:#fff;
+    background-color:#000;
     top: -100vh;
     right:0;
     bottom:0;
     left:0;
     opacity:0.5;
     height:100vh;
-    z-index:0
+    z-index:0;
 }
 .btn-close{
     background:var(--white-color);
@@ -240,7 +240,12 @@
     align-items:center;
     justofy-content:center
 }
-.selcet-coin.coin-wrapper .coin, .infinite-scroll-component .coin-wrapper .coin{
+.selcet-coin.coin-wrapper .coin, .infinite-scroll-component .coin-wrapper .coin, .coin-list-wrapper .inner-card .coin-wrapper .coin{
     mask:unset !important;
     mask:none !important;
+}
+.infinite-scroll-component {
+    display:flex;
+    flex-direction:column;
+    gap:8px
 }

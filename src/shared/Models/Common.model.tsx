@@ -14,6 +14,7 @@ export class Chains{
     lifiName: string = '';
     rangoName: string = '';
     logoURI: string = '';
+    rpcUrl?:string[] = [];
 }
 
 export class DLNChainResponse {

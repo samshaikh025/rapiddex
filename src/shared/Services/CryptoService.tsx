@@ -85,7 +85,28 @@ export class CryptoService {
                 this.AvailableCoins.push(obj);
             }    
         })
+
+        let chainList = await this.getAvailableChainList();
+        chainList?.map((chain)=>{
+            let index = this.AvailableChains.findIndex(x => x.chainId == chain.chainId);
+            if(index > -1){
+                this.AvailableChains[index].rpcUrl = chain.rpc;
+            }
+        });
+
         return this.AvailableCoins;
+    }
+
+    async getAvailableChainList(){
+        let ChainListAPIResponseData = [];
+        try{
+            let ChainListAPIResponse = await fetch('https://chainid.network/chains.json');
+            ChainListAPIResponseData = await ChainListAPIResponse.json();
+            //let data = await this.SharedService.setIndexDbItem(Keys.All_LIFI_COINS, lifiCoins);
+        }catch(error){
+            console.log(error);
+        }
+        return ChainListAPIResponseData;
     }
 
     async GetCoinsForLifi(chain: Chains)
@@ -418,6 +439,31 @@ export class CryptoService {
             this.getRangoPath(sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST")
           ]);
 
+          let urls = sourceChain.rpcUrl;
+
+          const reorderedUrls = [
+            ...urls.filter(url => url.includes('publicnode')), // Publicnode URLs first
+            ...urls.filter(url => !url.includes('publicnode')) // Other URLs after
+          ];
+
+          // Example usage:
+          const balance = await this.getFirstBalanceWithAbort(sourceToken.address, "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0",reorderedUrls);
+          console.log("Final balance:", balance);
+
+
+                
+          
+
+          
+         
+
+         
+          
+
+         
+           
+          
+
           
     
           return [
@@ -430,6 +476,70 @@ export class CryptoService {
           throw error;
         }
       }
+
+      async  fetchWithAbort(url, signal) {
+        const response = await fetch(url, { signal });
+        return response.json();
+    }
+    
+    async  getFirstBalanceWithAbort(sourceTokenAddress, userAddress,reorderedUrls) {
+        const controller = new AbortController();
+        const { signal } = controller;
+    
+        const balancePromises = reorderedUrls.map(rpcUrl =>
+            this.fetchWithAbort(rpcUrl, signal)
+                .then(response => {
+                    // Process balance with ethers.js logic here
+                    // If balance is found, abort the other requests
+                    controller.abort();
+                    return 'balance found'; // Replace with actual balance logic
+                })
+                .catch(error => {
+                    if (error.name === 'AbortError') {
+                        console.log(`Request aborted for ${rpcUrl}`);
+                    } else {
+                        console.error(`Error fetching balance from ${rpcUrl}:`, error);
+                    }
+                    return '0'; // Return '0' if there's an error
+                })
+        );
+    
+        try {
+            const firstBalance = await Promise.race(balancePromises);
+            return firstBalance;
+        } catch (error) {
+            console.error("Error during balance retrieval:", error);
+            return '0';
+        }
+    }
+    
+
+      async  getFirstBalance(sourceTokenAddress, userAddress,reorderedUrls) {
+        const rpcPromises = reorderedUrls.map(rpcUrl => 
+            this.utilityService.getBalance(sourceTokenAddress, userAddress, rpcUrl)
+            .then(balance => {
+                if (balance) {
+                    return { balance, rpcUrl }; // Return balance with the URL if found
+                }
+                throw new Error('No balance found'); // Explicitly reject if no balance found
+            })
+            .catch(error => {
+                console.error(`Error fetching balance from ${rpcUrl}:`, error);
+                return null; // Return null for errors to avoid Promise.race halting on first error
+            })
+        );
+    
+        // Wait for the first successful balance
+        const result = await Promise.any(rpcPromises);
+        if (result && result.balance) {
+            console.log(`Balance found: ${result.balance} using ${result.rpcUrl}`);
+            return result.balance;
+        }
+    
+        console.error("Failed to fetch balance from all provided URLs.");
+        return null;
+    }
+      
     
        async getLifiPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<ResponseLifiPath> {
         const requestLifiPath = await this.createLifiPathRequest(sourceChain, destChain, sourceToken, destToken, amount, order);

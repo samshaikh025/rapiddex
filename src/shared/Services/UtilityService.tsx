@@ -71,6 +71,35 @@ async checkCoinNative(chain:Chains,token:Tokens)
     return false;
 }
 
+async getBalance(tokenAddress: string, userAddress: string, providerUrl: string): Promise<string> {
+    try {
+        // Create a provider using the passed provider URL
+        const provider = new ethers.JsonRpcProvider(providerUrl);
+
+        // Define the minimal ABI for balance and decimals
+        const tokenABI = [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function decimals() view returns (uint8)"
+        ];
+
+        // Create a contract instance
+        const tokenContract = new ethers.Contract(tokenAddress, tokenABI, provider);
+
+        // Fetch balance and decimals
+        const balance = await tokenContract.balanceOf(userAddress);
+        const decimals = await tokenContract.decimals();
+
+        // Convert balance to a human-readable format
+        const formattedBalance = ethers.formatUnits(balance, decimals);
+        
+        console.log(`Balance: ${formattedBalance} tokens`);
+        return formattedBalance;
+    } catch (error) {
+        console.error('Error fetching balance:', error);
+        return '0';
+    }
+}
+
 isNullOrEmpty(str:any){
     return (str == null || str == '' || str == undefined || str?.length == 0) ? true : false;
 }

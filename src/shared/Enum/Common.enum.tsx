@@ -19,3 +19,8 @@ export enum SwapProvider {
     OWLTO = 2,
     MOBULA = 3
 }
+
+export enum ActionType {
+    OpenWalletModal = "OPEN_WALLET_MODAL",
+    SetWalletAddress = "SET_WALLET_ADDRESS"
+}

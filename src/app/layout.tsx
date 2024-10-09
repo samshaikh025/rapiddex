@@ -11,6 +11,7 @@ import { cookieToInitialState } from "wagmi";
 import { config } from './wagmi/config'
 import { headers } from "next/headers";
 import WagmiProviderComp from "./wagmi/wagmi-provider";
+import Providers from "@/shared/Component/header/providers/page";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -37,10 +38,12 @@ export default function RootLayout({
     <body>
       <div className="body-bg"></div>
       <WagmiProviderComp initialState={initialState}>
+      <Providers>
         <Header/>
         <div className="content-wrapper">
             {children}
         </div>
+      </Providers>
       </WagmiProviderComp>
       <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>

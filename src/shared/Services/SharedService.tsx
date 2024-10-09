@@ -25,13 +25,6 @@ export class SharedService {
         return this.instance;
     }
 
-    public abc = 0;
-    public walletAddress$ = new BehaviorSubject('');
-    public walletAddress = this.walletAddress$.asObservable();
-
-    public openWalletModal$ = new BehaviorSubject(null);
-    public openWalletModal = this.openWalletModal$.asObservable();
-
     DB_NAME = 'IndexDB';
     STORE_NAME = 'Store';
     DB_VERSION = 1;

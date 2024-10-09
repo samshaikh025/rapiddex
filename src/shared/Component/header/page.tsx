@@ -3,11 +3,12 @@ import { Keys } from "@/shared/Enum/Common.enum";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useState } from "react";
-import { BehaviorSubject, Subject } from "rxjs";
 import { useAccount, useAccountEffect, useConnect, useDisconnect } from "wagmi";
-import { config } from "../../../app/wagmi/config"
 import headerLogoDesktop from '../../../assets/images/logo.png';
 import headerLogoMobile from '../../../assets/images/logoIocn.png';
+import { useDispatch, useSelector } from "react-redux";
+import { SetWalletAddressA } from "@/app/redux-store/action/action-redux";
+import { UtilityService } from "@/shared/Services/UtilityService";
 
 export default function Header() {
 
@@ -15,7 +16,11 @@ export default function Header() {
   let account = useAccount();
   let sharedService = SharedService.getSharedServiceInstance();
   const { disconnect, isSuccess } = useDisconnect();
-  let [walletAddress, setWalletAddress] = useState<string>('');
+  const walletAddress = useSelector((state: any) => state.WalletAddress);
+  const openModalStatus = useSelector((state: any) => state.OpenWalletModalStatus);
+  let dispatch = useDispatch();
+  let utilityService = new UtilityService();
+
   function toggleTheme(status: boolean)
   {
     let mode = status == false ? 'light' : 'dark';
@@ -23,46 +28,14 @@ export default function Header() {
     sharedService.setData(Keys.THEME, mode);   
   };
 
-  // useAccountEffect({
-  //   config,
-  //   async onConnect(data) {
-  //     console.log('Connected!', data)
-  //     if(account.address){
-  //       setWalletAddress(account.address)
-  //       await setWalletAddressInStorage();
-  //       sharedService.walletAddress$.next(account.address);
-  //     }
-  //   },
-  //   onDisconnect() {
-  //     console.log('Disconnected!')
-  //   },
-  // })
-
   useAccountEffect({
     onConnect(data) {
-      let addressExist = sharedService.getData(Keys.Wallet_Address);
-      if(!addressExist && data.address){
+      if(data.address){
+        dispatch(SetWalletAddressA(data.address));
         sharedService.setData(Keys.Wallet_Address, data.address);
-        setWalletAddress(data.address)
-        sharedService.walletAddress$.next(data.address);
       }
     }
-    // onDisconnect() {
-    //   console.log('Disconnected!')
-    //   sharedService.removeData(Keys.Wallet_Address);
-    //   setWalletAddress('');
-    //   sharedService.walletAddress$.next('');
-    // },
   })
-
-  function setWalletAddressInStorage(address: string){
-    sharedService.setData(Keys.Wallet_Address, address);
-  }
-
-  function getWalletAddressFromStorage()
-  {
-      return sharedService.getData(Keys.Wallet_Address);
-  }
 
   useEffect(() => {
     getWalletAddressFromStorageAndSet();
@@ -72,42 +45,23 @@ export default function Header() {
   }, []);
 
   function getWalletAddressFromStorageAndSet(){
-    let addressExist = sharedService.getData(Keys.Wallet_Address);
-    if(addressExist){
-      setWalletAddress(addressExist)
-      sharedService.walletAddress$.next(addressExist);
+    let address = sharedService.getData(Keys.Wallet_Address);
+    if(address){
+      dispatch(SetWalletAddressA(address));
     }
   }
 
-  useEffect(() => {
-    let openWalletConnectModal = sharedService.openWalletModal.subscribe((res) => {
-      if(res){
-        openWallet();
-      }
-    });
-    
-  }, [sharedService.openWalletModal$]);
+  useEffect(() =>{
+    if(openModalStatus){
+      open();
+    }
+  }, [openModalStatus])
 
-  // useEffect(() => {
-  //   console.log('account info: ' + account);
-  //   if(account.address){
-  //     setWalletAddress(account.address)
-  //     sharedService.walletAddress$.next(account.address);
-  //     //setWalletAddressInStorage();
-  //   }
-  // }, [account]);
-
-  function openWallet()
-  {
-    open();
-  }
   
   function diconnectWallet(){
     disconnect();
     sharedService.removeData(Keys.Wallet_Address);
-    setWalletAddress('');
-    sharedService.walletAddress$.next('');
-    //sharedService.removeIndexDbItem(Keys.Wallet_Address);
+    dispatch(SetWalletAddressA(''));
   }
     return(
         <section className="header">
@@ -124,6 +78,7 @@ export default function Header() {
                     <a href="#">Loans</a>
                     <a href="#">Liquidity</a>
                     <a href="#">Stak</a>
+                    <a href="#">{openModalStatus}</a>
                 </div>
                 <div className="btn-wrapper d-flex align-items-center gap-2">
                     <div className="theme-mode">
@@ -136,17 +91,17 @@ export default function Header() {
                     </div>
                     <div className="dropdown">
                         {
-                          walletAddress == '' && 
+                          utilityService.isNullOrEmpty(walletAddress) && 
                           <>
-                            <button className="btn primary-btn" onClick={()=> openWallet()}>
+                            <button className="btn primary-btn" onClick={()=> open()}>
                               Connect Wallet</button>
                           </>
                         }
                         {
-                          walletAddress != '' && 
+                          !utilityService.isNullOrEmpty(walletAddress) && 
                           <>
                             <button className="btn primary-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                              {walletAddress && walletAddress?.length > 0 ? walletAddress.substring(0,4) + '...' + walletAddress.substring(37,42) : ''}
+                              { walletAddress.substring(0,4) + '...' + walletAddress.substring(37,42)}
                             </button>
                             <ul className="dropdown-menu dropdown-menu-right">
                               <div className="d-flex align-items-center user-profile">

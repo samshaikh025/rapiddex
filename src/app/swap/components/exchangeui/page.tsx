@@ -1,18 +1,15 @@
 "use client"
-import { config } from "@/app/wagmi/config";
 import { DataSource, Keys } from "@/shared/Enum/Common.enum";
 import { Chains, PathShowViewModel, Tokens } from "@/shared/Models/Common.model";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useRef, useState } from "react";
-import { useAccount, useBalance, useDisconnect } from "wagmi";
-import { getBalance } from "wagmi/actions";
-
-import { CryptoService } from "@/shared/Services/CryptoService";
+import { useAccount } from "wagmi";
 import Pathshow from "../pathshow/page";
 import { UtilityService } from "@/shared/Services/UtilityService";
-import { stat } from "fs";
 import Skeleton from "react-loading-skeleton";
+import { useDispatch, useSelector } from "react-redux";
+import { OpenWalletModalA } from "@/app/redux-store/action/action-redux";
 
 type propsType = {
     sourceChain: Chains,
@@ -30,55 +27,17 @@ export default function Exchangeui(props: propsType) {
     let [sendAmount, setSendAmount] = useState<number | null>();
     let [equAmountUSD, setequAmountUSD] = useState<number | null>(null);
     let sharedService = SharedService.getSharedServiceInstance();
-    let [walletAddress, setWalletAddress] = useState<string>('');
+    const walletAddress = useSelector((state: any) => state.WalletAddress);
     let utilityService = new UtilityService();
     let [totalAvailablePath, setTotalAvailablePath] = useState<number>(0);
     let [isPathShow, setIsPathShow] = useState<boolean>(false);
     let [selectedPath, setSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
     let amountTextBoxRef = useRef<HTMLInputElement>(null);
-
+    let dispatch = useDispatch();
     const { open } = useWeb3Modal();
     let account = useAccount();
 
     const [pathshow,setpathshow] = useState<boolean>(false);
-
-    function openWallet() {
-        sharedService.openWalletModal$.next(true);
-    } 
-
-    async function getWalletAddressFromStorage()
-    {
-        let address = await sharedService.getIndexDbItem(Keys.Wallet_Address);
-        if(address){
-            setWalletAddress(address);
-        }
-    }
-
-    // async function setWalletAddressInStorage(){
-    //     let response = await sharedService.setIndexDbItem(Keys.Wallet_Address, account.address);
-    // }
-
-    useEffect(()=>{
-        //getWalletAddressFromStorage();
-        //getAvailableBalanceInWallet();
-    }, []);
-
-    // useEffect(()=>{
-    //     sharedService.walletAddress$.next(account.address);
-    //     setWalletAddressInStorage();
-    // }, [account]);
-
-    useEffect(() => {
-        let walletSub = sharedService.walletAddress.subscribe((res) => {
-                //if(res != null){
-                    setWalletAddress(res);
-                //}
-                //getAvailableBalanceInWallet();
-        });
-        // return () => {
-        //   walletSub.unsubscribe();
-        // }
-      }, [sharedService.walletAddress$]);
 
     async function updateAmount(amount)
     {
@@ -109,13 +68,6 @@ export default function Exchangeui(props: propsType) {
         setequAmountUSD(null);
         amountTextBoxRef.current.value = '';
         props.interChangeData();
-    }
-
-    async function getAvailableBalanceInWallet(){
-        const balance = getBalance(config,{
-            address: walletAddress as `0x${string}`,//or as Address(viem) 
-          });
-          let amount = await balance;
     }
 
     function getInitData(data: PathShowViewModel[]){
@@ -267,7 +219,7 @@ export default function Exchangeui(props: propsType) {
                         }
                         
                         {
-                            walletAddress != '' &&
+                            !utilityService.isNullOrEmpty(walletAddress) &&
                             <>
                                 <button className="btn primary-btn w-100 mt-3">
                                     Exchange
@@ -275,9 +227,9 @@ export default function Exchangeui(props: propsType) {
                             </>
                         }
                         {
-                            walletAddress == '' &&
+                            utilityService.isNullOrEmpty(walletAddress) &&
                             <>
-                                <button className="btn primary-btn w-100 mt-3" onClick={() => openWallet()}>
+                                <button className="btn primary-btn w-100 mt-3" onClick={() => dispatch(OpenWalletModalA(true))}>
                                     Connect Wallet
                                 </button>
                             </>

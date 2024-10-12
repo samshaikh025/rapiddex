@@ -1,9 +1,10 @@
 import { combineReducers } from "redux";
-import { OpenWalletModalStatus, WalletAddress } from "./reducer-redux";
+import { AvailableChains, OpenWalletModalStatus, WalletAddress } from "./reducer-redux";
 
 const rootReducer = combineReducers({
     OpenWalletModalStatus,
-    WalletAddress
+    WalletAddress,
+    AvailableChains
 });
 
 export default rootReducer;

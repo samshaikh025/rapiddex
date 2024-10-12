@@ -9,7 +9,7 @@ export enum Keys {
     All_OWLTO_COINS = 'All_Owlto_Coins',
     All_AVAILABLE_CHAINS = 'All_Available_Chains',
     All_DLN_CHAINS = 'All_DLN_Chains',
-    Wallet_Address = 'Wallet_Address',
+    WALLET_CONNECT_DATA = 'Wallet_Connect_Data',
     THEME = 'Theme' 
 }
 
@@ -22,5 +22,6 @@ export enum SwapProvider {
 
 export enum ActionType {
     OpenWalletModal = "OPEN_WALLET_MODAL",
-    SetWalletAddress = "SET_WALLET_ADDRESS"
+    SetWalletAddress = "SET_WALLET_ADDRESS",
+    SetAvailableChains = "SET_AVAILABLE_CHAINS"
 }

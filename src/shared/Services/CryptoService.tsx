@@ -234,6 +234,7 @@ export class CryptoService {
             this.SetLifiChains = await this.GetLifiChains();
             //this.SetDlnChains = await this.GetDlnChains();
             this.SetRangoChains = await this.GetRangoChains();
+            debugger
             this.SetOwltoChains = await this.GetOwltoChains();
 
             this.SetLifiChains?.map((chain) => {

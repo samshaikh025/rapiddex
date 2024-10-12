@@ -7,8 +7,9 @@ import { useAccount, useAccountEffect, useConnect, useDisconnect } from "wagmi";
 import headerLogoDesktop from '../../../assets/images/logo.png';
 import headerLogoMobile from '../../../assets/images/logoIocn.png';
 import { useDispatch, useSelector } from "react-redux";
-import { SetWalletAddressA } from "@/app/redux-store/action/action-redux";
+import { OpenWalletModalA, SetWalletAddressA } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
+import { WalletConnectData } from "@/shared/Models/Common.model";
 
 export default function Header() {
 
@@ -17,8 +18,12 @@ export default function Header() {
   let sharedService = SharedService.getSharedServiceInstance();
   const { disconnect, isSuccess } = useDisconnect();
   const walletAddress = useSelector((state: any) => state.WalletAddress);
+  console.log(walletAddress);
   const openModalStatus = useSelector((state: any) => state.OpenWalletModalStatus);
+  let [walletChainId, setWalletChainId] = useState<number>(0);
+  let [walletData, setWalletData] = useState<WalletConnectData>(new WalletConnectData());
   let dispatch = useDispatch();
+  const allAvailableChains = useSelector((state: any) => state.AvailableChains);
   let utilityService = new UtilityService();
 
   function toggleTheme(status: boolean)
@@ -32,7 +37,15 @@ export default function Header() {
     onConnect(data) {
       if(data.address){
         dispatch(SetWalletAddressA(data.address));
-        sharedService.setData(Keys.Wallet_Address, data.address);
+        let obj = new WalletConnectData();
+        obj.address = data.address;
+        obj.providerImgPath = data.connector.icon;
+        obj.chainId = data.chain?.id;
+        obj.chainName = data.chain?.name;
+        obj.chainLogo = allAvailableChains.length > 0 ? allAvailableChains?.find(x => x.chainId == data.chain?.id)?.logoURI : '';
+        obj.blockExplorer = data.chain.blockExplorers.default;
+        setWalletData(obj);
+        sharedService.setData(Keys.WALLET_CONNECT_DATA,obj);
       }
     }
   })
@@ -45,14 +58,15 @@ export default function Header() {
   }, []);
 
   function getWalletAddressFromStorageAndSet(){
-    let address = sharedService.getData(Keys.Wallet_Address);
-    if(address){
-      dispatch(SetWalletAddressA(address));
+    let data = sharedService.getData(Keys.WALLET_CONNECT_DATA);
+    if(data){
+      dispatch(SetWalletAddressA(data.address));
+      setWalletData(data);
     }
   }
 
   useEffect(() =>{
-    if(openModalStatus){
+    if(Boolean(openModalStatus) == true){
       open();
     }
   }, [openModalStatus])
@@ -60,12 +74,19 @@ export default function Header() {
   
   function diconnectWallet(){
     disconnect();
-    sharedService.removeData(Keys.Wallet_Address);
+    sharedService.removeData(Keys.WALLET_CONNECT_DATA);
     dispatch(SetWalletAddressA(''));
+    dispatch(OpenWalletModalA(false))
+    setWalletData(new WalletConnectData());
   }
-    return(
+
+  function openBlockExplorer(){
+    window.open(walletData.blockExplorer.url + '/address/' + walletData.address, '_blank');
+  }
+
+  return(
         <section className="header">
-        <div className="container">
+        <div className="container"> 
             <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
                 <div className="site-logo">
                     <a href="index.html">
@@ -100,21 +121,45 @@ export default function Header() {
                         {
                           !utilityService.isNullOrEmpty(walletAddress) && 
                           <>
-                            <button className="btn primary-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                              { walletAddress.substring(0,4) + '...' + walletAddress.substring(37,42)}
+                            {/* button for small screen */}
+                            <button className="btn primary-btn dropdown-toggle d-block d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWalletData" aria-controls="offcanvasWalletData">
+                            <div className="position-relative coin-wrapper">
+                                    {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
+                                        className="coin" alt="coin" />}
+                                    {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
+                                        className="coin-small" alt="coin" />}
+                            </div>
+                            { walletAddress.substring(0,4) + '...' + walletAddress.substring(37,42)}
+                            </button>
+
+                            {/* button for large screen */}
+                            <button className="btn primary-btn dropdown-toggle d-none d-lg-block" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div className="position-relative coin-wrapper">
+                                    {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
+                                        className="coin" alt="coin" />}
+                                    {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
+                                        className="coin-small" alt="coin" />}
+                            </div>
+                            { walletAddress.substring(0,4) + '...' + walletAddress.substring(37,42)}
                             </button>
                             <ul className="dropdown-menu dropdown-menu-right">
                               <div className="d-flex align-items-center user-profile">
-                                <img src="assets/images/avatar.svg" alt="avatar" />
+                                <div className="position-relative coin-wrapper">
+                                  {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
+                                    className="coin" alt="coin" />}
+                                  {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
+                                    className="coin-small" alt="coin" />}
+                                </div>
                                 <div className="d-flex flex-column">
-                                  <label>John Carter</label>
+                                  <label>{ walletAddress.substring(0,4) + '...' + walletAddress.substring(37,42)}</label>
                                   <a href="#">
-                                    <span>View Profile</span>
+                                    <span>{ walletData.chainName }</span>
                                   </a>
+                                  <i className="fa-regular fa-clipboard px-2" onClick={()=> navigator.clipboard.writeText(walletAddress)}></i>
                                 </div>
                               </div>
-                              <li><a href="#" className="dropdown-item">Action</a></li>
-                              <li><a href="#" className="dropdown-item">Another action</a></li>
+                              <li><a href="#" className="dropdown-item">View Transaction</a></li>
+                              <li><a className="dropdown-item" role="button" onClick={()=> openBlockExplorer()}>View On Block Explorer</a></li>
                               <li><a role="button" className="dropdown-item" onClick={()=> diconnectWallet()}>Diconnect</a></li>
                             </ul>
                           </>
@@ -146,6 +191,37 @@ export default function Header() {
                     </div>                    
                 </div>
             </div>
+        </div>
+        <div className="offcanvas offcanvas-bottom custom-backgrop"  id="offcanvasWalletData" data-bs-backdrop="true" aria-labelledby="offcanvasWalletDataLabel" style={{ height: '50%' }}>
+          <div className="offcanvas-header">
+            <h5 className="offcanvas-title primary-text" id="offcanvasWalletDataLabel">Wallet Detail</h5>
+            <button type="button" className="btn-close text-reset primary-text" data-bs-dismiss="offcanvas" aria-label="Close">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
+            </button>
+          </div>
+          <div className="offcanvas-body small">
+            <div className='d-flex gap-3 flex-column add-scroll-bar'>
+              <ul>
+                <div className="d-flex align-items-center user-profile">
+                  <div className="position-relative coin-wrapper">
+                    {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
+                      className="coin" alt="coin" />}
+                    {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
+                      className="coin-small" alt="coin" />}
+                  </div>
+                  <div className="d-flex flex-column">
+                    <label>{walletAddress.substring(0, 4) + '...' + walletAddress.substring(37, 42)}</label>
+                    <a href="#">
+                      <span>{walletData.chainName}</span>
+                    </a>
+                  </div>
+                </div>
+                <li><a href="#" className="dropdown-item">View Transaction</a></li>
+                <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()} data-bs-dismiss="offcanvas">View On Block Explorer</a></li>
+                <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()} data-bs-dismiss="offcanvas">Diconnect</a></li>
+              </ul>
+            </div>
+          </div>
         </div>
         </section>
     )

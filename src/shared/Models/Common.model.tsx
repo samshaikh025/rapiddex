@@ -84,3 +84,18 @@ export class PathShowViewModel{
     chainId: number = 0;
     tokens: Tokens[] = [];
   } 
+
+  export class WalletConnectData {
+    address: string = '';
+    providerImgPath: string = '';
+    chainId: number = 0;
+    chainName: string = '';
+    chainLogo: string = '';
+    blockExplorer: WalletDataBlockExplorer = new WalletDataBlockExplorer();
+  }
+
+  export class WalletDataBlockExplorer {
+    apiUrl?: string = '';
+    name:string = '';
+    url: string = '';
+  }

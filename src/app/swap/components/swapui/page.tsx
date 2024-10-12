@@ -1,5 +1,5 @@
 'use client'
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Exchangeui from "../exchangeui/page";
 import Tokenui from "../tokenui/page";
 import Chainui from "../chainui/page";
@@ -10,6 +10,8 @@ import 'react-loading-skeleton/dist/skeleton.css'
 import { json } from "node:stream/consumers";
 import { PredifineTokensContext } from "@/shared/Context/CommonContext";
 import Pathshow from "../pathshow/page";
+import { useDispatch } from "react-redux";
+import { SetAllAvailableChainsA, SetWalletAddressA } from "@/app/redux-store/action/action-redux";
 
 type propsType = {
     chains: Chains[],
@@ -28,7 +30,14 @@ export default function Swapui(props:propsType) {
     const [destToken, setDestToken] = useState<Tokens>(new Tokens());
     const [destTokenAmount, setDestTokenAmount] = useState<number>(0);
     const preDefineData = props.preDefinedTokensForChains;
+    let dispatch = useDispatch();
+    
     let cryptoService = new CryptoService();
+    
+    useEffect(()=>{
+        dispatch(SetAllAvailableChainsA(props.chains));        
+    },[]);
+
     function OpenTokenUI(dataSource: string) {
         setDataSource(dataSource);
         setShowExchangeUI(false);

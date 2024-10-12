@@ -72,19 +72,27 @@ export class CryptoService {
             }    
         })
 
-        this.SetOwltoCoins?.map((coin: any)=>{
+        debugger;
 
-            if(this.AvailableCoins.filter(x => x.address == coin.address).length == 0)
-            {
-                let obj = new Tokens();
-                obj.name = coin.text;
-                obj.address = coin.address;
-                obj.symbol = coin.symbol;
-                obj.logoURI = coin.icon;
-                obj.decimal = coin.decimal;
-                this.AvailableCoins.push(obj);
-            }    
-        })
+        if(this.SetOwltoChains != undefined && this.SetOwltoChains.length >0)
+        {
+
+        
+
+        // this.SetOwltoCoins?.map((coin: any)=>{
+
+        //     if(this.AvailableCoins.filter(x => x.address == coin.address).length == 0)
+        //     {
+        //         let obj = new Tokens();
+        //         obj.name = coin.text;
+        //         obj.address = coin.address;
+        //         obj.symbol = coin.symbol;
+        //         obj.logoURI = coin.icon;
+        //         obj.decimal = coin.decimal;
+        //         this.AvailableCoins.push(obj);
+        //     }    
+        // })
+        }
 
         let chainList = await this.getAvailableChainList();
         chainList?.map((chain)=>{
@@ -275,19 +283,26 @@ export class CryptoService {
                 }
             });
 
-            this.SetOwltoChains?.map((chain) => {
-                if (this.AvailableChains.filter(x => x.chainId == chain.chainId).length == 0) {
-                    let obj = new Chains();
-                    obj.chainId = chain.chainId;
-                    obj.chainName = chain.aliasName;
-                    obj.lifiName = '';
-                    obj.rangoName = '';
-                    obj.logoURI = chain.icon;
+            if(this.SetOwltoChains != undefined && this.SetOwltoChains.length > 0)
+            {
+                debugger;
+
+            
+
+            // this.SetOwltoChains?.map((chain) => {
+            //     if (this.AvailableChains.filter(x => x.chainId == chain.chainId).length == 0) {
+            //         let obj = new Chains();
+            //         obj.chainId = chain.chainId;
+            //         obj.chainName = chain.aliasName;
+            //         obj.lifiName = '';
+            //         obj.rangoName = '';
+            //         obj.logoURI = chain.icon;
                     
 
-                    this.AvailableChains.push(obj);
-                }
-            });
+            //         this.AvailableChains.push(obj);
+            //     }
+            // });
+        }
 
             //let res = await this.SharedService.setIndexDbItem(Keys.All_AVAILABLE_CHAINS, this.AvailableChains)
             return this.AvailableChains;

@@ -1,5 +1,5 @@
 import { ActionType } from "@/shared/Enum/Common.enum";
-import { Chains } from "@/shared/Models/Common.model";
+import { Chains, WalletConnectData } from "@/shared/Models/Common.model";
 
 export function OpenWalletModalA(data: boolean){
     return {
@@ -8,9 +8,9 @@ export function OpenWalletModalA(data: boolean){
     }
 }
 
-export function SetWalletAddressA(address: string){
+export function SetWalletDataA(address: WalletConnectData){
     return {
-        type: ActionType.SetWalletAddress,
+        type: ActionType.SetWalletData,
         data: address
     }
 }

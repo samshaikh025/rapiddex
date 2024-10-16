@@ -1,7 +1,8 @@
 import { ActionType } from "@/shared/Enum/Common.enum";
+import { WalletConnectData } from "@/shared/Models/Common.model";
 
 const modalInitialState = false;
-const addressInitialState = '';
+const addressInitialState = new WalletConnectData();
 const availableChainsInit = [];
 
 export function OpenWalletModalStatus(state = modalInitialState, action: any) {
@@ -14,9 +15,9 @@ export function OpenWalletModalStatus(state = modalInitialState, action: any) {
     }
 }
 
-export function WalletAddress(state = addressInitialState, action: any) {
+export function WalletData(state = addressInitialState, action: any) {
     switch (action.type) {
-        case ActionType.SetWalletAddress:
+        case ActionType.SetWalletData:
             state = action.data;
             return state;
         default:

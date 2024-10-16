@@ -1,4 +1,5 @@
 
+import { useSelector } from "react-redux";
 import { Keys, SwapProvider } from "../Enum/Common.enum";
 import { Chains, Tokens, DLNChainResponse, ResponseMobulaPricing, PathShowViewModel } from '../Models/Common.model';
 import { RequestLifiPath, ResponseLifiPath } from "../Models/Lifi";
@@ -72,7 +73,6 @@ export class CryptoService {
             }    
         })
 
-        debugger;
 
         if(this.SetOwltoChains != undefined && this.SetOwltoChains.length >0)
         {
@@ -237,12 +237,10 @@ export class CryptoService {
     
     async GetAvailableChains()
     {
-        debugger;
             this.AvailableChains = [];
             this.SetLifiChains = await this.GetLifiChains();
             //this.SetDlnChains = await this.GetDlnChains();
             this.SetRangoChains = await this.GetRangoChains();
-            debugger
             this.SetOwltoChains = await this.GetOwltoChains();
 
             this.SetLifiChains?.map((chain) => {
@@ -286,7 +284,6 @@ export class CryptoService {
 
             if(this.SetOwltoChains != undefined && this.SetOwltoChains.length > 0)
             {
-                debugger;
 
             
 
@@ -602,6 +599,7 @@ export class CryptoService {
       }
     
        async createLifiPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<RequestLifiPath> {
+        
         const requestLifiPath = new RequestLifiPath();
         requestLifiPath.fromChain = sourceChain.chainId.toString();
         requestLifiPath.toChain = destChain.chainId.toString();

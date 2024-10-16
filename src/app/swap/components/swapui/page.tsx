@@ -11,7 +11,7 @@ import { json } from "node:stream/consumers";
 import { PredifineTokensContext } from "@/shared/Context/CommonContext";
 import Pathshow from "../pathshow/page";
 import { useDispatch } from "react-redux";
-import { SetAllAvailableChainsA, SetWalletAddressA } from "@/app/redux-store/action/action-redux";
+import { SetAllAvailableChainsA} from "@/app/redux-store/action/action-redux";
 
 type propsType = {
     chains: Chains[],
@@ -46,15 +46,21 @@ export default function Swapui(props:propsType) {
     async function CloseTokenUI(token: Tokens) {
         if (dataSource == DataSource.From) {
             setSourceToken(token);
-            let amount = (await cryptoService.GetTokenData(token))?.data?.price;
-            setSourceTokenAmount(amount);
+            setShowExchangeUI(true);  // Show UI immediately
+            cryptoService.GetTokenData(token).then(response => {
+                let amount = response?.data?.price;
+                setSourceTokenAmount(amount);
+            });
         } else if (dataSource == DataSource.To) {
             setDestToken(token);
-            let amount = (await cryptoService.GetTokenData(token))?.data?.price;
-            setDestTokenAmount(amount);
+            setShowExchangeUI(true);  // Show UI immediately
+            cryptoService.GetTokenData(token).then(response => {
+                let amount = response?.data?.price;
+                setDestTokenAmount(amount);
+            });
         }
-        setShowExchangeUI(true);
     }
+    
     function OpenChainUI(isShow: boolean) {
         setshowChainUI(isShow);
     }

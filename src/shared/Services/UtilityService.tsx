@@ -100,6 +100,49 @@ async getBalance(tokenAddress: string, userAddress: string, providerUrl: string)
     }
 }
 
+async findWorkingRPC(chainId: number, rpcUrls: string[], timeout = 3000): Promise<string | null> {
+    const checkRPC = async (rpcUrl: string): Promise<string | null> => {
+        return new Promise((resolve) => {
+            const provider = new ethers.JsonRpcProvider(rpcUrl);
+            const timeoutId = setTimeout(() => {
+                resolve(null);
+            }, timeout);
+
+            provider.getNetwork().then((network) => {
+                clearTimeout(timeoutId);
+                if (Number(network.chainId) === chainId) {
+                    resolve(rpcUrl);
+                } else {
+                    resolve(null);
+                }
+            }).catch(() => {
+                clearTimeout(timeoutId);
+                resolve(null);
+            });
+        });
+    };
+
+    const results = await Promise.all(rpcUrls.map(url => checkRPC(url)));
+    const workingRPC = results.find(result => result !== null);
+
+    if (workingRPC) {
+        console.log(`Working RPC found: ${workingRPC}`);
+        return workingRPC;
+    } else {
+        console.error(`No working RPC found for chain ID ${chainId}`);
+        return null;
+    }
+}
+
+// Example usage within another method
+async setupProviderForChain(chainId: number, rpcUrls: string[]): Promise<ethers.Provider | null> {
+    const workingRPC = await this.findWorkingRPC(chainId, rpcUrls);
+    if (workingRPC) {
+        return new ethers.JsonRpcProvider(workingRPC);
+    }
+    return null;
+}
+
 isNullOrEmpty(str:any){
     return (str == null || str == '' || str == undefined || str?.length == 0) ? true : false;
 }

@@ -4,12 +4,18 @@ import { Chains, PathShowViewModel, Tokens } from "@/shared/Models/Common.model"
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useRef, useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useSwitchAccount,useSwitchChain } from "wagmi";
 import Pathshow from "../pathshow/page";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import Skeleton from "react-loading-skeleton";
 import { useDispatch, useSelector } from "react-redux";
 import { OpenWalletModalA } from "@/app/redux-store/action/action-redux";
+import { mainnet, sepolia } from 'wagmi/chains';
+import { config } from '../../../wagmi/config';// Go up a level if needed
+import { Chain } from "wagmi/chains";
+
+
+
 
 type propsType = {
     sourceChain: Chains,
@@ -27,7 +33,7 @@ export default function Exchangeui(props: propsType) {
     let [sendAmount, setSendAmount] = useState<number | null>();
     let [equAmountUSD, setequAmountUSD] = useState<number | null>(null);
     let sharedService = SharedService.getSharedServiceInstance();
-    const walletAddress = useSelector((state: any) => state.WalletAddress);
+    let walletData = useSelector((state: any) => state.WalletData);
     let utilityService = new UtilityService();
     let [totalAvailablePath, setTotalAvailablePath] = useState<number>(0);
     let [isPathShow, setIsPathShow] = useState<boolean>(false);
@@ -36,6 +42,22 @@ export default function Exchangeui(props: propsType) {
     let dispatch = useDispatch();
     const { open } = useWeb3Modal();
     let account = useAccount();
+    const {
+        switchChain,
+        error,
+        isPending,
+        isSuccess,
+        reset,
+        data,
+        failureCount,
+        failureReason,
+      } = useSwitchChain();
+      const initialChains: Chain[] = []; // Start with an empty array
+      const [dynamicChains, setDynamicChains] = useState<Chains[]>([]);
+    
+    
+    
+    
 
     const [pathshow,setpathshow] = useState<boolean>(false);
 
@@ -83,6 +105,63 @@ export default function Exchangeui(props: propsType) {
 
     function setIsPathLoading(status:boolean){
         setIsPathShow(status);
+    }
+
+
+    
+    
+
+    async function exchange()
+    {
+        if(!utilityService.isNullOrEmpty(walletData.address))
+        {
+            let workingRpc = await utilityService.setupProviderForChain(props.sourceChain.chainId,props.sourceChain.rpcUrl);
+
+
+
+            if(workingRpc != undefined && workingRpc != null)
+            {
+                
+
+                // switch chain
+
+                 await switchChain({ chainId:props.sourceChain.chainId }) // Call switchChain with only chainId
+                 
+                 
+
+                console.log(error);
+      
+
+                if(walletData.chainId != props.sourceChain.chainId)
+                {
+                       console.log("Need switch chain");
+
+
+
+                       
+                       
+                       
+                    
+
+                }
+                else
+                {
+                    console.log("No Need to switch chain")
+                }
+
+                
+                
+
+                
+
+                
+            }
+
+
+            
+        }
+
+        
     }
 
     return (
@@ -219,15 +298,15 @@ export default function Exchangeui(props: propsType) {
                         }
                         
                         {
-                            !utilityService.isNullOrEmpty(walletAddress) &&
+                            !utilityService.isNullOrEmpty(walletData.address) &&
                             <>
-                                <button className="btn primary-btn w-100 mt-3">
+                                <button className="btn primary-btn w-100 mt-3" onClick={() => exchange()}>
                                     Exchange
                                 </button>
                             </>
                         }
                         {
-                            utilityService.isNullOrEmpty(walletAddress) &&
+                            utilityService.isNullOrEmpty(walletData.address) &&
                             <>
                                 <button className="btn primary-btn w-100 mt-3" onClick={() => dispatch(OpenWalletModalA(true))}>
                                     Connect Wallet

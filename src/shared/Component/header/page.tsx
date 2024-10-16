@@ -7,7 +7,7 @@ import { useAccount, useAccountEffect, useConnect, useDisconnect } from "wagmi";
 import headerLogoDesktop from '../../../assets/images/logo.png';
 import headerLogoMobile from '../../../assets/images/logoIocn.png';
 import { useDispatch, useSelector } from "react-redux";
-import { OpenWalletModalA, SetWalletAddressA } from "@/app/redux-store/action/action-redux";
+import { OpenWalletModalA, SetWalletDataA,  } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import { WalletConnectData } from "@/shared/Models/Common.model";
 
@@ -17,11 +17,9 @@ export default function Header() {
   let account = useAccount();
   let sharedService = SharedService.getSharedServiceInstance();
   const { disconnect, isSuccess } = useDisconnect();
-  const walletAddress = useSelector((state: any) => state.WalletAddress);
-  console.log(walletAddress);
   const openModalStatus = useSelector((state: any) => state.OpenWalletModalStatus);
   let [walletChainId, setWalletChainId] = useState<number>(0);
-  let [walletData, setWalletData] = useState<WalletConnectData>(new WalletConnectData());
+  let walletData:WalletConnectData = useSelector((state: any) => state.WalletData);
   let dispatch = useDispatch();
   const allAvailableChains = useSelector((state: any) => state.AvailableChains);
   let utilityService = new UtilityService();
@@ -36,7 +34,6 @@ export default function Header() {
   useAccountEffect({
     onConnect(data) {
       if(data.address){
-        dispatch(SetWalletAddressA(data.address));
         let obj = new WalletConnectData();
         obj.address = data.address;
         obj.providerImgPath = data.connector.icon;
@@ -44,13 +41,14 @@ export default function Header() {
         obj.chainName = data.chain?.name;
         obj.chainLogo = allAvailableChains.length > 0 ? allAvailableChains?.find(x => x.chainId == data.chain?.id)?.logoURI : '';
         obj.blockExplorer = data.chain.blockExplorers.default;
-        setWalletData(obj);
+        dispatch(SetWalletDataA(obj));
         sharedService.setData(Keys.WALLET_CONNECT_DATA,obj);
       }
     }
   })
 
   useEffect(() => {
+    console.log(walletData);
     getWalletAddressFromStorageAndSet();
     let theme = sharedService.getData(Keys.THEME);
     if(theme && theme == 'DARK'){
@@ -60,8 +58,7 @@ export default function Header() {
   function getWalletAddressFromStorageAndSet(){
     let data = sharedService.getData(Keys.WALLET_CONNECT_DATA);
     if(data){
-      dispatch(SetWalletAddressA(data.address));
-      setWalletData(data);
+      dispatch(SetWalletDataA(data));
     }
   }
 
@@ -75,13 +72,12 @@ export default function Header() {
   function diconnectWallet(){
     disconnect();
     sharedService.removeData(Keys.WALLET_CONNECT_DATA);
-    dispatch(SetWalletAddressA(''));
+    dispatch(SetWalletDataA(new WalletConnectData()));
     dispatch(OpenWalletModalA(false))
-    setWalletData(new WalletConnectData());
   }
 
   function openBlockExplorer(){
-    window.open(walletData.blockExplorer.url + '/address/' + walletData.address, '_blank');
+    window.open(walletData.blockExplorer.url + '/address/' + walletData?.address, '_blank');
   }
 
   return(
@@ -112,14 +108,14 @@ export default function Header() {
                     </div>
                     <div className="dropdown">
                         {
-                          utilityService.isNullOrEmpty(walletAddress) && 
+                          utilityService.isNullOrEmpty(walletData.address) && 
                           <>
                             <button className="btn primary-btn" onClick={()=> open()}>
                               Connect Wallet</button>
                           </>
                         }
                         {
-                          !utilityService.isNullOrEmpty(walletAddress) && 
+                          !utilityService.isNullOrEmpty(walletData.address) && 
                           <>
                             {/* button for small screen */}
                             <button className="btn primary-btn dropdown-toggle d-block d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWalletData" aria-controls="offcanvasWalletData">
@@ -129,7 +125,7 @@ export default function Header() {
                                     {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
                                         className="coin-small" alt="coin" />}
                             </div>
-                            { walletAddress.substring(0,4) + '...' + walletAddress.substring(37,42)}
+                            { walletData.address.substring(0,4) + '...' + walletData.address.substring(37,42)}
                             </button>
 
                             {/* button for large screen */}
@@ -140,7 +136,7 @@ export default function Header() {
                                     {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
                                         className="coin-small" alt="coin" />}
                             </div>
-                            { walletAddress.substring(0,4) + '...' + walletAddress.substring(37,42)}
+                            { walletData.address.substring(0,4) + '...' + walletData.address.substring(37,42)}
                             </button>
                             <ul className="dropdown-menu dropdown-menu-right">
                               <div className="d-flex align-items-center user-profile">
@@ -151,11 +147,11 @@ export default function Header() {
                                     className="coin-small" alt="coin" />}
                                 </div>
                                 <div className="d-flex flex-column">
-                                  <label>{ walletAddress.substring(0,4) + '...' + walletAddress.substring(37,42)}</label>
+                                  <label>{ walletData.address.substring(0,4) + '...' + walletData.address.substring(37,42)}</label>
                                   <a href="#">
                                     <span>{ walletData.chainName }</span>
                                   </a>
-                                  <i className="fa-regular fa-clipboard px-2" onClick={()=> navigator.clipboard.writeText(walletAddress)}></i>
+                                  <i className="fa-regular fa-clipboard px-2" onClick={()=> navigator.clipboard.writeText(walletData.address)}></i>
                                 </div>
                               </div>
                               <li><a href="#" className="dropdown-item">View Transaction</a></li>
@@ -210,7 +206,7 @@ export default function Header() {
                       className="coin-small" alt="coin" />}
                   </div>
                   <div className="d-flex flex-column">
-                    <label>{walletAddress.substring(0, 4) + '...' + walletAddress.substring(37, 42)}</label>
+                    <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
                     <a href="#">
                       <span>{walletData.chainName}</span>
                     </a>

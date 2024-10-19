@@ -14,5 +14,9 @@ export const CommonConfig = [
     {
         apiKey:'',
         apiUrl:'https://api.mobula.io/api/1/'
+    },
+    {
+        apiKey:'',
+        apiUrl:'http://localhost:5159/api/'
     }
 ]

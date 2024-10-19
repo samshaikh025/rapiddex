@@ -17,7 +17,8 @@ export enum SwapProvider {
     LIFI = 0,
     RANGO = 1,
     OWLTO = 2,
-    MOBULA = 3
+    MOBULA = 3,
+    DOTNET = 4
 }
 
 export enum ActionType {

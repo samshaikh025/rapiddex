@@ -10,7 +10,6 @@ export async function POST(req: Request , res: NextApiResponse)
     request.apiUrl = getAPIUrl(request);
     let reqHeader = {
     };
-
     //add x-lifi-api-key: YOUR_CUSTOM_KEY to header
     if(request.apiProvider == SwapProvider.LIFI){
         reqHeader['x-lifi-api-key'] = CommonConfig[request.apiProvider].apiKey;
@@ -22,17 +21,37 @@ export async function POST(req: Request , res: NextApiResponse)
             method: 'GET',
             headers: reqHeader
         });
-        apiResponse = await apiResponse.json();
+        if(apiResponse.status == 200)
+        {
+            apiResponse = await apiResponse.json();
+        }else{
+            return NextResponse.json(
+                {
+                    Data: null
+                }, 
+                {status: apiResponse.status}
+            );
+        }
     }
     else if(request.apiType == 'POST')
     {
         reqHeader['Content-Type'] = 'application/json';
+        reqHeader['Accept'] = 'application/json';
         apiResponse = await fetch(request.apiUrl,{
             method: 'POST',
             headers: reqHeader,
             body: JSON.stringify(request.apiData),
         });
-        apiResponse = await apiResponse.json();
+        if (apiResponse.status == 200) {
+            apiResponse = await apiResponse.json();
+        } else {
+            return NextResponse.json(
+                {
+                    Data: null
+                },
+                { status: apiResponse.status }
+            );
+        }
     }
     return NextResponse.json(
         {
@@ -47,7 +66,8 @@ function getAPIUrl(request: any)
     let returnUrl = '';
     if(request.apiProvider == SwapProvider.LIFI 
         || request.apiProvider == SwapProvider.OWLTO
-        || request.apiProvider == SwapProvider.MOBULA)
+        || request.apiProvider == SwapProvider.MOBULA
+        || request.apiProvider == SwapProvider.DOTNET)
     {
         let apiConfig = CommonConfig[request.apiProvider];
         returnUrl = apiConfig.apiUrl + request.apiUrl;

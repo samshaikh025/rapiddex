@@ -35,6 +35,12 @@ export class CryptoService {
         //this.SetDlnCoins = await this.GetCoinsForDln(selectedChain.chainId);
         this.SetRangoCoins  = await this.GetCoinsForRango(selectedChain);
         this.SetOwltoCoins = await this.GetCoinsForOwlto(selectedChain);
+
+        try
+        {
+
+        
+
         this.SetLifiCoins?.map((coin: any)=>{
             let obj = new Tokens();
             obj.name = coin.name;
@@ -44,6 +50,11 @@ export class CryptoService {
             obj.decimal = coin.decimals;
             this.AvailableCoins.push(obj);
         })
+    }
+    catch(error)
+    {
+
+    }
 
         // this.SetDlnCoins?.map((coin: any)=>{
 
@@ -59,6 +70,11 @@ export class CryptoService {
         //     }    
         // })
 
+        try
+        {
+
+        
+
         this.SetRangoCoins?.map((coin: any)=>{
 
             if(this.AvailableCoins.filter(x => x.address == coin.address).length == 0)
@@ -68,10 +84,15 @@ export class CryptoService {
                 obj.address = coin.address;
                 obj.symbol = coin.symbol;
                 obj.logoURI = coin.image;
-                obj.decimal = coin.decimal;
+                obj.decimal = coin.decimals;
                 this.AvailableCoins.push(obj);
             }    
         })
+    }
+    catch(error)
+    {
+
+    }
 
 
         if(this.SetOwltoChains != undefined && this.SetOwltoChains.length >0)
@@ -444,169 +465,183 @@ export class CryptoService {
         return TokenData;
     }
 
-    async getBestPathFromChosenChains(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number) {
-        try {
-          const [fastestPath, cheapestPath,rangoPath] = await Promise.all([
-            this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, "FASTEST"),
-            this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST"),
-            this.getRangoPath(sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST")
-          ]);
-
-          let urls = sourceChain.rpcUrl;
-
-          const reorderedUrls = [
-            ...urls.filter(url => url.includes('publicnode')), // Publicnode URLs first
-            ...urls.filter(url => !url.includes('publicnode')) // Other URLs after
-          ];
-
-          // Example usage:
-          const balance = await this.getFirstBalanceWithAbort(sourceToken.address, "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0",reorderedUrls);
-          console.log("Final balance:", balance);
-
-
-                
-          
-
-          
-         
-
-         
-          
-
-         
-           
-          
-
-          
     
-          return [
-            await this.createPathShowViewModel(fastestPath, sourceChain, destChain, sourceToken, destToken, amount, "FASTEST"),
-            await this.createPathShowViewModel(cheapestPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST"),
-            await this.createRangoPathShowViewModel(rangoPath,sourceChain,destChain,sourceToken,destToken,amount,"Rango")
-          ];
-        } catch (error) {
-          console.error("Error in getBestPathFromChosenChains:", error);
-          throw error;
+
+    
+
+async getBestPathFromChosenChains(
+    sourceChain: Chains, 
+    destChain: Chains, 
+    sourceToken: Tokens, 
+    destToken: Tokens, 
+    amount: number, 
+    walletAddress: string
+) {
+    try {
+        // Assign default wallet address if not provided
+        if (this.utilityService.isNullOrEmpty(walletAddress)) {
+            walletAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
         }
-      }
 
-      async  fetchWithAbort(url, signal) {
-        const response = await fetch(url, { signal });
-        return response.json();
-    }
-    
-    async  getFirstBalanceWithAbort(sourceTokenAddress, userAddress,reorderedUrls) {
-        const controller = new AbortController();
-        const { signal } = controller;
-    
-        const balancePromises = reorderedUrls.map(rpcUrl =>
-            this.fetchWithAbort(rpcUrl, signal)
-                .then(response => {
-                    // Process balance with ethers.js logic here
-                    // If balance is found, abort the other requests
-                    controller.abort();
-                    return 'balance found'; // Replace with actual balance logic
-                })
-                .catch(error => {
-                    if (error.name === 'AbortError') {
-                        console.log(`Request aborted for ${rpcUrl}`);
-                    } else {
-                        console.error(`Error fetching balance from ${rpcUrl}:`, error);
-                    }
-                    return '0'; // Return '0' if there's an error
-                })
-        );
-    
-        try {
-            const firstBalance = await Promise.race(balancePromises);
-            return firstBalance;
-        } catch (error) {
-            console.error("Error during balance retrieval:", error);
-            return '0';
+        // Set a 5-second timeout for each API call
+        const apiTimeout = 5000; // 5 seconds
+
+        const withTimeout = (promise: Promise<any>, ms: number, apiName: string) => {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error(`${apiName} API timed out after ${ms} ms`)), ms)
+                ),
+            ]);
+        };
+
+        // Fetch paths concurrently with timeout
+        const [fastestPath, cheapestPath, rangoPath] = await Promise.all([
+            withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "FASTEST"), apiTimeout, 'Lifi (Fastest)'),
+            withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Lifi (Cheapest)'),
+            withTimeout(this.getRangoPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Rango'),
+        ]);
+
+        // Log message if the default wallet address is used
+        if (walletAddress === "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0") {
+            console.log("Wallet is not connected");
         }
+
+        // Create PathShowViewModel concurrently with timeout
+        const [subfastestPath, subcheapestPath, subrangoPath] = await Promise.all([
+            fastestPath ? this.createPathShowViewModel(fastestPath, sourceChain, destChain, sourceToken, destToken, amount, "FASTEST") : null,
+            cheapestPath ? this.createPathShowViewModel(cheapestPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST") : null,
+            rangoPath ? this.createRangoPathShowViewModel(rangoPath, sourceChain, destChain, sourceToken, destToken, amount, "Rango") : null
+        ]);
+
+        // Filter non-null paths
+        const bestpath = [subfastestPath, subcheapestPath, subrangoPath].filter(path => path != null);
+
+        // Return bestpath if any valid paths, otherwise return null
+        return bestpath.length > 0 ? bestpath : null;
+
+    } catch (error) {
+        console.error("Error in getBestPathFromChosenChains:", error);
+        throw error;
     }
+}
+
+    
+        
     
 
-      async  getFirstBalance(sourceTokenAddress, userAddress,reorderedUrls) {
-        const rpcPromises = reorderedUrls.map(rpcUrl => 
-            this.utilityService.getBalance(sourceTokenAddress, userAddress, rpcUrl)
-            .then(balance => {
-                if (balance) {
-                    return { balance, rpcUrl }; // Return balance with the URL if found
-                }
-                throw new Error('No balance found'); // Explicitly reject if no balance found
-            })
-            .catch(error => {
-                console.error(`Error fetching balance from ${rpcUrl}:`, error);
-                return null; // Return null for errors to avoid Promise.race halting on first error
-            })
-        );
-    
-        // Wait for the first successful balance
-        const result = await Promise.any(rpcPromises);
-        if (result && result.balance) {
-            console.log(`Balance found: ${result.balance} using ${result.rpcUrl}`);
-            return result.balance;
-        }
-    
-        console.error("Failed to fetch balance from all provided URLs.");
-        return null;
-    }
+      
       
     
-       async getLifiPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<ResponseLifiPath> {
-        const requestLifiPath = await this.createLifiPathRequest(sourceChain, destChain, sourceToken, destToken, amount, order);
-        const params = this.createLifiUrlParams(requestLifiPath);
-        const url = `quote?${params.toString()}`;
-    
-        const payLoad = {
-          apiType: "GET",
-          apiUrl: url,
-          apiData: null,
-          apiProvider: SwapProvider.LIFI
-        };
-    
-        const response = await fetch("http://localhost:3000/api/common", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payLoad),
-        });
-    
-        const jsonResponse = await response.json();
-        return jsonResponse.Data;
+       async getLifiPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number,walletAddress:string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseLifiPath> {
+        debugger;
+
+        try {
+          const requestLifiPath = await this.createLifiPathRequest(
+            sourceChain,
+            destChain,
+            sourceToken,
+            destToken,
+            amount,
+            walletAddress,
+            order
+          );
+          const params = this.createLifiUrlParams(requestLifiPath);
+          const url = `quote?${params.toString()}`;
+
+          const payLoad = {
+            apiType: "GET",
+            apiUrl: url,
+            apiData: null,
+            apiProvider: SwapProvider.LIFI,
+          };
+
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+          const response = await fetch("http://localhost:3000/api/common", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payLoad),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeout);
+
+          if (!response.ok) {
+            throw new Error(
+              `LiFi API error: ${response.status} ${response.statusText}`
+            );
+          }
+
+          const jsonResponse = await response.json();
+          if (!jsonResponse?.Data) {
+            throw new Error("Invalid response structure from LiFi API");
+          }
+
+          return jsonResponse.Data;
+        } catch (error) {
+
+            console.error('Error in getLifiPath:', error);
+            return null;
+
+
+        }
       }
 
-      async getRangoPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<ResponseRangoPath> {
-        const requestRangoPath = await this.createRangoPathRequest(sourceChain, destChain, sourceToken, destToken, amount, order);
-        const params = this.createRangoUrlParams(requestRangoPath);
-        const url = `basic/quote?${params.toString()}`;
+      async getRangoPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseRangoPath | null> {
+        try {
+            const requestRangoPath = await this.createRangoPathRequest(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, order);
+            const params = this.createRangoUrlParams(requestRangoPath);
+            const url = `basic/quote?${params.toString()}`;
     
-        const payLoad = {
-          apiType: "GET",
-          apiUrl: url,
-          apiData: null,
-          apiProvider: SwapProvider.RANGO
-        };
+            const payLoad = {
+                apiType: "GET",
+                apiUrl: url,
+                apiData: null,
+                apiProvider: SwapProvider.RANGO
+            };
     
-        const response = await fetch("http://localhost:3000/api/common", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payLoad),
-        });
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
     
-        const jsonResponse = await response.json();
-        return jsonResponse.Data;
-      }
+            const response = await fetch("http://localhost:3000/api/common", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payLoad),
+                signal: controller.signal
+            });
     
-       async createLifiPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<RequestLifiPath> {
+            clearTimeout(timeout);
+    
+            if (!response.ok) {
+                throw new Error(`Rango API error: ${response.status} ${response.statusText}`);
+            }
+    
+            const jsonResponse = await response.json();
+            if (!jsonResponse?.Data) {
+                throw new Error('Invalid response structure from Rango API');
+            }
+    
+            return jsonResponse.Data;
+        } catch (error) {
+            console.error('Error in getRangoPath:', error);
+            return null;
+        }
+    }
+    
+       async createLifiPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number,walletAddress:string, order: "FASTEST" | "CHEAPEST"): Promise<RequestLifiPath> {
         
+        
+
+
         const requestLifiPath = new RequestLifiPath();
         requestLifiPath.fromChain = sourceChain.chainId.toString();
         requestLifiPath.toChain = destChain.chainId.toString();
         requestLifiPath.fromToken = sourceToken.address;
         requestLifiPath.toToken = destToken.address;
-        requestLifiPath.fromAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
-        requestLifiPath.toAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
+        requestLifiPath.fromAddress = walletAddress;
+        requestLifiPath.toAddress = walletAddress;
         requestLifiPath.fromAmount = (await this.utilityService.convertToDecimals(amount, sourceToken.decimal)).toString();
         requestLifiPath.order = order;
         requestLifiPath.slippage = 0.005;
@@ -625,15 +660,15 @@ export class CryptoService {
         return requestLifiPath;
       }
 
-      async createRangoPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<RequestRangoPath> {
+      async createRangoPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number,walletAddress:string, order: "FASTEST" | "CHEAPEST"): Promise<RequestRangoPath> {
         
         const requestRangoPath = new RequestRangoPath();
 
         let tokenfrom = "";
         let tokento="";
           
-        let sourceNative=await this.utilityService.checkCoinNative(sourceChain,sourceToken);
-        let destNative=await this.utilityService.checkCoinNative(destChain,destToken);
+        let sourceNative=await this.utilityService.isNativeCurrency(sourceChain,sourceToken);
+        let destNative=await this.utilityService.isNativeCurrency(destChain,destToken);
 
         if(sourceNative == true)
         {
@@ -713,6 +748,11 @@ export class CryptoService {
       }
     
        async createPathShowViewModel(lifiPath: ResponseLifiPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
+        try
+        {
+
+        
+        
         const pathShowViewModel = new PathShowViewModel();
         pathShowViewModel.estTime = await this.utilityService.formatDuration(lifiPath.estimate.executionDuration);
         pathShowViewModel.gasafee = lifiPath.estimate.feeCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0).toFixed(2) + " USD";
@@ -726,9 +766,19 @@ export class CryptoService {
         pathShowViewModel.aggregator = "lifi";
         pathShowViewModel.aggregatorOrderType = orderType;
         return pathShowViewModel;
+        }
+        catch(error)
+        {
+            return null;
+        }
       }
 
       async createRangoPathShowViewModel(responseRangoPath: ResponseRangoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
+        try
+        {
+
+        
+        
         const pathShowViewModel = new PathShowViewModel();
         pathShowViewModel.estTime = await this.utilityService.formatDuration(responseRangoPath.route.estimatedTimeInSeconds);
         pathShowViewModel.gasafee = responseRangoPath.route.feeUsd + " USD";
@@ -742,11 +792,20 @@ export class CryptoService {
         pathShowViewModel.aggregator = "rango";
         pathShowViewModel.aggregatorOrderType = orderType;
         return pathShowViewModel;
+        }
+        catch(error)
+        {
+            return null;
+        }
       }
     
 
 
       async createOwltoPathShowViewModel(responseOwltoPath: ResponseOwltoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
+        try
+        {
+
+        
         const pathShowViewModel = new PathShowViewModel();
         pathShowViewModel.estTime = "less than 1 min";
         pathShowViewModel.gasafee = (Number(responseOwltoPath.msg.dtc) + Number(amount) * Number(responseOwltoPath.msg.bridge_fee_ratio) ) + " " + sourceToken.symbol;
@@ -760,6 +819,11 @@ export class CryptoService {
         pathShowViewModel.aggregator = "Owlto";
         pathShowViewModel.aggregatorOrderType = orderType;
         return pathShowViewModel;
+        }
+        catch(error)
+        {
+            return null;
+        }
       }
 
 }

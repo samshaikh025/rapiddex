@@ -1,8 +1,10 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { Chains, PathShowViewModel, Tokens } from '@/shared/Models/Common.model';
+import { BridgeMessage, Chains, PathShowViewModel, Tokens } from '@/shared/Models/Common.model';
 import { CryptoService } from '@/shared/Services/CryptoService';
 import Skeleton from 'react-loading-skeleton';
+import { useSelector } from 'react-redux';
+import { UtilityService } from '@/shared/Services/UtilityService';
 
 type PropsType = {
   Amountpathshow: number;
@@ -19,7 +21,14 @@ export default function Pathshow(props: PropsType) {
   const [pathShowSpinner, setPathShowSpinner] = useState<boolean>(false);
   let [availablePaths, setAvailablePaths] = useState<PathShowViewModel[]>([]);
   let [currentSelectedPath, setCurrentSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
+  let bridgeMessage:BridgeMessage = new BridgeMessage();
 
+  
+
+  let walletData = useSelector((state: any) => state.WalletData);
+  let walletAddress ="";
+  let utilityService = new UtilityService();
+  
   useEffect(() => {
     const fetchData = async () => {
       if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
@@ -27,12 +36,19 @@ export default function Pathshow(props: PropsType) {
         setPathShowSpinner(true);
         props.isPathLoadingParent(true);
         try {
+          if(!utilityService.isNullOrEmpty(walletData.address))
+          {
+            walletAddress = walletData.address;
+
+          }
+          
           let result = await cryptoService.getBestPathFromChosenChains(
             props.sourceChain,
             props.destChain,
             props.sourceToken,
             props.destToken,
-            props.Amountpathshow
+            props.Amountpathshow,
+            walletAddress
           );
           if(result && result.length > 0){
             //result = result.slice(0,2);
@@ -44,6 +60,13 @@ export default function Pathshow(props: PropsType) {
             setAvailablePaths(result);
             setPathShowSpinner(false);
             props.isPathLoadingParent(false);
+          }
+          else
+          {
+            setPathShowSpinner(false);
+            bridgeMessage.message = "No path found";
+            props.isPathLoadingParent(false);
+            
           }
           
         } catch (error) {

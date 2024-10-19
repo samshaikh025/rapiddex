@@ -1,6 +1,6 @@
 "use client"
 import { DataSource, Keys } from "@/shared/Enum/Common.enum";
-import { Chains, PathShowViewModel, Tokens } from "@/shared/Models/Common.model";
+import { BridgeMessage, Chains, PathShowViewModel, Tokens } from "@/shared/Models/Common.model";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useRef, useState } from "react";
@@ -60,6 +60,9 @@ export default function Exchangeui(props: propsType) {
     
 
     const [pathshow,setpathshow] = useState<boolean>(false);
+
+    let bridgeMessage:BridgeMessage = new BridgeMessage();
+    let [isBridgeMessageVisible,setIsBridgeMessageVisible] = useState<boolean>(false);
 
     async function updateAmount(amount)
     {
@@ -123,9 +126,8 @@ export default function Exchangeui(props: propsType) {
             {
                 
 
-                // switch chain
-
-                 await switchChain({ chainId:props.sourceChain.chainId }) // Call switchChain with only chainId
+                
+                 
                  
                  
 
@@ -135,6 +137,42 @@ export default function Exchangeui(props: propsType) {
                 if(walletData.chainId != props.sourceChain.chainId)
                 {
                        console.log("Need switch chain");
+
+                       try
+                       {
+                         await switchChain({ chainId:props.sourceChain.chainId }) // Call switchChain with only chainId
+                       }
+                       catch(error)
+                       {
+
+                        console.log("rejected switch chain");
+
+                       }
+
+                       
+                       
+                       let checkNativeCoin = await utilityService.checkCoinNative(props.sourceChain,props.sourceToken)
+
+                       // check balance
+
+                       let balance = await utilityService.getBalance(checkNativeCoin,props.sourceToken,walletData.address,workingRpc);
+
+                       if(Number(balance) < Number(sendAmount))
+                       {
+
+                         bridgeMessage.message = "You don't have enough "+ props.sourceToken.symbol +" to complete the transaction.";
+                         setIsBridgeMessageVisible(true);
+
+                       }
+                       else
+                       {
+
+                        
+                         
+                       }
+
+
+                       
 
 
 
@@ -267,6 +305,10 @@ export default function Exchangeui(props: propsType) {
                                                 <Skeleton width={250} height={10} />
                                             </div>
                                             </>
+                                        }
+                                        {
+                                            (!isPathShow && totalAvailablePath == 0) &&
+                                            <><span>No Routes Availabe</span></>
                                         }
                                         {
                                             (!isPathShow && totalAvailablePath == 0) &&

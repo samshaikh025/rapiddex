@@ -1,8 +1,11 @@
 import { ethers } from 'ethers';
 
 import { BigNumberish } from 'ethers';
-import { Chain } from 'viem';
+//import { Chain } from 'viem';
 import { Chains, TokenBase, Tokens } from '../Models/Common.model';
+import type { Chain } from "wagmi/chains"; // Import Chain type
+import * as definedChains from "wagmi/chains";
+
 
 export class UtilityService {
     async convertToDecimals(amount: number, decimals: number): Promise<string> {
@@ -71,7 +74,7 @@ async checkCoinNative(chain:Chains,token:Tokens)
     return false;
 }
 
-async getBalance(tokenAddress: string, userAddress: string, providerUrl: string): Promise<string> {
+async getBalance(tokenIsNative,token:Tokens, userAddress: string, providerUrl: string): Promise<string> {
     try {
         // Create a provider using the passed provider URL
         const provider = new ethers.JsonRpcProvider(providerUrl);
@@ -81,9 +84,26 @@ async getBalance(tokenAddress: string, userAddress: string, providerUrl: string)
             "function balanceOf(address owner) view returns (uint256)",
             "function decimals() view returns (uint8)"
         ];
+        
+
+        if(tokenIsNative == true)
+        {
+            const balance = await provider.getBalance(userAddress);
+
+            const formattedBalance = ethers.formatUnits(balance, token.decimal);
+        
+            console.log(`Balance: ${formattedBalance} tokens`);
+            
+            return formattedBalance;
+            
+                
+            
+        }
+
+        
 
         // Create a contract instance
-        const tokenContract = new ethers.Contract(tokenAddress, tokenABI, provider);
+        const tokenContract = new ethers.Contract(token.address, tokenABI, provider);
 
         // Fetch balance and decimals
         const balance = await tokenContract.balanceOf(userAddress);
@@ -135,10 +155,12 @@ async findWorkingRPC(chainId: number, rpcUrls: string[], timeout = 3000): Promis
 }
 
 // Example usage within another method
-async setupProviderForChain(chainId: number, rpcUrls: string[]): Promise<ethers.Provider | null> {
+async setupProviderForChain(chainId: number, rpcUrls: string[]): Promise<string | null> {
     const workingRPC = await this.findWorkingRPC(chainId, rpcUrls);
     if (workingRPC) {
-        return new ethers.JsonRpcProvider(workingRPC);
+        //return new ethers.JsonRpcProvider(workingRPC);
+
+        return workingRPC;
     }
     return null;
 }
@@ -146,6 +168,47 @@ async setupProviderForChain(chainId: number, rpcUrls: string[]): Promise<ethers.
 isNullOrEmpty(str:any){
     return (str == null || str == '' || str == undefined || str?.length == 0) ? true : false;
 }
+
+
+
+
+
+async isNativeCurrency(chainDe:Chains,token:Tokens) : Promise<boolean> {
+
+    const getAllChains = (): Chain[] => {
+        return Object.values(definedChains).filter((chain) => chain.id !== undefined) as Chain[];
+      };
+      
+      // Get all chains
+      const allChains = getAllChains();
+      
+      // Ensure there's at least one chain
+      if (allChains.length === 0) {
+        throw new Error("No chains available");
+      }
+      
+      // Type assertion to tuple
+      const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
+
+      
+    const chain = allChains.find(chain => chain.id === chainDe.chainId);
+
+    let coinAddress = token.address != undefined ? token.address : '';
+
+    if(chain?.nativeCurrency.symbol === token.symbol)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+    
+
+
+  }
+  
+  
 }
 
 

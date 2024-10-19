@@ -99,3 +99,8 @@ export class PathShowViewModel{
     name:string = '';
     url: string = '';
   }
+
+  export class BridgeMessage{
+    message:string= '';
+
+  }

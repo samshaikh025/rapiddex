@@ -88,6 +88,7 @@ export class PathShowViewModel{
   export class WalletConnectData {
     address: string = '';
     providerImgPath: string = '';
+    providerName: string = '';
     chainId: number = 0;
     chainName: string = '';
     chainLogo: string = '';
@@ -99,3 +100,21 @@ export class PathShowViewModel{
     name:string = '';
     url: string = '';
   }
+
+  export class OperationResult {
+    data?: any = '';
+    successMessage:string = '';
+    errorMessage: string = '';
+    statusCode: number = 0;
+  }
+
+export class LoggedParams
+{
+    LoggedId: number = 0;
+    WalletAddress : string = '';
+    WalletProvider: string = '';
+    ChainName: string = '';
+    ChainId : number = 0;
+    LoggedDate: string ;
+    LoggedTime : string;
+}

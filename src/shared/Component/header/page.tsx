@@ -10,6 +10,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { OpenWalletModalA, SetWalletDataA,  } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import { WalletConnectData } from "@/shared/Models/Common.model";
+import { UserService } from "@/shared/Services/UserService";
+import { error } from "console";
 
 export default function Header() {
 
@@ -23,6 +25,7 @@ export default function Header() {
   let dispatch = useDispatch();
   const allAvailableChains = useSelector((state: any) => state.AvailableChains);
   let utilityService = new UtilityService();
+  let userService = new UserService();
 
   function toggleTheme(status: boolean)
   {
@@ -36,13 +39,21 @@ export default function Header() {
       if(data.address){
         let obj = new WalletConnectData();
         obj.address = data.address;
-        obj.providerImgPath = data.connector.icon;
+        obj.providerImgPath = data?.connector?.icon;
+        obj.providerName = data?.connector?.name;
         obj.chainId = data.chain?.id;
         obj.chainName = data.chain?.name;
         obj.chainLogo = allAvailableChains.length > 0 ? allAvailableChains?.find(x => x.chainId == data.chain?.id)?.logoURI : '';
         obj.blockExplorer = data.chain.blockExplorers.default;
         dispatch(SetWalletDataA(obj));
         sharedService.setData(Keys.WALLET_CONNECT_DATA,obj);
+        userService.AddLog(obj).then((response)=>{
+          if(response?.data && response.data == 1){
+            console.log('logged successfully');
+          }
+        }).catch((error)=>{
+          console.log(error);
+        });
       }
     }
   })

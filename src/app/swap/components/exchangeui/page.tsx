@@ -14,9 +14,6 @@ import { mainnet, sepolia } from 'wagmi/chains';
 import { config } from '../../../wagmi/config';// Go up a level if needed
 import { Chain } from "wagmi/chains";
 
-
-
-
 type propsType = {
     sourceChain: Chains,
     destChain: Chains,
@@ -52,13 +49,8 @@ export default function Exchangeui(props: propsType) {
         failureCount,
         failureReason,
       } = useSwitchChain();
-      const initialChains: Chain[] = []; // Start with an empty array
-      const [dynamicChains, setDynamicChains] = useState<Chains[]>([]);
-    
-    
-    
-    
-
+    const initialChains: Chain[] = []; // Start with an empty array
+    const [dynamicChains, setDynamicChains] = useState<Chains[]>([]);
     const [pathshow,setpathshow] = useState<boolean>(false);
 
     let bridgeMessage:BridgeMessage = new BridgeMessage();
@@ -110,96 +102,43 @@ export default function Exchangeui(props: propsType) {
         setIsPathShow(status);
     }
 
-
-    
-    
-
     async function exchange()
     {
         if(!utilityService.isNullOrEmpty(walletData.address))
         {
             let workingRpc = await utilityService.setupProviderForChain(props.sourceChain.chainId,props.sourceChain.rpcUrl);
-
-
-
             if(workingRpc != undefined && workingRpc != null)
             {
-                
-
-                
-                 
-                 
-                 
-
-                console.log(error);
-      
-
                 if(walletData.chainId != props.sourceChain.chainId)
                 {
                        console.log("Need switch chain");
-
                        try
                        {
                          await switchChain({ chainId:props.sourceChain.chainId }) // Call switchChain with only chainId
                        }
                        catch(error)
                        {
-
                         console.log("rejected switch chain");
-
                        }
-
-                       
                        
                        let checkNativeCoin = await utilityService.checkCoinNative(props.sourceChain,props.sourceToken)
-
                        // check balance
-
                        let balance = await utilityService.getBalance(checkNativeCoin,props.sourceToken,walletData.address,workingRpc);
-
                        if(Number(balance) < Number(sendAmount))
                        {
-
                          bridgeMessage.message = "You don't have enough "+ props.sourceToken.symbol +" to complete the transaction.";
                          setIsBridgeMessageVisible(true);
-
                        }
                        else
                        {
-
-                        
-                         
                        }
-
-
-                       
-
-
-
-                       
-                       
-                       
-                    
-
                 }
                 else
                 {
                     console.log("No Need to switch chain")
                 }
-
-                
-                
-
-                
-
-                
             }
-
-
-            
         }
-
-        
     }
 
     return (

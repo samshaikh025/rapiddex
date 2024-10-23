@@ -304,7 +304,7 @@ export default function Pathshow(props: PropsType) {
             {
               availablePaths.length > 0 &&
               availablePaths.map((pathshow, index) => (
-                <div className={`inner-card w-100 py-2 px-3 mt-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} data-bs-dismiss="offcanvas" aria-label="Close" onClick={() => sendSelectedPathToParent(pathshow)}>
+                <div className={`inner-card w-100 py-2 px-3 mt-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} data-bs-dismiss="offcanvas" aria-label="Close" onClick={() => sendSelectedPathToParent(pathshow)} key={index}>
                   <div className="d-flex align-items-center gap-3">
                     <div className="selcet-coin coin-wrapper">
                       <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/ethereum.svg" className="coin" alt="" />

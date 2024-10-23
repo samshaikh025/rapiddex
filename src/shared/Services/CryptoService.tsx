@@ -534,8 +534,6 @@ async getBestPathFromChosenChains(
       
     
        async getLifiPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number,walletAddress:string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseLifiPath> {
-        debugger;
-
         try {
           const requestLifiPath = await this.createLifiPathRequest(
             sourceChain,

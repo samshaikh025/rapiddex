@@ -7,11 +7,12 @@ import { useAccount, useAccountEffect, useConnect, useDisconnect } from "wagmi";
 import headerLogoDesktop from '../../../assets/images/logo.png';
 import headerLogoMobile from '../../../assets/images/logoIocn.png';
 import { useDispatch, useSelector } from "react-redux";
-import { OpenWalletModalA, SetWalletDataA,  } from "@/app/redux-store/action/action-redux";
+import { OpenWalletModalA, SetSelectedLanguageA, SetWalletDataA,  } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import { WalletConnectData } from "@/shared/Models/Common.model";
 import { UserService } from "@/shared/Services/UserService";
 import { error } from "console";
+import { SupportedLang } from "@/shared/Const/Common.const";
 
 export default function Header() {
 
@@ -26,6 +27,8 @@ export default function Header() {
   const allAvailableChains = useSelector((state: any) => state.AvailableChains);
   let utilityService = new UtilityService();
   let userService = new UserService();
+  let SupportedLanguage = SupportedLang;
+  const selectedLang = useSelector((state: any) => state.SelectedLanguage);
 
   function toggleTheme(status: boolean)
   {
@@ -64,6 +67,10 @@ export default function Header() {
     let theme = sharedService.getData(Keys.THEME);
     if(theme && theme == 'DARK'){
     }
+    let lang = sharedService.getData(Keys.SELECTED_LANG);
+    if(lang){
+      dispatch(SetSelectedLanguageA(lang));
+    }
   }, []);
 
   function getWalletAddressFromStorageAndSet(){
@@ -91,6 +98,10 @@ export default function Header() {
     window.open(walletData.blockExplorer.url + '/address/' + walletData?.address, '_blank');
   }
 
+  function changeLanguage(lang:string){
+    dispatch(SetSelectedLanguageA(lang));
+    sharedService.setData(Keys.SELECTED_LANG, lang);
+  }
   return(
         <section className="header">
         <div className="container"> 
@@ -106,8 +117,8 @@ export default function Header() {
                     <a href="#">Loans</a>
                     <a href="#">Liquidity</a>
                     <a href="#">Stak</a>
-                    <a href="#">{openModalStatus}</a>
                 </div>
+                
                 <div className="btn-wrapper d-flex align-items-center gap-2">
                     <div className="theme-mode">
                       <input type="checkbox" className="checkbox" id="checkbox" onChange={(e)=>toggleTheme(e.currentTarget.checked)} />
@@ -122,7 +133,7 @@ export default function Header() {
                           utilityService.isNullOrEmpty(walletData.address) && 
                           <>
                             <button className="btn primary-btn" onClick={()=> open()}>
-                              Connect Wallet</button>
+                              {utilityService.Translate(selectedLang,'CONNECT_WALLET')}</button>
                           </>
                         }
                         {
@@ -194,6 +205,16 @@ export default function Header() {
                             <li><a href="#" className="dropdown-item">Action</a></li>
                             <li><a href="#" className="dropdown-item">Another action</a></li>
                             <li><a href="#" className="dropdown-item">Something else here</a></li>
+                            {
+                              (SupportedLanguage && SupportedLanguage.length > 0) &&
+                              <>
+                                {
+                                  SupportedLanguage.map((item, index) => (
+                                    <li key={index}><a className="dropdown-item" onClick={() => changeLanguage(item)}>{item}</a></li>
+                                  ))
+                                }
+                              </>
+                            }
                         </ul>
                     </div>                    
                 </div>

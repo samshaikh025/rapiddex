@@ -21,3 +21,10 @@ export function SetAllAvailableChainsA(chains: Chains[]){
         data: chains
     }
 }
+
+export function SetSelectedLanguageA(lang: string){
+    return {
+        type: ActionType.SetSelectedLanguage,
+        data: lang
+    }
+}

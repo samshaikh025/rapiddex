@@ -8,53 +8,50 @@ import { RequestRangoPath, ResponseRangoPath } from "../Models/Rango";
 import { SharedService } from "./SharedService";
 import { UtilityService } from "./UtilityService";
 export class CryptoService {
-    
-    AvailableChains : Chains[] = [];
-    SetLifiChains : any[] = [];
-    SetDlnChains : DLNChainResponse[] = [];
-    SetRangoChains : any[] = [];
-    SetOwltoChains : any[] = [];
+
+    AvailableChains: Chains[] = [];
+    SetLifiChains: any[] = [];
+    SetDlnChains: DLNChainResponse[] = [];
+    SetRangoChains: any[] = [];
+    SetOwltoChains: any[] = [];
     AvailableCoins: Tokens[] = [];
     SetLifiCoins: any[] = [];
     SetDlnCoins: any[] = [];
     SetRangoCoins: any[] = [];
     SetOwltoCoins: any[] = [];
     SharedService = new SharedService();
-    constructor(){
+    constructor() {
     }
-    utilityService =new UtilityService();
+    utilityService = new UtilityService();
 
-    async GetAvailableTokens(selectedChain: Chains)
-    {
+    async GetAvailableTokens(selectedChain: Chains) {
         this.SetLifiCoins = [];
         //this.SetDlnCoins = [];
-        this.SetRangoCoins  = [];
+        this.SetRangoCoins = [];
         this.SetOwltoCoins = [];
         this.AvailableCoins = [];
         this.SetLifiCoins = await this.GetCoinsForLifi(selectedChain);
         //this.SetDlnCoins = await this.GetCoinsForDln(selectedChain.chainId);
-        this.SetRangoCoins  = await this.GetCoinsForRango(selectedChain);
+        this.SetRangoCoins = await this.GetCoinsForRango(selectedChain);
         this.SetOwltoCoins = await this.GetCoinsForOwlto(selectedChain);
 
-        try
-        {
+        try {
 
-        
 
-        this.SetLifiCoins?.map((coin: any)=>{
-            let obj = new Tokens();
-            obj.name = coin.name;
-            obj.address = coin.address;
-            obj.symbol = coin.symbol;
-            obj.logoURI = coin.logoURI;
-            obj.decimal = coin.decimals;
-            this.AvailableCoins.push(obj);
-        })
-    }
-    catch(error)
-    {
 
-    }
+            this.SetLifiCoins?.map((coin: any) => {
+                let obj = new Tokens();
+                obj.name = coin.name;
+                obj.address = coin.address;
+                obj.symbol = coin.symbol;
+                obj.logoURI = coin.logoURI;
+                obj.decimal = coin.decimals;
+                this.AvailableCoins.push(obj);
+            })
+        }
+        catch (error) {
+
+        }
 
         // this.SetDlnCoins?.map((coin: any)=>{
 
@@ -70,55 +67,51 @@ export class CryptoService {
         //     }    
         // })
 
-        try
-        {
-
-        
-
-        this.SetRangoCoins?.map((coin: any)=>{
-
-            if(this.AvailableCoins.filter(x => x.address == coin.address).length == 0)
-            {
-                let obj = new Tokens();
-                obj.name = coin.name;
-                obj.address = coin.address;
-                obj.symbol = coin.symbol;
-                obj.logoURI = coin.image;
-                obj.decimal = coin.decimals;
-                this.AvailableCoins.push(obj);
-            }    
-        })
-    }
-    catch(error)
-    {
-
-    }
+        try {
 
 
-        if(this.SetOwltoChains != undefined && this.SetOwltoChains.length >0)
-        {
 
-        
+            this.SetRangoCoins?.map((coin: any) => {
 
-        // this.SetOwltoCoins?.map((coin: any)=>{
+                if (this.AvailableCoins.filter(x => x.address == coin.address).length == 0) {
+                    let obj = new Tokens();
+                    obj.name = coin.name;
+                    obj.address = coin.address;
+                    obj.symbol = coin.symbol;
+                    obj.logoURI = coin.image;
+                    obj.decimal = coin.decimals;
+                    this.AvailableCoins.push(obj);
+                }
+            })
+        }
+        catch (error) {
 
-        //     if(this.AvailableCoins.filter(x => x.address == coin.address).length == 0)
-        //     {
-        //         let obj = new Tokens();
-        //         obj.name = coin.text;
-        //         obj.address = coin.address;
-        //         obj.symbol = coin.symbol;
-        //         obj.logoURI = coin.icon;
-        //         obj.decimal = coin.decimal;
-        //         this.AvailableCoins.push(obj);
-        //     }    
-        // })
+        }
+
+
+        if (this.SetOwltoChains != undefined && this.SetOwltoChains.length > 0) {
+
+
+
+            // this.SetOwltoCoins?.map((coin: any)=>{
+
+            //     if(this.AvailableCoins.filter(x => x.address == coin.address).length == 0)
+            //     {
+            //         let obj = new Tokens();
+            //         obj.name = coin.text;
+            //         obj.address = coin.address;
+            //         obj.symbol = coin.symbol;
+            //         obj.logoURI = coin.icon;
+            //         obj.decimal = coin.decimal;
+            //         this.AvailableCoins.push(obj);
+            //     }    
+            // })
         }
 
         let chainList = await this.getAvailableChainList();
-        chainList?.map((chain)=>{
+        chainList?.map((chain) => {
             let index = this.AvailableChains.findIndex(x => x.chainId == chain.chainId);
-            if(index > -1){
+            if (index > -1) {
                 this.AvailableChains[index].rpcUrl = chain.rpc;
             }
         });
@@ -126,58 +119,56 @@ export class CryptoService {
         return this.AvailableCoins;
     }
 
-    async getAvailableChainList(){
+    async getAvailableChainList() {
         let ChainListAPIResponseData = [];
-        try{
+        try {
             let ChainListAPIResponse = await fetch('https://chainid.network/chains.json');
             ChainListAPIResponseData = await ChainListAPIResponse.json();
             //let data = await this.SharedService.setIndexDbItem(Keys.All_LIFI_COINS, lifiCoins);
-        }catch(error){
+        } catch (error) {
             console.log(error);
         }
         return ChainListAPIResponseData;
     }
 
-    async GetCoinsForLifi(chain: Chains)
-    {
+    async GetCoinsForLifi(chain: Chains) {
         let lifiCoins = [];
         let payLoad = {
-            apiType : 'GET',
-            apiUrl : `tokens?chains=${chain.lifiName}`,
-            apiData : null,
+            apiType: 'GET',
+            apiUrl: `tokens?chains=${chain.lifiName}`,
+            apiData: null,
             apiProvider: SwapProvider.LIFI
         }
-        try{
+        try {
             let LIFICoinResult = await fetch('http://localhost:3000/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payLoad),
-    
+
             });
             const LIFICoinData = await LIFICoinResult.json();
             lifiCoins = LIFICoinData?.Data?.tokens[chain.chainId];
             //let data = await this.SharedService.setIndexDbItem(Keys.All_LIFI_COINS, lifiCoins);
-        }catch(error){
+        } catch (error) {
             console.log(error);
         }
-        return lifiCoins; 
+        return lifiCoins;
     }
 
-    async GetCoinsForDln(id: number)
-    {
+    async GetCoinsForDln(id: number) {
         let dlnCoins: any[] = [];
         let dlnId = 0;
         let dlnChains: DLNChainResponse[] = await this.SharedService.getIndexDbItem(Keys.All_DLN_CHAINS);
-        if(dlnChains && dlnChains?.length > 0){
+        if (dlnChains && dlnChains?.length > 0) {
             dlnId = dlnChains.find(x => x.originalChainId == id)?.chainId;
         }
-        try{
+        try {
             let payLoad = {
-                apiType : 'GET',
-                apiUrl : `https://api.dln.trade/v1.0/token-list?chainId=${dlnId}`,
-                apiData : null
+                apiType: 'GET',
+                apiUrl: `https://api.dln.trade/v1.0/token-list?chainId=${dlnId}`,
+                apiData: null
             }
             let DlnCoinResult = await fetch('http://localhost:3000/api/common', {
                 method: 'POST',
@@ -185,128 +176,124 @@ export class CryptoService {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payLoad),
-    
+
             });
             const DLnCoinData = await DlnCoinResult.json();
             let keys = Object.keys(DLnCoinData.Data.tokens);
-            keys.map((index)=>{
+            keys.map((index) => {
                 dlnCoins.push(DLnCoinData.Data.tokens[index])
             })
-        }catch(error){
+        } catch (error) {
             console.log(error);
         }
-        
-        return dlnCoins; 
+
+        return dlnCoins;
     }
 
-    async GetCoinsForRango(chain: Chains)
-    {
+    async GetCoinsForRango(chain: Chains) {
         let rangoCoins = [];
         //let checkLifiCoins = await this.SharedService.getIndexDbItem(Keys.All_LIFI_COINS);
         let payLoad = {
-            apiType : 'GET',
-            apiUrl : `basic/meta?blockchains=${chain.rangoName}`,
-            apiData : null,
+            apiType: 'GET',
+            apiUrl: `basic/meta?blockchains=${chain.rangoName}`,
+            apiData: null,
             apiProvider: SwapProvider.RANGO
         }
-        try{
+        try {
             let RangoCoinResult = await fetch('http://localhost:3000/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payLoad),
-    
+
             });
             const RangoCoinData = await RangoCoinResult.json();
             rangoCoins = RangoCoinData?.Data?.tokens;
             //let data = await this.SharedService.setIndexDbItem(Keys.All_LIFI_COINS, lifiCoins);
-        }catch(error){
-            console.log(chain.rangoName,error);
+        } catch (error) {
+            console.log(chain.rangoName, error);
         }
-        
-        return rangoCoins; 
+
+        return rangoCoins;
     }
 
-    async GetCoinsForOwlto(chain: Chains)
-    {
+    async GetCoinsForOwlto(chain: Chains) {
         let owltCoins = [];
         let payLoad = {
-            apiType : 'GET',
-            apiUrl : `config/all-tokens`,
-            apiData : null,
+            apiType: 'GET',
+            apiUrl: `config/all-tokens`,
+            apiData: null,
             apiProvider: SwapProvider.OWLTO
         }
-        try{
+        try {
             let LIFICoinResult = await fetch('http://localhost:3000/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payLoad),
-    
+
             });
             const OwltoCoinData = await LIFICoinResult.json();
-            owltCoins = OwltoCoinData?.Data?.msg?.filter((x)=> x.chainId == chain.chainId);
+            owltCoins = OwltoCoinData?.Data?.msg?.filter((x) => x.chainId == chain.chainId);
             //let data = await this.SharedService.setIndexDbItem(Keys.All_OWLTO_COINS, owltCoins);
-        }catch(error){
+        } catch (error) {
             console.log(error);
         }
-        
-        return owltCoins; 
+
+        return owltCoins;
     }
-    
-    async GetAvailableChains()
-    {
-            this.AvailableChains = [];
-            this.SetLifiChains = await this.GetLifiChains();
-            //this.SetDlnChains = await this.GetDlnChains();
-            this.SetRangoChains = await this.GetRangoChains();
-            this.SetOwltoChains = await this.GetOwltoChains();
 
-            this.SetLifiChains?.map((chain) => {
+    async GetAvailableChains() {
+        this.AvailableChains = [];
+        this.SetLifiChains = await this.GetLifiChains();
+        //this.SetDlnChains = await this.GetDlnChains();
+        this.SetRangoChains = await this.GetRangoChains();
+        this.SetOwltoChains = await this.GetOwltoChains();
 
+        this.SetLifiChains?.map((chain) => {
+
+            let obj = new Chains();
+            obj.chainId = chain.id;
+            obj.lifiName = chain.key;
+            obj.chainName = chain.name;
+            obj.rangoName = '';
+            obj.logoURI = chain.logoURI;
+
+
+            this.AvailableChains.push(obj);
+        });
+
+        // this.SetDlnChains?.map((chain) => {
+        //     if (this.AvailableChains?.filter(x => x.chainId == chain.originalChainId).length == 0) {
+        //         let obj = new Chains();
+        //         obj.chainId = chain.originalChainId
+        //         obj.chainName = chain.chainName;
+        //         this.AvailableChains.push(obj);
+        //     }
+        // });
+
+        this.SetRangoChains?.map((chain) => {
+            let includeLength = this.AvailableChains.filter(x => x.chainId == parseInt(chain.chainId)).length;
+            if (includeLength == 0) {
                 let obj = new Chains();
-                obj.chainId = chain.id;
-                obj.lifiName = chain.key;
-                obj.chainName = chain.name;
-                obj.rangoName = '';
-                obj.logoURI = chain.logoURI;
-                
+                obj.chainId = parseInt(chain.chainId)
+                obj.chainName = chain.displayName;
+                obj.rangoName = chain.name;
+                obj.lifiName = '';
+                obj.logoURI = chain.logo;
 
                 this.AvailableChains.push(obj);
-            });
+            } else if (includeLength == 1) {
+                let index = this.AvailableChains?.findIndex(x => x.chainId == parseInt(chain.chainId));
+                this.AvailableChains[index].rangoName = chain.name;
+            }
+        });
 
-            // this.SetDlnChains?.map((chain) => {
-            //     if (this.AvailableChains?.filter(x => x.chainId == chain.originalChainId).length == 0) {
-            //         let obj = new Chains();
-            //         obj.chainId = chain.originalChainId
-            //         obj.chainName = chain.chainName;
-            //         this.AvailableChains.push(obj);
-            //     }
-            // });
+        if (this.SetOwltoChains != undefined && this.SetOwltoChains.length > 0) {
 
-            this.SetRangoChains?.map((chain) => {
-                let includeLength = this.AvailableChains.filter(x => x.chainId == parseInt(chain.chainId)).length;
-                if (includeLength == 0) {
-                    let obj = new Chains();
-                    obj.chainId = parseInt(chain.chainId)
-                    obj.chainName = chain.displayName;
-                    obj.rangoName = chain.name;
-                    obj.lifiName = '';
-                    obj.logoURI = chain.logo;
-                    
-                    this.AvailableChains.push(obj);
-                }else if(includeLength == 1){
-                    let index = this.AvailableChains?.findIndex(x => x.chainId == parseInt(chain.chainId));
-                    this.AvailableChains[index].rangoName = chain.name;
-                }
-            });
 
-            if(this.SetOwltoChains != undefined && this.SetOwltoChains.length > 0)
-            {
-
-            
 
             // this.SetOwltoChains?.map((chain) => {
             //     if (this.AvailableChains.filter(x => x.chainId == chain.chainId).length == 0) {
@@ -316,27 +303,26 @@ export class CryptoService {
             //         obj.lifiName = '';
             //         obj.rangoName = '';
             //         obj.logoURI = chain.icon;
-                    
+
 
             //         this.AvailableChains.push(obj);
             //     }
             // });
         }
 
-            //let res = await this.SharedService.setIndexDbItem(Keys.All_AVAILABLE_CHAINS, this.AvailableChains)
-            return this.AvailableChains;
+        //let res = await this.SharedService.setIndexDbItem(Keys.All_AVAILABLE_CHAINS, this.AvailableChains)
+        return this.AvailableChains;
     }
 
-    async GetLifiChains()
-    {
+    async GetLifiChains() {
         let lifiChains = [];
         let payLoad = {
-            apiType : 'GET',
-            apiUrl : 'chains',
-            apiData : null,
+            apiType: 'GET',
+            apiUrl: 'chains',
+            apiData: null,
             apiProvider: SwapProvider.LIFI
         }
-        try{
+        try {
             let LIFIChainResult = await fetch('http://localhost:3000/api/common', {
                 method: 'POST',
                 headers: {
@@ -345,79 +331,73 @@ export class CryptoService {
                 body: JSON.stringify(payLoad),
             });
             const LIFIChainData = await LIFIChainResult.json();
-            lifiChains = LIFIChainData.Data?.chains; 
-        }catch(error)
-        {
+            lifiChains = LIFIChainData.Data?.chains;
+        } catch (error) {
             console.log(error);
         }
         return lifiChains;
     }
 
-    async GetDlnChains()
-    {
+    async GetDlnChains() {
         let dlnChains = [];
         let payLoad = {
-            apiType : 'GET',
-            apiUrl : 'https://api.dln.trade/v1.0/supported-chains-info',
-            apiData : null
+            apiType: 'GET',
+            apiUrl: 'https://api.dln.trade/v1.0/supported-chains-info',
+            apiData: null
         }
-        try{
+        try {
             let DlnChainResult = await fetch('http://localhost:3000/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payLoad),
-    
+
             });
             const DlnChainData = await DlnChainResult.json();
             dlnChains = DlnChainData.Data?.chains;
-            let res = this.SharedService.setIndexDbItem(Keys.All_DLN_CHAINS, dlnChains); 
-        }catch(error)
-        {
+            let res = this.SharedService.setIndexDbItem(Keys.All_DLN_CHAINS, dlnChains);
+        } catch (error) {
             console.log(error);
         }
         return dlnChains;
     }
 
-    async GetRangoChains()
-    {
+    async GetRangoChains() {
         let rangoChains = [];
         let payLoad = {
-            apiType : 'GET',
-            apiUrl : 'basic/meta',
-            apiData : null,
+            apiType: 'GET',
+            apiUrl: 'basic/meta',
+            apiData: null,
             apiProvider: SwapProvider.RANGO
         }
-        try{
+        try {
             let RangoChainResult = await fetch('http://localhost:3000/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payLoad),
-    
+
             });
             const RangoChainData = await RangoChainResult.json();
-            rangoChains = RangoChainData.Data.blockchains.filter((x:any)=> x.type == 'EVM'); 
-        }catch(error)
-        {
+            rangoChains = RangoChainData.Data.blockchains.filter((x: any) => x.type == 'EVM');
+        } catch (error) {
             console.log(error);
         }
-        
+
         return rangoChains;
     }
 
-    async GetOwltoChains()
-    {
+    async GetOwltoChains() {
         let owltoChains = [];
         let payLoad = {
-            apiType : 'GET',
-            apiUrl : 'config/all-chains',
-            apiData : null,
+            apiType: 'GET',
+            apiUrl: 'config/all-chains',
+            apiData: null,
             apiProvider: SwapProvider.OWLTO
         }
-        try{
+        try {
             let OwltoChainResult = await fetch('http://localhost:3000/api/common', {
                 method: 'POST',
                 headers: {
@@ -427,159 +407,159 @@ export class CryptoService {
             });
             const OwltoChainData = await OwltoChainResult.json();
             owltoChains = OwltoChainData.Data.msg;
-        }catch(error)
-        {
+        } catch (error) {
             console.log(error);
         }
-        
+
         return owltoChains;
     }
 
-    async GetTokenData(token: Tokens)
-    {
+    async GetTokenData(token: Tokens) {
         let amountUSD = 0;
-        let TokenData : ResponseMobulaPricing;
-        let query = token.address == '0x0000000000000000000000000000000000000000' ? 'symbol='+ token.symbol : 'asset='+ token.address;
+        let TokenData: ResponseMobulaPricing;
+        let query = token.address == '0x0000000000000000000000000000000000000000' ? 'symbol=' + token.symbol : 'asset=' + token.address;
         let payLoad = {
-            apiType : 'GET',
-            apiUrl : `market/data?${query}`,
-            apiData : null,
+            apiType: 'GET',
+            apiUrl: `market/data?${query}`,
+            apiData: null,
             apiProvider: SwapProvider.MOBULA
         }
-        try{
+        try {
             let tokenExec = await fetch('http://localhost:3000/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payLoad),
-    
+
             });
             const TokenResponse = await tokenExec.json();
-            
-            TokenData  = TokenResponse?.Data;
-        }catch(error){
+
+            TokenData = TokenResponse?.Data;
+        } catch (error) {
             console.log(error);
         }
-        
+
         return TokenData;
     }
 
-    
 
-    
 
-async getBestPathFromChosenChains(
-    sourceChain: Chains, 
-    destChain: Chains, 
-    sourceToken: Tokens, 
-    destToken: Tokens, 
-    amount: number, 
-    walletAddress: string
-) {
-    try {
-        // Assign default wallet address if not provided
-        if (this.utilityService.isNullOrEmpty(walletAddress)) {
-            walletAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
-        }
 
-        // Set a 5-second timeout for each API call
-        const apiTimeout = 5000; // 5 seconds
 
-        const withTimeout = (promise: Promise<any>, ms: number, apiName: string) => {
-            return Promise.race([
-                promise,
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error(`${apiName} API timed out after ${ms} ms`)), ms)
-                ),
+    async getBestPathFromChosenChains(
+        sourceChain: Chains,
+        destChain: Chains,
+        sourceToken: Tokens,
+        destToken: Tokens,
+        amount: number,
+        walletAddress: string
+    ) {
+        try {
+            // Assign default wallet address if not provided
+            if (this.utilityService.isNullOrEmpty(walletAddress)) {
+                walletAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
+            }
+
+            // Set a 5-second timeout for each API call
+            const apiTimeout = 10000; // 5 seconds
+
+            const withTimeout = (promise: Promise<any>, ms: number, apiName: string) => {
+                return Promise.race([
+                    promise,
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error(`${apiName} API timed out after ${ms} ms`)), ms)
+                    ),
+                ]);
+            };
+
+            // Fetch paths concurrently with timeout
+            const [fastestPath, cheapestPath, rangoPath, owltoPath] = await Promise.all([
+                withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "FASTEST"), apiTimeout, 'Lifi (Fastest)'),
+                withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Lifi (Cheapest)'),
+                withTimeout(this.getRangoPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Rango'),
+                withTimeout(this.getOwltoPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Owlto'),
             ]);
-        };
 
-        // Fetch paths concurrently with timeout
-        const [fastestPath, cheapestPath, rangoPath] = await Promise.all([
-            withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "FASTEST"), apiTimeout, 'Lifi (Fastest)'),
-            withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Lifi (Cheapest)'),
-            withTimeout(this.getRangoPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Rango'),
-        ]);
+            // Log message if the default wallet address is used
+            if (walletAddress === "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0") {
+                console.log("Wallet is not connected");
+            }
 
-        // Log message if the default wallet address is used
-        if (walletAddress === "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0") {
-            console.log("Wallet is not connected");
+            // Create PathShowViewModel concurrently with timeout
+            const [subfastestPath, subcheapestPath, subrangoPath, subowltoPath] = await Promise.all([
+                fastestPath ? this.createPathShowViewModel(fastestPath, sourceChain, destChain, sourceToken, destToken, amount, "FASTEST") : null,
+                cheapestPath ? this.createPathShowViewModel(cheapestPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST") : null,
+                rangoPath ? this.createRangoPathShowViewModel(rangoPath, sourceChain, destChain, sourceToken, destToken, amount, "Rango") : null,
+                owltoPath ? this.createOwltoPathShowViewModel(owltoPath, sourceChain, destChain, sourceToken, destToken, amount, "Owlto") : null
+            ]);
+
+            // Filter non-null paths
+            const bestpath = [subfastestPath, subcheapestPath, subrangoPath, subowltoPath].filter(path => path != null);
+
+            // Return bestpath if any valid paths, otherwise return null
+            return bestpath.length > 0 ? bestpath : null;
+
+        } catch (error) {
+            console.error("Error in getBestPathFromChosenChains:", error);
+            throw error;
         }
-
-        // Create PathShowViewModel concurrently with timeout
-        const [subfastestPath, subcheapestPath, subrangoPath] = await Promise.all([
-            fastestPath ? this.createPathShowViewModel(fastestPath, sourceChain, destChain, sourceToken, destToken, amount, "FASTEST") : null,
-            cheapestPath ? this.createPathShowViewModel(cheapestPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST") : null,
-            rangoPath ? this.createRangoPathShowViewModel(rangoPath, sourceChain, destChain, sourceToken, destToken, amount, "Rango") : null
-        ]);
-
-        // Filter non-null paths
-        const bestpath = [subfastestPath, subcheapestPath, subrangoPath].filter(path => path != null);
-
-        // Return bestpath if any valid paths, otherwise return null
-        return bestpath.length > 0 ? bestpath : null;
-
-    } catch (error) {
-        console.error("Error in getBestPathFromChosenChains:", error);
-        throw error;
     }
-}
 
-    
-        
-    
 
-      
-      
-    
-       async getLifiPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number,walletAddress:string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseLifiPath> {
+
+
+
+
+
+
+    async getLifiPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseLifiPath> {
         debugger;
 
         try {
-          const requestLifiPath = await this.createLifiPathRequest(
-            sourceChain,
-            destChain,
-            sourceToken,
-            destToken,
-            amount,
-            walletAddress,
-            order
-          );
-          const params = this.createLifiUrlParams(requestLifiPath);
-          const url = `quote?${params.toString()}`;
-
-          const payLoad = {
-            apiType: "GET",
-            apiUrl: url,
-            apiData: null,
-            apiProvider: SwapProvider.LIFI,
-          };
-
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-          const response = await fetch("http://localhost:3000/api/common", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payLoad),
-            signal: controller.signal,
-          });
-
-          clearTimeout(timeout);
-
-          if (!response.ok) {
-            throw new Error(
-              `LiFi API error: ${response.status} ${response.statusText}`
+            const requestLifiPath = await this.createLifiPathRequest(
+                sourceChain,
+                destChain,
+                sourceToken,
+                destToken,
+                amount,
+                walletAddress,
+                order
             );
-          }
+            const params = this.createLifiUrlParams(requestLifiPath);
+            const url = `quote?${params.toString()}`;
 
-          const jsonResponse = await response.json();
-          if (!jsonResponse?.Data) {
-            throw new Error("Invalid response structure from LiFi API");
-          }
+            const payLoad = {
+                apiType: "GET",
+                apiUrl: url,
+                apiData: null,
+                apiProvider: SwapProvider.LIFI,
+            };
 
-          return jsonResponse.Data;
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+            const response = await fetch("http://localhost:3000/api/common", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payLoad),
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeout);
+
+            if (!response.ok) {
+                throw new Error(
+                    `LiFi API error: ${response.status} ${response.statusText}`
+                );
+            }
+
+            const jsonResponse = await response.json();
+            if (!jsonResponse?.Data) {
+                throw new Error("Invalid response structure from LiFi API");
+            }
+
+            return jsonResponse.Data;
         } catch (error) {
 
             console.error('Error in getLifiPath:', error);
@@ -587,52 +567,93 @@ async getBestPathFromChosenChains(
 
 
         }
-      }
+    }
 
-      async getRangoPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseRangoPath | null> {
+    async getRangoPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseRangoPath | null> {
         try {
             const requestRangoPath = await this.createRangoPathRequest(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, order);
             const params = this.createRangoUrlParams(requestRangoPath);
             const url = `basic/quote?${params.toString()}`;
-    
+
             const payLoad = {
                 apiType: "GET",
                 apiUrl: url,
                 apiData: null,
                 apiProvider: SwapProvider.RANGO
             };
-    
+
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-    
+
             const response = await fetch("http://localhost:3000/api/common", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payLoad),
                 signal: controller.signal
             });
-    
+
             clearTimeout(timeout);
-    
+
             if (!response.ok) {
                 throw new Error(`Rango API error: ${response.status} ${response.statusText}`);
             }
-    
+
             const jsonResponse = await response.json();
             if (!jsonResponse?.Data) {
                 throw new Error('Invalid response structure from Rango API');
             }
-    
+
             return jsonResponse.Data;
         } catch (error) {
             console.error('Error in getRangoPath:', error);
             return null;
         }
     }
-    
-       async createLifiPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number,walletAddress:string, order: "FASTEST" | "CHEAPEST"): Promise<RequestLifiPath> {
-        
-        
+
+    async getOwltoPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseRangoPath | null> {
+        try {
+            const requestOwltoPath = await this.createOwltoPathRequest(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, order);
+            const params = this.createOwltoUrlParams(requestOwltoPath);
+            const url = `lp-info?${params.toString()}`;
+
+            const payLoad = {
+                apiType: "GET",
+                apiUrl: url,
+                apiData: null,
+                apiProvider: SwapProvider.OWLTO
+            };
+
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+            const response = await fetch("http://localhost:3000/api/common", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payLoad),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeout);
+
+            if (!response.ok) {
+                throw new Error(`Owlto API error: ${response.status} ${response.statusText}`);
+            }
+
+            const jsonResponse = await response.json();
+            if (!jsonResponse?.Data) {
+                throw new Error('Invalid response structure from Rango API');
+            }
+
+            return jsonResponse.Data;
+        } catch (error) {
+            console.error('Error in getOwltoPath:', error);
+            return null;
+        }
+    }
+
+    async createLifiPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<RequestLifiPath> {
+
+
 
 
         const requestLifiPath = new RequestLifiPath();
@@ -658,172 +679,162 @@ async getBestPathFromChosenChains(
         requestLifiPath.fromAmountForGas = "100000";
         requestLifiPath.maxPriceImpact = 0.15;
         return requestLifiPath;
-      }
+    }
 
-      async createRangoPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number,walletAddress:string, order: "FASTEST" | "CHEAPEST"): Promise<RequestRangoPath> {
-        
+    async createRangoPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<RequestRangoPath> {
+
         const requestRangoPath = new RequestRangoPath();
 
         let tokenfrom = "";
-        let tokento="";
-          
-        let sourceNative=await this.utilityService.isNativeCurrency(sourceChain,sourceToken);
-        let destNative=await this.utilityService.isNativeCurrency(destChain,destToken);
+        let tokento = "";
 
-        if(sourceNative == true)
-        {
+        let sourceNative = await this.utilityService.isNativeCurrency(sourceChain, sourceToken);
+        let destNative = await this.utilityService.isNativeCurrency(destChain, destToken);
+
+        if (sourceNative == true) {
 
             tokenfrom = sourceToken.symbol;
 
         }
-        else
-        {
-            tokenfrom = +sourceToken.symbol+"--"+sourceToken.address;
+        else {
+            tokenfrom = +sourceToken.symbol + "--" + sourceToken.address;
         }
 
-        if(destNative == true)
-        {
+        if (destNative == true) {
             tokento = destToken.symbol
         }
-        else
-        {
-            tokento = destToken.symbol+"--"+destToken.address;
+        else {
+            tokento = destToken.symbol + "--" + destToken.address;
         }
 
 
 
 
-        
-        requestRangoPath.from = sourceChain.rangoName.toString()+"."+tokenfrom;
-        requestRangoPath.to = destChain.rangoName.toString()+"."+tokento;
-        
-        requestRangoPath.amount = Number(await this.utilityService.convertToDecimals(amount, sourceToken.decimal));
-        
-        return requestRangoPath;
-      }
 
-      async createOwltoPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, order: "FASTEST" | "CHEAPEST"): Promise<RequestOwltoPath> {
+        requestRangoPath.from = sourceChain.rangoName.toString() + "." + tokenfrom;
+        requestRangoPath.to = destChain.rangoName.toString() + "." + tokento;
+
+        requestRangoPath.amount = Number(await this.utilityService.convertToDecimals(amount, sourceToken.decimal));
+
+        return requestRangoPath;
+    }
+
+    async createOwltoPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<RequestOwltoPath> {
         const requestOwltoPath = new RequestOwltoPath();
 
-        requestOwltoPath.from_chainid=sourceChain.chainId;
-        requestOwltoPath.to_chainid=destChain.chainId;
-        requestOwltoPath.user="0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
-        
-        requestOwltoPath.token=sourceToken.symbol;
+        requestOwltoPath.from_chainid = sourceChain.chainId;
+        requestOwltoPath.to_chainid = destChain.chainId;
+        requestOwltoPath.user = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
+
+        requestOwltoPath.token = sourceToken.symbol;
 
 
-        
+
         return requestOwltoPath;
-      }
-    
-       createLifiUrlParams(requestLifiPath: RequestLifiPath): URLSearchParams {
+    }
+
+    createLifiUrlParams(requestLifiPath: RequestLifiPath): URLSearchParams {
         return new URLSearchParams({
-          fromChain: requestLifiPath.fromChain,
-          toChain: requestLifiPath.toChain,
-          fromToken: requestLifiPath.fromToken,
-          toToken: requestLifiPath.toToken,
-          fromAddress: requestLifiPath.fromAddress,
-          toAddress: requestLifiPath.toAddress || requestLifiPath.fromAddress,
-          fromAmount: requestLifiPath.fromAmount,
-          order: requestLifiPath.order
+            fromChain: requestLifiPath.fromChain,
+            toChain: requestLifiPath.toChain,
+            fromToken: requestLifiPath.fromToken,
+            toToken: requestLifiPath.toToken,
+            fromAddress: requestLifiPath.fromAddress,
+            toAddress: requestLifiPath.toAddress || requestLifiPath.fromAddress,
+            fromAmount: requestLifiPath.fromAmount,
+            order: requestLifiPath.order
         });
-      }
+    }
 
-      createRangoUrlParams(requestRangoPath: RequestRangoPath): URLSearchParams {
+    createRangoUrlParams(requestRangoPath: RequestRangoPath): URLSearchParams {
         return new URLSearchParams({
-          from:requestRangoPath.from,
-          to:requestRangoPath.to,
-          amount:requestRangoPath.amount.toString()
+            from: requestRangoPath.from,
+            to: requestRangoPath.to,
+            amount: requestRangoPath.amount.toString()
         });
-      }
+    }
 
-      createOwltoUrlParams(requestRangoPath: RequestOwltoPath): URLSearchParams {
+    createOwltoUrlParams(requestOwltoPath: RequestOwltoPath): URLSearchParams {
         return new URLSearchParams({
-            token:requestRangoPath.token,
-            from_chainid:requestRangoPath.from_chainid.toString(),
-            to_chainid:requestRangoPath.to_chainid.toString(),
-            user:requestRangoPath.user
+            token: requestOwltoPath.token,
+            from_chainid: requestOwltoPath.from_chainid.toString(),
+            to_chainid: requestOwltoPath.to_chainid.toString(),
+            user: requestOwltoPath.user
 
         });
-      }
-    
-       async createPathShowViewModel(lifiPath: ResponseLifiPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
-        try
-        {
+    }
 
-        
-        
-        const pathShowViewModel = new PathShowViewModel();
-        pathShowViewModel.estTime = await this.utilityService.formatDuration(lifiPath.estimate.executionDuration);
-        pathShowViewModel.gasafee = lifiPath.estimate.feeCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0).toFixed(2) + " USD";
-        pathShowViewModel.fromChain = sourceChain.chainName;
-        pathShowViewModel.fromToken = sourceToken.symbol;
-        pathShowViewModel.fromAmount = amount.toString();
-        pathShowViewModel.toChain = destChain.chainName;
-        pathShowViewModel.toToken = destToken.symbol;
-        pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmount, lifiPath.action.toToken.decimals)).toString();
-        pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmountMin, lifiPath.action.toToken.decimals)).toString();
-        pathShowViewModel.aggregator = "lifi";
-        pathShowViewModel.aggregatorOrderType = orderType;
-        return pathShowViewModel;
+    async createPathShowViewModel(lifiPath: ResponseLifiPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
+        try {
+
+
+
+            const pathShowViewModel = new PathShowViewModel();
+            pathShowViewModel.estTime = await this.utilityService.formatDuration(lifiPath.estimate.executionDuration);
+            pathShowViewModel.gasafee = lifiPath.estimate.feeCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0).toFixed(2) + " USD";
+            pathShowViewModel.fromChain = sourceChain.chainName;
+            pathShowViewModel.fromToken = sourceToken.symbol;
+            pathShowViewModel.fromAmount = amount.toString();
+            pathShowViewModel.toChain = destChain.chainName;
+            pathShowViewModel.toToken = destToken.symbol;
+            pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmount, lifiPath.action.toToken.decimals)).toString();
+            pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmountMin, lifiPath.action.toToken.decimals)).toString();
+            pathShowViewModel.aggregator = "lifi";
+            pathShowViewModel.aggregatorOrderType = orderType;
+            return pathShowViewModel;
         }
-        catch(error)
-        {
+        catch (error) {
             return null;
         }
-      }
+    }
 
-      async createRangoPathShowViewModel(responseRangoPath: ResponseRangoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
-        try
-        {
+    async createRangoPathShowViewModel(responseRangoPath: ResponseRangoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
+        try {
 
-        
-        
-        const pathShowViewModel = new PathShowViewModel();
-        pathShowViewModel.estTime = await this.utilityService.formatDuration(responseRangoPath.route.estimatedTimeInSeconds);
-        pathShowViewModel.gasafee = responseRangoPath.route.feeUsd + " USD";
-        pathShowViewModel.fromChain = sourceChain.chainName;
-        pathShowViewModel.fromToken = sourceToken.symbol;
-        pathShowViewModel.fromAmount = amount.toString();
-        pathShowViewModel.toChain = destChain.chainName;
-        pathShowViewModel.toToken = destToken.symbol;
-        pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(responseRangoPath.route.outputAmount.toString(), destToken.decimal)).toString();
-        pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(responseRangoPath.route.outputAmountMin.toString(), destToken.decimal)).toString();;
-        pathShowViewModel.aggregator = "rango";
-        pathShowViewModel.aggregatorOrderType = orderType;
-        return pathShowViewModel;
+
+
+            const pathShowViewModel = new PathShowViewModel();
+            pathShowViewModel.estTime = await this.utilityService.formatDuration(responseRangoPath.route.estimatedTimeInSeconds);
+            pathShowViewModel.gasafee = responseRangoPath.route.feeUsd + " USD";
+            pathShowViewModel.fromChain = sourceChain.chainName;
+            pathShowViewModel.fromToken = sourceToken.symbol;
+            pathShowViewModel.fromAmount = amount.toString();
+            pathShowViewModel.toChain = destChain.chainName;
+            pathShowViewModel.toToken = destToken.symbol;
+            pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(responseRangoPath.route.outputAmount.toString(), destToken.decimal)).toString();
+            pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(responseRangoPath.route.outputAmountMin.toString(), destToken.decimal)).toString();;
+            pathShowViewModel.aggregator = "rango";
+            pathShowViewModel.aggregatorOrderType = orderType;
+            return pathShowViewModel;
         }
-        catch(error)
-        {
+        catch (error) {
             return null;
         }
-      }
-    
+    }
 
 
-      async createOwltoPathShowViewModel(responseOwltoPath: ResponseOwltoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
-        try
-        {
 
-        
-        const pathShowViewModel = new PathShowViewModel();
-        pathShowViewModel.estTime = "less than 1 min";
-        pathShowViewModel.gasafee = (Number(responseOwltoPath.msg.dtc) + Number(amount) * Number(responseOwltoPath.msg.bridge_fee_ratio) ) + " " + sourceToken.symbol;
-        pathShowViewModel.fromChain = sourceChain.chainName;
-        pathShowViewModel.fromToken = sourceToken.symbol;
-        pathShowViewModel.fromAmount = amount.toString();
-        pathShowViewModel.toChain = destChain.chainName;
-        pathShowViewModel.toToken = destToken.symbol;
-        pathShowViewModel.toAmount = (amount).toString();
-        pathShowViewModel.receivedAmount = (amount).toString();;
-        pathShowViewModel.aggregator = "Owlto";
-        pathShowViewModel.aggregatorOrderType = orderType;
-        return pathShowViewModel;
+    async createOwltoPathShowViewModel(responseOwltoPath: ResponseOwltoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
+        try {
+
+
+            const pathShowViewModel = new PathShowViewModel();
+            pathShowViewModel.estTime = "less than 1 min";
+            pathShowViewModel.gasafee = (Number(responseOwltoPath.msg.dtc) + Number(amount) * Number(responseOwltoPath.msg.bridge_fee_ratio)) + " " + sourceToken.symbol;
+            pathShowViewModel.fromChain = sourceChain.chainName;
+            pathShowViewModel.fromToken = sourceToken.symbol;
+            pathShowViewModel.fromAmount = amount.toString();
+            pathShowViewModel.toChain = destChain.chainName;
+            pathShowViewModel.toToken = destToken.symbol;
+            pathShowViewModel.toAmount = (amount).toString();
+            pathShowViewModel.receivedAmount = (amount).toString();;
+            pathShowViewModel.aggregator = "Owlto";
+            pathShowViewModel.aggregatorOrderType = orderType;
+            return pathShowViewModel;
         }
-        catch(error)
-        {
+        catch (error) {
             return null;
         }
-      }
+    }
 
 }

@@ -5,6 +5,7 @@ import { BigNumberish } from 'ethers';
 import { Chains, TokenBase, Tokens } from '../Models/Common.model';
 import type { Chain } from "wagmi/chains"; // Import Chain type
 import * as definedChains from "wagmi/chains";
+import { i18n } from '../Const/i18n';
 
 
 export class UtilityService {
@@ -100,8 +101,6 @@ async getBalance(tokenIsNative,token:Tokens, userAddress: string, providerUrl: s
             
         }
 
-        
-
         // Create a contract instance
         const tokenContract = new ethers.Contract(token.address, tokenABI, provider);
 
@@ -169,10 +168,6 @@ isNullOrEmpty(str:any){
     return (str == null || str == '' || str == undefined || str?.length == 0) ? true : false;
 }
 
-
-
-
-
 async isNativeCurrency(chainDe:Chains,token:Tokens) : Promise<boolean> {
 
     const getAllChains = (): Chain[] => {
@@ -203,12 +198,11 @@ async isNativeCurrency(chainDe:Chains,token:Tokens) : Promise<boolean> {
     {
         return false;
     }
-    
-
-
   }
-  
-  
+
+  Translate(language: string, key: string) {
+    return (!this.isNullOrEmpty(language) && !this.isNullOrEmpty(key) && i18n) ? i18n[language][key] : '';
+  }
 }
 
 

@@ -14,9 +14,6 @@ import { mainnet, sepolia } from 'wagmi/chains';
 import { config } from '../../../wagmi/config';// Go up a level if needed
 import { Chain } from "wagmi/chains";
 
-
-
-
 type propsType = {
     sourceChain: Chains,
     destChain: Chains,
@@ -143,31 +140,38 @@ export default function Exchangeui(props: propsType) {
                     }
 
 
+
+                    let checkNativeCoin = await utilityService.checkCoinNative(props.sourceChain, props.sourceToken)
+
+                    // check balance
+
+                    let balance = await utilityService.getBalance(checkNativeCoin, props.sourceToken, walletData.address, workingRpc);
+
+                    if (Number(balance) < Number(sendAmount)) {
+
+                        bridgeMessage.message = "You don't have enough " + props.sourceToken.symbol + " to complete the transaction.";
+                        setIsBridgeMessageVisible(true);
+
+                    }
+                    else {
+
+
+
+                    }
+
+
+
+
+
+
+
+
+
+
+
                 }
                 else {
                     console.log("No Need to switch chain")
-                }
-
-                let checkNativeCoin = await utilityService.checkCoinNative(props.sourceChain, props.sourceToken)
-
-                // check balance
-
-                let balance = await utilityService.getBalance(checkNativeCoin, props.sourceToken, walletData.address, workingRpc);
-
-                if (Number(balance) <= Number(sendAmount)) {
-
-                    bridgeMessage.message = "You don't have enough " + props.sourceToken.symbol + " to complete the transaction.";
-                    setIsBridgeMessage("You don't have enough " + props.sourceToken.symbol + " to complete the transaction.");
-                    setIsBridgeMessageVisible(true);
-
-                }
-                else {
-
-                    bridgeMessage.message = "";
-                    setIsBridgeMessage("");
-                    setIsBridgeMessageVisible(false);
-
-
                 }
 
 

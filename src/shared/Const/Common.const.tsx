@@ -20,3 +20,5 @@ export const CommonConfig = [
         apiUrl:'http://localhost:5159/api/'
     }
 ]
+
+export const SupportedLang = ['en', 'es']

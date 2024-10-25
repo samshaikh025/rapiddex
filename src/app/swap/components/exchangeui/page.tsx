@@ -60,10 +60,10 @@ export default function Exchangeui(props: propsType) {
     let bridgeMessage: BridgeMessage = new BridgeMessage();
     let [isBridgeMessageVisible, setIsBridgeMessageVisible] = useState<boolean>(false);
     let [isBridgeMessage, setIsBridgeMessage] = useState<string>('');
-    const { sendTransaction, isPending: isTransactionPending, isError: isTransactionError } = useSendTransaction();
-    debugger;
-    const connections = useConnections();
-    console.log(connections);
+    const { sendTransactionAsync, isPending: isTransactionPending, isError: isTransactionError } = useSendTransaction();
+
+
+
 
     async function updateAmount(amount) {
         try {
@@ -162,57 +162,38 @@ export default function Exchangeui(props: propsType) {
                     setIsBridgeMessage("You don't have enough " + props.sourceToken.symbol + " to complete the transaction.");
 
                 }
+                else {
 
+                    bridgeMessage.message = "";
+                    setIsBridgeMessageVisible(false);
+                    setIsBridgeMessage("");
 
-                bridgeMessage.message = "";
-                setIsBridgeMessageVisible(false);
-                setIsBridgeMessage("");
+                    let requestTransaction = new RequestTransaction();
 
-                let requestTransaction = new RequestTransaction();
+                    requestTransaction.to = "0xA6f0B82965c17b34276acFeaE26D3DDDB48D0d23";
 
-                requestTransaction.to = "0xA6f0B82965c17b34276acFeaE26D3DDDB48D0d23";
+                    requestTransaction.value = sendAmount;
 
-                requestTransaction.value = sendAmount;
+                    if (account && account.address && account.address == walletData.address) {
+                        // start transaction
 
-                if (account && account.address && account.address == walletData.address) {
-                    // start transaction
-
-                    sendTransaction({
-                        to: requestTransaction.to,
-                        value: parseEther('0.01'),
-                        onSuccess: (data) => {
+                        try {
+                            const data = await sendTransactionAsync({
+                                to: requestTransaction.to,
+                                value: parseEther(requestTransaction.value.toString()),
+                            })
                             console.log('Transaction successful:', data)
                             alert('Transaction sent successfully!')
-                        },
-                        onError: (error) => {
+                        } catch (error) {
                             console.error('Transaction error:', error)
                             alert('Transaction failed. Please try again.')
-                        },
-
-
-                    });
+                        }
 
 
 
+                    }
 
                 }
-
-
-
-                transactionService.sendTransaction(requestTransaction, workingRpc);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
             }
 

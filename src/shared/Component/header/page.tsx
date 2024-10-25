@@ -48,33 +48,30 @@ export default function Header() {
         obj.chainLogo = allAvailableChains.length > 0 ? allAvailableChains?.find(x => x.chainId == data.chain?.id)?.logoURI : '';
         obj.blockExplorer = data.chain.blockExplorers.default;
         dispatch(SetWalletDataA(obj));
-        sharedService.setData(Keys.WALLET_CONNECT_DATA, obj);
-        userService.AddLog(obj).then((response) => {
-          if (response?.data && response.data == 1) {
-            console.log('logged successfully');
-          }
-        }).catch((error) => {
-          console.log(error);
-        });
+        let loggedIn = sharedService.getData(Keys.IS_LOGGED_IN);
+        if(!loggedIn) {
+          sharedService.setData(Keys.IS_LOGGED_IN, true);
+          userService.AddLog(obj).then((response) => {
+            if (response?.data && response.data == 1) {
+              console.log('logged successfully');
+            }
+          }).catch((error) => {
+            console.log(error);
+          });
+        }
       }
     },
 
     onDisconnect() {
       console.log('Disconnected!');
       clearWalletData();
+      sharedService.setData(Keys.IS_LOGGED_IN, false);
     }
   });
 
-
-  useEffect(() => {
-
-    console.log(account);
-
-  }, [account]);
-
   useEffect(() => {
     console.log(walletData);
-    getWalletAddressFromStorageAndSet();
+    //getWalletAddressFromStorageAndSet();
     let theme = sharedService.getData(Keys.THEME);
     if (theme && theme == 'DARK') {
     }

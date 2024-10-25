@@ -60,7 +60,6 @@ export default function Exchangeui(props: propsType) {
     let [isBridgeMessageVisible, setIsBridgeMessageVisible] = useState<boolean>(false);
     let [isBridgeMessage, setIsBridgeMessage] = useState<string>('');
     const { sendTransaction } = useSendTransaction();
-    debugger;
     const connections = useConnections();
     console.log(connections);
 

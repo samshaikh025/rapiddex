@@ -8,6 +8,7 @@ export default async function Swap() {
 
     let cryptoService = new CryptoService();
     let chains = await cryptoService.GetAvailableChains();
+    console.log(chains);
     //let preDefinedTokensForChains: PreDefinedTokensForChains[] = [];
     //let predefineChains = PredefineChains;
     

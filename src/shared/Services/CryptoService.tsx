@@ -111,15 +111,6 @@ export class CryptoService {
             //     }    
             // })
         }
-
-        let chainList = await this.getAvailableChainList();
-        chainList?.forEach((chain)=>{
-            let index = this.AvailableChains.findIndex(x => x.chainId == chain.chainId);
-            if (index > -1) {
-                this.AvailableChains[index].rpcUrl = chain.rpc;
-            }
-        });
-
         return this.AvailableCoins;
     }
 
@@ -322,6 +313,14 @@ export class CryptoService {
         }
 
         //let res = await this.SharedService.setIndexDbItem(Keys.All_AVAILABLE_CHAINS, this.AvailableChains)
+        let chainList = await this.getAvailableChainList();
+        chainList?.forEach((chain)=>{
+            let index = this.AvailableChains.findIndex(x => x.chainId == chain.chainId);
+            if (index > -1) {
+                this.AvailableChains[index].rpcUrl = chain.rpc;
+            }
+        });
+        
         return this.AvailableChains;
     }
 

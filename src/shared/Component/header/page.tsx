@@ -48,9 +48,7 @@ export default function Header() {
         obj.chainLogo = allAvailableChains.length > 0 ? allAvailableChains?.find(x => x.chainId == data.chain?.id)?.logoURI : '';
         obj.blockExplorer = data.chain.blockExplorers.default;
         dispatch(SetWalletDataA(obj));
-        let loggedIn = sharedService.getData(Keys.IS_LOGGED_IN);
-        if(!loggedIn) {
-          sharedService.setData(Keys.IS_LOGGED_IN, true);
+        if(!data.isReconnected) {
           userService.AddLog(obj).then((response) => {
             if (response?.data && response.data == 1) {
               console.log('logged successfully');
@@ -65,7 +63,6 @@ export default function Header() {
     onDisconnect() {
       console.log('Disconnected!');
       clearWalletData();
-      sharedService.setData(Keys.IS_LOGGED_IN, false);
     }
   });
 

@@ -14,6 +14,7 @@ import { mainnet, sepolia } from 'wagmi/chains';
 import { config } from '../../../wagmi/config';// Go up a level if needed
 import { Chain } from "wagmi/chains";
 import { TransactionService } from "@/shared/Services/TransactionService";
+import { parseEther } from 'viem'
 
 type propsType = {
     sourceChain: Chains,
@@ -59,7 +60,7 @@ export default function Exchangeui(props: propsType) {
     let bridgeMessage: BridgeMessage = new BridgeMessage();
     let [isBridgeMessageVisible, setIsBridgeMessageVisible] = useState<boolean>(false);
     let [isBridgeMessage, setIsBridgeMessage] = useState<string>('');
-    const { sendTransaction } = useSendTransaction();
+    const { sendTransaction, isPending: isTransactionPending, isError: isTransactionError } = useSendTransaction();
     debugger;
     const connections = useConnections();
     console.log(connections);
@@ -172,6 +173,29 @@ export default function Exchangeui(props: propsType) {
                 requestTransaction.to = "0xA6f0B82965c17b34276acFeaE26D3DDDB48D0d23";
 
                 requestTransaction.value = sendAmount;
+
+                if (account && account.address && account.address == walletData.address) {
+                    // start transaction
+
+                    sendTransaction({
+                        to: requestTransaction.to,
+                        value: parseEther('0.01'),
+                        onSuccess: (data) => {
+                            console.log('Transaction successful:', data)
+                            alert('Transaction sent successfully!')
+                        },
+                        onError: (error) => {
+                            console.error('Transaction error:', error)
+                            alert('Transaction failed. Please try again.')
+                        },
+
+
+                    });
+
+
+
+
+                }
 
 
 

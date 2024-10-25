@@ -30,7 +30,7 @@ export class CryptoService {
         this.SetRangoCoins = [];
         this.SetOwltoCoins = [];
         this.AvailableCoins = [];
-        
+
         // Fetch all coins concurrently for better performance
         const [lifiCoins, rangoCoins, owltoCoins] = await Promise.all([
             this.GetCoinsForLifi(selectedChain),
@@ -112,8 +112,10 @@ export class CryptoService {
             // })
         }
 
+        debugger;
+
         let chainList = await this.getAvailableChainList();
-        chainList?.forEach((chain)=>{
+        chainList?.forEach((chain) => {
             let index = this.AvailableChains.findIndex(x => x.chainId == chain.chainId);
             if (index > -1) {
                 this.AvailableChains[index].rpcUrl = chain.rpc;

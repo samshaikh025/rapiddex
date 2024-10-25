@@ -112,8 +112,6 @@ export class CryptoService {
             // })
         }
 
-        debugger;
-
         let chainList = await this.getAvailableChainList();
         chainList?.forEach((chain) => {
             let index = this.AvailableChains.findIndex(x => x.chainId == chain.chainId);
@@ -324,6 +322,14 @@ export class CryptoService {
         }
 
         //let res = await this.SharedService.setIndexDbItem(Keys.All_AVAILABLE_CHAINS, this.AvailableChains)
+        let chainList = await this.getAvailableChainList();
+        chainList?.forEach((chain) => {
+            let index = this.AvailableChains.findIndex(x => x.chainId == chain.chainId);
+            if (index > -1) {
+                this.AvailableChains[index].rpcUrl = chain.rpc;
+            }
+        });
+
         return this.AvailableChains;
     }
 
@@ -527,8 +533,6 @@ export class CryptoService {
 
 
     async getLifiPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseLifiPath> {
-        debugger;
-
         try {
             const requestLifiPath = await this.createLifiPathRequest(
                 sourceChain,

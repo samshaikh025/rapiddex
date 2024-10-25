@@ -11,7 +11,8 @@ export enum Keys {
     All_DLN_CHAINS = 'All_DLN_Chains',
     WALLET_CONNECT_DATA = 'Wallet_Connect_Data',
     THEME = 'Theme',
-    SELECTED_LANG = 'Selected_Lang' 
+    SELECTED_LANG = 'Selected_Lang',
+    IS_LOGGED_IN = 'Is_Logged_In' 
 }
 
 export enum SwapProvider {

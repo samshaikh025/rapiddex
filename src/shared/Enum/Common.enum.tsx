@@ -26,5 +26,6 @@ export enum ActionType {
     OpenWalletModal = "OPEN_WALLET_MODAL",
     SetWalletData = "SET_WALLET_DATA",
     SetAvailableChains = "SET_AVAILABLE_CHAINS",
-    SetSelectedLanguage = "SET_SELECTED_LANGUAGE"
+    SetSelectedLanguage = "SET_SELECTED_LANGUAGE",
+    PreDefineTokensForChain = "PRE_DEFINE_TOKENS_FOR_CHAIN"
 }

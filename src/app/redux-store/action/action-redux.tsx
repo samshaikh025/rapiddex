@@ -1,5 +1,5 @@
 import { ActionType } from "@/shared/Enum/Common.enum";
-import { Chains, WalletConnectData } from "@/shared/Models/Common.model";
+import { Chains, PreDefinedTokensForChains, WalletConnectData } from "@/shared/Models/Common.model";
 
 export function OpenWalletModalA(data: boolean){
     return {
@@ -26,5 +26,12 @@ export function SetSelectedLanguageA(lang: string){
     return {
         type: ActionType.SetSelectedLanguage,
         data: lang
+    }
+}
+
+export function SetPredineTokensForChainA(obj: PreDefinedTokensForChains){
+    return {
+        type: ActionType.PreDefineTokensForChain,
+        data: obj
     }
 }

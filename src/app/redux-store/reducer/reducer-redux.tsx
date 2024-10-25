@@ -5,6 +5,7 @@ const modalInitialState = false;
 const addressInitialState = new WalletConnectData();
 const availableChainsInit = [];
 const defaultLanguage = 'en';
+const preDefineTokensData = [];
 
 export function OpenWalletModalStatus(state = modalInitialState, action: any) {
     switch (action.type) {
@@ -40,6 +41,16 @@ export function SelectedLanguage(state = defaultLanguage, action: any) {
     switch (action.type) {
         case ActionType.SetSelectedLanguage:
             state = action.data;
+            return state;
+        default:
+            return state;
+    }
+}
+
+export function PreDefinedTokensForChainsData(state = preDefineTokensData, action: any) {
+    switch (action.type) {
+        case ActionType.PreDefineTokensForChain:
+            state = [...state, action.data];
             return state;
         default:
             return state;

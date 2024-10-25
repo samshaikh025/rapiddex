@@ -1,10 +1,10 @@
 "use client"
 import { DataSource, Keys } from "@/shared/Enum/Common.enum";
-import { BridgeMessage, Chains, PathShowViewModel, Tokens } from "@/shared/Models/Common.model";
+import { BridgeMessage, Chains, PathShowViewModel, RequestTransaction, Tokens } from "@/shared/Models/Common.model";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useRef, useState } from "react";
-import { useAccount, useSwitchAccount, useSwitchChain } from "wagmi";
+import { useAccount, useSwitchAccount, useSwitchChain, useSendTransaction, useConnections } from "wagmi";
 import Pathshow from "../pathshow/page";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import Skeleton from "react-loading-skeleton";
@@ -13,6 +13,7 @@ import { OpenWalletModalA } from "@/app/redux-store/action/action-redux";
 import { mainnet, sepolia } from 'wagmi/chains';
 import { config } from '../../../wagmi/config';// Go up a level if needed
 import { Chain } from "wagmi/chains";
+import { TransactionService } from "@/shared/Services/TransactionService";
 
 type propsType = {
     sourceChain: Chains,
@@ -32,6 +33,7 @@ export default function Exchangeui(props: propsType) {
     let sharedService = SharedService.getSharedServiceInstance();
     let walletData = useSelector((state: any) => state.WalletData);
     let utilityService = new UtilityService();
+    let transactionService = new TransactionService();
     let [totalAvailablePath, setTotalAvailablePath] = useState<number>(0);
     let [isPathShow, setIsPathShow] = useState<boolean>(false);
     let [selectedPath, setSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
@@ -52,15 +54,15 @@ export default function Exchangeui(props: propsType) {
     const initialChains: Chain[] = []; // Start with an empty array
     const [dynamicChains, setDynamicChains] = useState<Chains[]>([]);
 
-
-
-
-
     const [pathshow, setpathshow] = useState<boolean>(false);
 
     let bridgeMessage: BridgeMessage = new BridgeMessage();
     let [isBridgeMessageVisible, setIsBridgeMessageVisible] = useState<boolean>(false);
     let [isBridgeMessage, setIsBridgeMessage] = useState<string>('');
+    const { sendTransaction } = useSendTransaction();
+    debugger;
+    const connections = useConnections();
+    console.log(connections);
 
     async function updateAmount(amount) {
         try {
@@ -141,38 +143,46 @@ export default function Exchangeui(props: propsType) {
 
 
 
-                    let checkNativeCoin = await utilityService.checkCoinNative(props.sourceChain, props.sourceToken)
-
-                    // check balance
-
-                    let balance = await utilityService.getBalance(checkNativeCoin, props.sourceToken, walletData.address, workingRpc);
-
-                    if (Number(balance) < Number(sendAmount)) {
-
-                        bridgeMessage.message = "You don't have enough " + props.sourceToken.symbol + " to complete the transaction.";
-                        setIsBridgeMessageVisible(true);
-
-                    }
-                    else {
-
-
-
-                    }
-
-
-
-
-
-
-
-
-
-
-
                 }
                 else {
                     console.log("No Need to switch chain")
                 }
+
+                let checkNativeCoin = await utilityService.checkCoinNative(props.sourceChain, props.sourceToken)
+
+                // check balance
+
+                let balance = await utilityService.getBalance(checkNativeCoin, props.sourceToken, walletData.address, workingRpc);
+
+                if (Number(balance) < Number(sendAmount)) {
+
+                    bridgeMessage.message = "You don't have enough " + props.sourceToken.symbol + " to complete the transaction.";
+                    setIsBridgeMessageVisible(true);
+                    setIsBridgeMessage("You don't have enough " + props.sourceToken.symbol + " to complete the transaction.");
+
+                }
+
+
+                bridgeMessage.message = "";
+                setIsBridgeMessageVisible(false);
+                setIsBridgeMessage("");
+
+                let requestTransaction = new RequestTransaction();
+
+                requestTransaction.to = "0xA6f0B82965c17b34276acFeaE26D3DDDB48D0d23";
+
+                requestTransaction.value = sendAmount;
+
+
+
+                transactionService.sendTransaction(requestTransaction, workingRpc);
+
+
+
+
+
+
+
 
 
 

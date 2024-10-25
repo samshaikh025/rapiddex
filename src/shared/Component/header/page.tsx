@@ -113,10 +113,10 @@ export default function Header() {
                     </a>
                 </div>
                 <div className="menu-wrapper d-flex align-items-center">
-                    <a href="#" className="active">Swap</a>
-                    <a href="#">Loans</a>
-                    <a href="#">Liquidity</a>
-                    <a href="#">Stak</a>
+                    <a href="#" className="active">{utilityService.Translate(selectedLang,'SWAP')}</a>
+                    <a href="#">{utilityService.Translate(selectedLang,'LOAN')}</a>
+                    <a href="#">{utilityService.Translate(selectedLang,'LIQUIDITY')}</a>
+                    <a href="#">{utilityService.Translate(selectedLang,'STACK')}</a>
                 </div>
                 
                 <div className="btn-wrapper d-flex align-items-center gap-2">

@@ -1,5 +1,5 @@
 "use client"
-import { PredifineTokensContext } from "@/shared/Context/CommonContext";
+import { SetPredineTokensForChainA } from "@/app/redux-store/action/action-redux";
 import { DataSource } from "@/shared/Enum/Common.enum";
 import { ChainBase, Chains, PreDefinedTokensForChains, TokenBase, Tokens } from "@/shared/Models/Common.model";
 import { CryptoService } from "@/shared/Services/CryptoService";
@@ -7,6 +7,7 @@ import { UtilityService } from "@/shared/Services/UtilityService";
 import { useContext, useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Skeleton from 'react-loading-skeleton'
+import { useDispatch, useSelector } from "react-redux";
 
 type propsType = {
     sourceChain: Chains ,
@@ -22,8 +23,11 @@ export default function Tokenui(props: propsType) {
     let cryptoService = new CryptoService();
     let [AvailableToken, setAvailableToken] = useState<Tokens[]>([]);
     let [masterAvailableToken, setMasterAvailableToken] = useState<Tokens[]>([]);
+    let [tokenResponse, setTokenResponse] = useState<Tokens[]>([]);
     let [showCoinSpinner, setShowCoinSpinner] = useState<boolean>(false);
-    const preDefineTokensContextData = useContext(PredifineTokensContext);
+    let preDefineTokensContextData = useSelector((state: any) => state.PreDefinedTokensForChainsData);
+    let dispatch = useDispatch();
+    let [abc, setAbc] = useState<number>(0);
     let [hasMoreData, setHasMoreData] = useState<boolean>(false);
     let defaultListSize = 20;
     let utilityService = new UtilityService();
@@ -41,10 +45,15 @@ export default function Tokenui(props: propsType) {
                     tokens = await preDefineTokensContextData?.find(x=> x.chainId == chainDataSource.chainId)?.tokens;
                 }else{
                     tokens = await cryptoService.GetAvailableTokens(chainDataSource);
+                    let obj = new PreDefinedTokensForChains();
+                    obj.chainId = chainDataSource.chainId;
+                    obj.tokens = tokens;
+                    dispatch(SetPredineTokensForChainA(obj));
                 }
                 setShowCoinSpinner(false);
                 if(tokens && tokens.length > 0)
                 {
+                    setTokenResponse(tokens);
                     setMasterAvailableToken(tokens);
                     setAvailableToken(tokens.slice(0,defaultListSize));
                     setHasMoreData(true);
@@ -67,27 +76,21 @@ export default function Tokenui(props: propsType) {
 
     async function filterToken(tokenValue: string)
     {
-        let chainDataSource = props.dataSource == DataSource.From ? props.sourceChain : props.destChain;
-        let masterData = [];
-        setMasterAvailableToken([]);
-        setAvailableToken([]);
-        setShowCoinSpinner(true);
-        setHasMoreData(false);
-        
-        if(preDefineTokensContextData && preDefineTokensContextData.length > 0 && preDefineTokensContextData.findIndex(x =>x.chainId == chainDataSource.chainId) > -1){
-            masterData = await preDefineTokensContextData?.find(x=> x.chainId == chainDataSource.chainId)?.tokens;
-        }else{
-            masterData = await cryptoService.GetAvailableTokens(chainDataSource);
-        }
-        setShowCoinSpinner(false);
-        if(masterData && masterData.length > 0)
-        {
+        let tempData = [];
+        if(tokenResponse && tokenResponse.length > 0){
+            setMasterAvailableToken([]);
+            setAvailableToken([]);
+            setShowCoinSpinner(true);
+            setHasMoreData(false);
             if(tokenValue.length > 0){
-                masterData = masterData.filter(x => x.name?.toLowerCase()?.includes(tokenValue));
+                tempData = tokenResponse.filter(x => x.name?.toLowerCase()?.includes(tokenValue));
+            }else{
+                tempData = tokenResponse;
             }
-            setMasterAvailableToken(masterData);
-            setAvailableToken(masterData.slice(0,defaultListSize));
+            setMasterAvailableToken(tempData);
+            setAvailableToken(tempData.slice(0,defaultListSize));
             setHasMoreData(true);
+            setShowCoinSpinner(false);
         }
     }
 
@@ -115,7 +118,7 @@ export default function Tokenui(props: propsType) {
                                 <i className="fas fa-chevron-left"></i>
                             </div>
                             <div className="card-title">
-                                Exchange {props.dataSource == DataSource.From ? 'From' : 'To'}
+                                Exchange {props.dataSource == DataSource.From ? 'From' : 'To'} abc:{abc}{preDefineTokensContextData?.length}
                             </div>
                         </div>
 

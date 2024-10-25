@@ -3,19 +3,15 @@ import { useEffect, useState } from "react";
 import Exchangeui from "../exchangeui/page";
 import Tokenui from "../tokenui/page";
 import Chainui from "../chainui/page";
-import { ChainBase, Chains, PreDefinedTokensForChains, TokenBase, Tokens } from "@/shared/Models/Common.model";
+import { Chains, Tokens } from "@/shared/Models/Common.model";
 import { DataSource } from "@/shared/Enum/Common.enum";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import 'react-loading-skeleton/dist/skeleton.css'
-import { json } from "node:stream/consumers";
-import { PredifineTokensContext } from "@/shared/Context/CommonContext";
-import Pathshow from "../pathshow/page";
 import { useDispatch } from "react-redux";
 import { SetAllAvailableChainsA} from "@/app/redux-store/action/action-redux";
 
 type propsType = {
-    chains: Chains[],
-    preDefinedTokensForChains: PreDefinedTokensForChains[]
+    chains: Chains[]
 }
 export default function Swapui(props:propsType) {
 
@@ -29,7 +25,6 @@ export default function Swapui(props:propsType) {
     const [sourceTokenAmount, setSourceTokenAmount] = useState<number>(0);
     const [destToken, setDestToken] = useState<Tokens>(new Tokens());
     const [destTokenAmount, setDestTokenAmount] = useState<number>(0);
-    const preDefineData = props.preDefinedTokensForChains;
     let dispatch = useDispatch();
     
     let cryptoService = new CryptoService();
@@ -94,7 +89,6 @@ export default function Swapui(props:propsType) {
             <div className="exchange-wrapper">
                 <div className="container">
                     <div className="row justify-content-center">
-                        <PredifineTokensContext.Provider value={props.preDefinedTokensForChains}>
                             {showExchangeUI && 
                                 <Exchangeui openTokenUI={(dataSource: string) => 
                                         OpenTokenUI(dataSource)} 
@@ -121,7 +115,6 @@ export default function Swapui(props:propsType) {
                                     destChain={destChain} 
                                     dataSource={dataSource} 
                                     chains={props.chains} />}       
-                        </PredifineTokensContext.Provider>
                     </div>
                 </div>
             </div>

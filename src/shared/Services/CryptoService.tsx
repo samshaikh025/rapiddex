@@ -31,10 +31,22 @@ export class CryptoService {
         this.SetRangoCoins  = [];
         this.SetOwltoCoins = [];
         this.AvailableCoins = [];
-        this.SetLifiCoins = await this.GetCoinsForLifi(selectedChain);
+        
+        //this.SetLifiCoins = await this.GetCoinsForLifi(selectedChain);
         //this.SetDlnCoins = await this.GetCoinsForDln(selectedChain.chainId);
-        this.SetRangoCoins  = await this.GetCoinsForRango(selectedChain);
-        this.SetOwltoCoins = await this.GetCoinsForOwlto(selectedChain);
+        //this.SetRangoCoins  = await this.GetCoinsForRango(selectedChain);
+        //this.SetOwltoCoins = await this.GetCoinsForOwlto(selectedChain);
+
+        // Fetch all coins concurrently for better performance
+        const [lifiCoins, rangoCoins, owltoCoins] = await Promise.all([
+            this.GetCoinsForLifi(selectedChain),
+            this.GetCoinsForRango(selectedChain),
+            this.GetCoinsForOwlto(selectedChain)
+        ]);
+
+        this.SetLifiCoins = lifiCoins;
+        this.SetRangoCoins = rangoCoins;
+        this.SetOwltoCoins = owltoCoins;
 
         try
         {
@@ -116,7 +128,7 @@ export class CryptoService {
         }
 
         let chainList = await this.getAvailableChainList();
-        chainList?.map((chain)=>{
+        chainList?.forEach((chain)=>{
             let index = this.AvailableChains.findIndex(x => x.chainId == chain.chainId);
             if(index > -1){
                 this.AvailableChains[index].rpcUrl = chain.rpc;
@@ -263,6 +275,17 @@ export class CryptoService {
             //this.SetDlnChains = await this.GetDlnChains();
             this.SetRangoChains = await this.GetRangoChains();
             this.SetOwltoChains = await this.GetOwltoChains();
+
+            // Fetch all chains concurrently
+            const [lifiChains, rangoChains, owltoChains] = await Promise.all([
+                this.GetLifiChains(),
+                this.GetRangoChains(),
+                this.GetOwltoChains()
+            ]);
+
+            this.SetLifiChains = lifiChains;
+            this.SetRangoChains = rangoChains;
+            this.SetOwltoChains = owltoChains;
 
             this.SetLifiChains?.map((chain) => {
 

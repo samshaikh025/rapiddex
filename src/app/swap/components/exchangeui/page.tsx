@@ -14,8 +14,11 @@ import { mainnet, sepolia } from 'wagmi/chains';
 import { config } from '../../../wagmi/config';// Go up a level if needed
 import { Chain } from "wagmi/chains";
 import { TransactionService } from "@/shared/Services/TransactionService";
-import { parseEther } from 'viem'
+
 import BridgeView from "../bridge-view/page";
+import { parseEther } from 'viem';
+import { readContract, writeContract } from '@wagmi/core';
+import * as definedChains from "wagmi/chains";
 
 type propsType = {
     sourceChain: Chains,

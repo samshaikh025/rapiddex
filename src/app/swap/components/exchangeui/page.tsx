@@ -4,7 +4,7 @@ import { BridgeMessage, Chains, PathShowViewModel, RequestTransaction, Tokens } 
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useRef, useState } from "react";
-import { useAccount, useSwitchAccount, useSwitchChain, useSendTransaction, useConnections } from "wagmi";
+import { useAccount, useSwitchAccount, useSwitchChain, useSendTransaction, useConnections, useReadContract, useWriteContract } from "wagmi";
 import Pathshow from "../pathshow/page";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import Skeleton from "react-loading-skeleton";
@@ -14,7 +14,9 @@ import { mainnet, sepolia } from 'wagmi/chains';
 import { config } from '../../../wagmi/config';// Go up a level if needed
 import { Chain } from "wagmi/chains";
 import { TransactionService } from "@/shared/Services/TransactionService";
-import { parseEther } from 'viem'
+import { parseEther } from 'viem';
+import { readContract, writeContract } from '@wagmi/core';
+import * as definedChains from "wagmi/chains";
 
 type propsType = {
     sourceChain: Chains,
@@ -65,6 +67,22 @@ export default function Exchangeui(props: propsType) {
 
 
 
+    const getAllChains = (): Chain[] => {
+        return Object.values(definedChains).filter((chain) => chain.id !== undefined) as Chain[];
+    };
+
+    // Get all chains
+    const allChains = getAllChains();
+
+    // Ensure there's at least one chain
+    if (allChains.length === 0) {
+        throw new Error("No chains available");
+    }
+
+    // Type assertion to tuple
+    const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
+
+
     async function updateAmount(amount) {
         try {
             if (!utilityService.isNullOrEmpty(amount) && !isNaN(amount)) {
@@ -109,23 +127,94 @@ export default function Exchangeui(props: propsType) {
         setIsPathShow(status);
     }
 
+    async function getAllowance() {
+
+        const SPENDER_ADDRESS = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
+        const amountToSend = parseEther(sendAmount.toString());
+
+        if (account && account.address && account.address === walletData.address) {
+            // Token approval logic
+            const tokenAbi = [
+                {
+                    type: 'function',
+                    name: 'allowance',
+                    stateMutability: 'view',
+                    inputs: [
+                        { name: 'owner', type: 'address' },
+                        { name: 'spender', type: 'address' },
+                    ],
+                    outputs: [{ name: 'remaining', type: 'uint256' }],
+                },
+                {
+                    type: 'function',
+                    name: 'approve',
+                    stateMutability: 'nonpayable',
+                    inputs: [
+                        { name: 'spender', type: 'address' },
+                        { name: 'amount', type: 'uint256' },
+                    ],
+                    outputs: [{ name: 'success', type: 'bool' }],
+                },
+            ];
+
+            try {
+                // Check allowance
+                const allowance = await readContract(config, {
+                    address: props.sourceToken.address as `0x${string}`,
+                    abi: tokenAbi,
+                    functionName: 'allowance',
+                    args: [walletData.address, SPENDER_ADDRESS],
+                });
+
+                // If allowance is insufficient, request approval
+                if (Number(allowance) <= Number(amountToSend)) {
+                    console.log("Requesting token approval...");
+
+                    const a = await writeContract(config, {
+                        address: props.sourceToken.address as `0x${string}`,
+                        abi: tokenAbi,
+                        functionName: 'approve',
+                        args: [SPENDER_ADDRESS, amountToSend],
+                        chain: chainsTuple.find(a => a.id == props.sourceChain.chainId), // Add chain
+                        account: walletData.address as `0x${string}`, // Add account
+                    });
+
+                    // Wait for approval transaction
+
+
+                    console.log("Approval successful:", a);
+                } else {
+                    console.log("Token already approved");
+                }
+
+                // Proceed with the main transaction
+                const tx = await sendTransactionAsync({
+                    to: SPENDER_ADDRESS,
+                    value: amountToSend,
+                });
+
+                console.log('Transaction successful:', tx);
+                alert('Transaction sent successfully!');
+
+            } catch (error) {
+                console.error('Transaction error:', error);
+                alert('Transaction failed. Please try again.');
+            }
 
 
 
+
+        }
+
+
+    }
 
     async function exchange() {
         if (!utilityService.isNullOrEmpty(walletData.address)) {
             let workingRpc = await utilityService.setupProviderForChain(props.sourceChain.chainId, props.sourceChain.rpcUrl);
 
 
-
             if (workingRpc != undefined && workingRpc != null) {
-
-
-
-
-
-
 
                 console.log(error);
 
@@ -170,12 +259,16 @@ export default function Exchangeui(props: propsType) {
 
                     let requestTransaction = new RequestTransaction();
 
-                    requestTransaction.to = "0xA6f0B82965c17b34276acFeaE26D3DDDB48D0d23";
+                    requestTransaction.to = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
 
                     requestTransaction.value = sendAmount;
 
                     if (account && account.address && account.address == walletData.address) {
                         // start transaction
+
+                        // check token allowance
+
+
 
                         try {
                             const data = await sendTransactionAsync({
@@ -197,11 +290,7 @@ export default function Exchangeui(props: propsType) {
 
             }
 
-
-
         }
-
-
     }
 
     return (

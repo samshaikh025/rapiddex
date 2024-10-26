@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { Keys, SwapProvider } from "../Enum/Common.enum";
 import { Chains, Tokens, DLNChainResponse, ResponseMobulaPricing, PathShowViewModel } from '../Models/Common.model';
 import { RequestLifiPath, ResponseLifiPath } from "../Models/Lifi";
-import { RequestOwltoPath, ResponseOwltoPath } from "../Models/Owlto";
+import { RequestOwltoDTC, RequestOwltoPath, ResponseOwltoDTC, ResponseOwltoPath } from "../Models/Owlto";
 import { RequestRangoPath, ResponseRangoPath } from "../Models/Rango";
 import { SharedService } from "./SharedService";
 import { UtilityService } from "./UtilityService";
@@ -306,19 +306,24 @@ export class CryptoService {
 
 
 
-            // this.SetOwltoChains?.map((chain) => {
-            //     if (this.AvailableChains.filter(x => x.chainId == chain.chainId).length == 0) {
-            //         let obj = new Chains();
-            //         obj.chainId = chain.chainId;
-            //         obj.chainName = chain.aliasName;
-            //         obj.lifiName = '';
-            //         obj.rangoName = '';
-            //         obj.logoURI = chain.icon;
+            this.SetOwltoChains?.map((chain) => {
+                let includeLength = this.AvailableChains.filter(x => x.chainId == parseInt(chain.chainId)).length;
+                if (this.AvailableChains.filter(x => x.chainId == chain.chainId).length == 0) {
+                    let obj = new Chains();
+                    obj.chainId = chain.chainId;
+                    obj.chainName = chain.aliasName;
+                    obj.lifiName = '';
+                    obj.rangoName = '';
+                    obj.logoURI = chain.icon;
 
 
-            //         this.AvailableChains.push(obj);
-            //     }
-            // });
+                    this.AvailableChains.push(obj);
+                }
+                else if (includeLength == 1) {
+                    let index = this.AvailableChains?.findIndex(x => x.chainId == parseInt(chain.chainId));
+                    this.AvailableChains[index].owltoName = chain.name;
+                }
+            });
         }
 
         //let res = await this.SharedService.setIndexDbItem(Keys.All_AVAILABLE_CHAINS, this.AvailableChains)
@@ -627,11 +632,61 @@ export class CryptoService {
         }
     }
 
-    async getOwltoPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseRangoPath | null> {
+    async getOwltoPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseOwltoPath | null> {
         try {
-            const requestOwltoPath = await this.createOwltoPathRequest(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, order);
-            const params = this.createOwltoUrlParams(requestOwltoPath);
-            const url = `lp-info?${params.toString()}`;
+
+            if (sourceToken.symbol == "ETH" && destToken.symbol == "ETH") {
+
+
+
+                const requestOwltoPath = await this.createOwltoPathRequest(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, order);
+                const params = this.createOwltoUrlParams(requestOwltoPath);
+                const url = `lp-info?${params.toString()}`;
+
+                const payLoad = {
+                    apiType: "GET",
+                    apiUrl: url,
+                    apiData: null,
+                    apiProvider: SwapProvider.OWLTO
+                };
+
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+                const response = await fetch("http://localhost:3000/api/common", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payLoad),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeout);
+
+                if (!response.ok) {
+                    throw new Error(`Owlto API error: ${response.status} ${response.statusText}`);
+                }
+
+                const jsonResponse = await response.json();
+                if (!jsonResponse?.Data) {
+                    throw new Error('Invalid response structure from Owlto API');
+                }
+
+                return jsonResponse.Data;
+            }
+            else {
+                return null;
+            }
+        } catch (error) {
+            console.error('Error in getOwltoPath:', error);
+            return null;
+        }
+    }
+
+    async getOwltoDTC(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseOwltoDTC | null> {
+        try {
+            const requestOwltoDTC = await this.createOwltoDTCRequest(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, order);
+            const params = this.createOwltoDTCUrlParams(requestOwltoDTC);
+            const url = `dynamic-dtc?${params.toString()}`;
 
             const payLoad = {
                 apiType: "GET",
@@ -658,12 +713,12 @@ export class CryptoService {
 
             const jsonResponse = await response.json();
             if (!jsonResponse?.Data) {
-                throw new Error('Invalid response structure from Rango API');
+                throw new Error('Invalid response structure from Owlto API');
             }
 
             return jsonResponse.Data;
         } catch (error) {
-            console.error('Error in getOwltoPath:', error);
+            console.error('Error in getOwltoDTC:', error);
             return null;
         }
     }
@@ -750,6 +805,20 @@ export class CryptoService {
         return requestOwltoPath;
     }
 
+    async createOwltoDTCRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<RequestOwltoDTC> {
+        const requestOwltoDTC = new RequestOwltoDTC();
+
+        requestOwltoDTC.from = sourceChain.owltoName;
+        requestOwltoDTC.to = destChain.owltoName;
+        requestOwltoDTC.amount = amount;
+
+        requestOwltoDTC.token = sourceToken.symbol;
+
+
+
+        return requestOwltoDTC;
+    }
+
     createLifiUrlParams(requestLifiPath: RequestLifiPath): URLSearchParams {
         return new URLSearchParams({
             fromChain: requestLifiPath.fromChain,
@@ -777,6 +846,16 @@ export class CryptoService {
             from_chainid: requestOwltoPath.from_chainid.toString(),
             to_chainid: requestOwltoPath.to_chainid.toString(),
             user: requestOwltoPath.user
+
+        });
+    }
+
+    createOwltoDTCUrlParams(requestOwltoDTC: RequestOwltoDTC): URLSearchParams {
+        return new URLSearchParams({
+            token: requestOwltoDTC.token,
+            from: requestOwltoDTC.from.toString(),
+            to: requestOwltoDTC.to.toString(),
+            amount: requestOwltoDTC.amount.toString()
 
         });
     }
@@ -833,11 +912,14 @@ export class CryptoService {
 
     async createOwltoPathShowViewModel(responseOwltoPath: ResponseOwltoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
         try {
+            debugger;
 
 
             const pathShowViewModel = new PathShowViewModel();
             pathShowViewModel.estTime = "less than 1 min";
-            pathShowViewModel.gasafee = (Number(responseOwltoPath.msg.dtc) + Number(amount) * Number(responseOwltoPath.msg.bridge_fee_ratio)) + " " + sourceToken.symbol;
+            let responseOwltoDTC = new ResponseOwltoDTC()
+            responseOwltoDTC = await this.getOwltoDTC(sourceChain, destChain, sourceToken, destToken, amount, "", "FASTEST");
+            pathShowViewModel.gasafee = (Number(responseOwltoDTC.dtc) + Number(responseOwltoDTC.bridgefee)) + " " + sourceToken.symbol;
             pathShowViewModel.fromChain = sourceChain.chainName;
             pathShowViewModel.fromToken = sourceToken.symbol;
             pathShowViewModel.fromAmount = amount.toString();

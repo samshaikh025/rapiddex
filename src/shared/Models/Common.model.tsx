@@ -15,6 +15,7 @@ export class Chains {
   chainName: string = '';
   lifiName: string = '';
   rangoName: string = '';
+  owltoName: string = '';
   logoURI: string = '';
   rpcUrl?: string[] = [];
 }

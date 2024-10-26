@@ -199,6 +199,44 @@ export class UtilityService {
     Translate(language: string, key: string) {
         return (!this.isNullOrEmpty(language) && !this.isNullOrEmpty(key) && i18n) ? i18n[language][key] : '';
     }
+
+    async getTokenAllowance(tokenIsNative, token: Tokens, userAddress: string, approvalAddress: string, providerUrl: string): Promise<string> {
+        try {
+            // Create a provider using the passed provider URL
+            const provider = new ethers.JsonRpcProvider(providerUrl);
+
+            // Define the minimal ABI for balance and decimals
+            const tokenABI = [
+                "function allowance(address owner, address spender) view returns (uint256)",
+
+            ];
+
+
+
+
+            // Define the token contract address
+            const tokenAddress = token.address;
+
+            // Instantiate the token contract
+            const tokenContract = new ethers.Contract(tokenAddress, tokenABI, provider);
+
+            // Define the addresses
+            const ownerAddress = userAddress;  // The token holder
+            const spenderAddress = approvalAddress;  // The address you want to check allowance for
+
+            const allowance = await tokenContract.allowance(ownerAddress, spenderAddress);
+
+            console.log(`Allowance: ${ethers.formatUnits(allowance, 18)} tokens`);
+
+
+
+
+
+        } catch (error) {
+            console.error('Error fetching balance:', error);
+            return '0';
+        }
+    }
 }
 
 

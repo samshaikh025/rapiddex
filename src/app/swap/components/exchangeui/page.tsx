@@ -213,7 +213,7 @@ export default function Exchangeui(props: propsType) {
 
     async function exchange() {
         setStartBridging(true);
-        return;
+
         if (!utilityService.isNullOrEmpty(walletData.address)) {
             let workingRpc = await utilityService.setupProviderForChain(props.sourceChain.chainId, props.sourceChain.rpcUrl);
 
@@ -242,7 +242,7 @@ export default function Exchangeui(props: propsType) {
                     console.log("No Need to switch chain")
                 }
 
-                let checkNativeCoin = await utilityService.checkCoinNative(props.sourceChain, props.sourceToken)
+                let checkNativeCoin = await utilityService.checkCoinNative(props.sourceChain, props.sourceToken);
 
                 // check balance
 
@@ -267,28 +267,13 @@ export default function Exchangeui(props: propsType) {
 
                     requestTransaction.value = sendAmount;
 
-                    if (account && account.address && account.address == walletData.address) {
-                        // start transaction
-
-                        // check token allowance
 
 
+                    setStartBridging(true);
 
-                        try {
-                            const data = await sendTransactionAsync({
-                                to: requestTransaction.to,
-                                value: parseEther(requestTransaction.value.toString()),
-                            })
-                            console.log('Transaction successful:', data)
-                            alert('Transaction sent successfully!')
-                        } catch (error) {
-                            console.error('Transaction error:', error)
-                            alert('Transaction failed. Please try again.')
-                        }
+                    getAllowance();
 
 
-
-                    }
 
                 }
 
@@ -296,6 +281,7 @@ export default function Exchangeui(props: propsType) {
 
         }
     }
+
 
     function closeBridBridgeView() {
         setStartBridging(false);

@@ -867,7 +867,10 @@ export class CryptoService {
 
             const pathShowViewModel = new PathShowViewModel();
             pathShowViewModel.estTime = await this.utilityService.formatDuration(lifiPath.estimate.executionDuration);
-            pathShowViewModel.gasafee = lifiPath.estimate.feeCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0).toFixed(2) + " USD";
+            pathShowViewModel.gasafee = (
+                lifiPath.estimate.feeCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0) //+
+                //lifiPath.estimate.gasCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0)
+            ).toFixed(2) + " USD";
             pathShowViewModel.fromChain = sourceChain.chainName;
             pathShowViewModel.fromToken = sourceToken.symbol;
             pathShowViewModel.fromAmount = amount.toString();
@@ -891,7 +894,8 @@ export class CryptoService {
 
             const pathShowViewModel = new PathShowViewModel();
             pathShowViewModel.estTime = await this.utilityService.formatDuration(responseRangoPath.route.estimatedTimeInSeconds);
-            pathShowViewModel.gasafee = responseRangoPath.route.feeUsd + " USD";
+            pathShowViewModel.gasafee = responseRangoPath.route.feeUsd.toFixed(2) + " USD";
+
             pathShowViewModel.fromChain = sourceChain.chainName;
             pathShowViewModel.fromToken = sourceToken.symbol;
             pathShowViewModel.fromAmount = amount.toString();

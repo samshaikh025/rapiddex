@@ -130,9 +130,9 @@ export default function Exchangeui(props: propsType) {
         setIsPathShow(status);
     }
 
-    useEffect(()=>{
+    useEffect(() => {
         let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
-        if(activeTransactiondata){
+        if (activeTransactiondata) {
             setShowSubBridgeView(true);
             dispatch(SetActiveTransactionA(activeTransactiondata));
         }
@@ -271,7 +271,7 @@ export default function Exchangeui(props: propsType) {
 
                     let requestTransaction = new RequestTransaction();
 
-                    requestTransaction.to = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
+                    requestTransaction.to = selectedPath.approvalAddress;
 
                     requestTransaction.value = sendAmount;
 
@@ -281,10 +281,10 @@ export default function Exchangeui(props: propsType) {
                     transactoinObj.transactionGuid = '';
                     transactoinObj.walletAddress = walletData.address;
                     transactoinObj.amount = requestTransaction.value;
-                    transactoinObj.approvalAddress = '';
+                    transactoinObj.approvalAddress = requestTransaction.to;
                     transactoinObj.transactionHash = '';
                     transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
-                    transactoinObj.quoteDetail = '';
+                    transactoinObj.quoteDetail = JSON.stringify(selectedPath.entire);
                     transactoinObj.sourceChainId = props.sourceChain.chainId;
                     transactoinObj.sourceChainName = props.sourceChain.chainName;
                     transactoinObj.sourceChainLogoUri = props.sourceChain.logoURI;
@@ -299,7 +299,7 @@ export default function Exchangeui(props: propsType) {
                     transactoinObj.destinationTokenAddress = props.destToken.address;
                     transactoinObj.destinationTokenSymbol = props.destToken.symbol;
                     transactoinObj.destinationTokenLogoUri = props.destToken.logoURI;
-                    
+
                     //store active transaction in local storage and use when realod page
                     sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, transactoinObj);
 
@@ -323,7 +323,7 @@ export default function Exchangeui(props: propsType) {
         setSendAmount(null);
         setequAmountUSD(null);
         let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
-        if(activeTransactiondata){
+        if (activeTransactiondata) {
             setShowSubBridgeView(true);
         }
     }
@@ -334,10 +334,10 @@ export default function Exchangeui(props: propsType) {
                 !startBridging &&
                 <>
                     {
-                       showSubBridgeView && 
-                       <>
-                            <SubBridgeView openBridgeView={()=> setStartBridging(true)}></SubBridgeView>
-                       </>
+                        showSubBridgeView &&
+                        <>
+                            <SubBridgeView openBridgeView={() => setStartBridging(true)}></SubBridgeView>
+                        </>
                     }
                     <div className="row">
                         <div className="col-5">

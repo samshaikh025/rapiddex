@@ -237,47 +237,6 @@ export class UtilityService {
             return '0';
         }
     }
-
-    // async getNetworkCost(workingRPC: string, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amountToSend: number, contractAddressToSend: string, walletAddress: string) {
-
-    //     const provider = new ethers.JsonRpcProvider("https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID");
-    //     const contractAddress = contractAddressToSend; // Replace with the actual contract address
-    //     const recipientAddress = walletAddress; // Replace with the recipient address
-    //     const amount = ethers.parseUnits(amountToSend.toString(), sourceToken.decimal);
-
-    //     const exampleABI = [
-    //         {
-    //             "inputs": [
-    //                 {
-    //                     "internalType": "uint256",
-    //                     "name": "amount",
-    //                     "type": "uint256"
-    //                 }
-    //             ],
-    //             "name": "transfer",
-    //             "outputs": [
-    //                 {
-    //                     "internalType": "bool",
-    //                     "name": "",
-    //                     "type": "bool"
-    //                 }
-    //             ],
-    //             "stateMutability": "nonpayable",
-    //             "type": "function"
-    //         }
-    //     ];
-
-    //     const erc20Contract = new ethers.Contract(contractAddress, exampleABI, provider);
-
-    //     const gasEstimate = await erc20Contract.estimateGas(
-    //         ...methodParams,
-    //         { from: fromAddress }
-    //     );
-
-    //     const feeData = await provider.getFeeData();
-
-
-    // }
 }
 
 

@@ -47,6 +47,10 @@ export class PathShowViewModel {
   receivedAmount: string;
   aggregator: string;
   aggregatorOrderType: string;
+  relayerfeeusd: number;
+  networkcostusd: number;
+  approvalAddress: string;
+  entire: any;
 }
 
 export class ResponseMobulaPricing {

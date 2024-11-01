@@ -595,7 +595,7 @@ export class CryptoService {
         try {
             const requestRangoPath = await this.createRangoPathRequest(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, order);
             const params = this.createRangoUrlParams(requestRangoPath);
-            const url = `basic/quote?${params.toString()}`;
+            const url = `basic/swap?${params.toString()}`;
 
             const payLoad = {
                 apiType: "GET",
@@ -787,6 +787,9 @@ export class CryptoService {
         requestRangoPath.to = destChain.rangoName.toString() + "." + tokento;
 
         requestRangoPath.amount = Number(await this.utilityService.convertToDecimals(amount, sourceToken.decimal));
+        requestRangoPath.fromAddress = walletAddress;
+        requestRangoPath.toAddress = walletAddress;
+        requestRangoPath.slippage = 0.5;
 
         return requestRangoPath;
     }
@@ -836,7 +839,10 @@ export class CryptoService {
         return new URLSearchParams({
             from: requestRangoPath.from,
             to: requestRangoPath.to,
-            amount: requestRangoPath.amount.toString()
+            amount: requestRangoPath.amount.toString(),
+            fromAddress: requestRangoPath.fromAddress,
+            toAddress: requestRangoPath.toAddress,
+            slippage: requestRangoPath.slippage.toString()
         });
     }
 
@@ -867,10 +873,11 @@ export class CryptoService {
 
             const pathShowViewModel = new PathShowViewModel();
             pathShowViewModel.estTime = await this.utilityService.formatDuration(lifiPath.estimate.executionDuration);
-            pathShowViewModel.gasafee = (
-                lifiPath.estimate.feeCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0) //+
-                //lifiPath.estimate.gasCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0)
-            ).toFixed(2) + " USD";
+
+
+            pathShowViewModel.relayerfeeusd = lifiPath.estimate.feeCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0);
+            pathShowViewModel.networkcostusd = lifiPath.estimate.gasCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0);
+            pathShowViewModel.gasafee = (pathShowViewModel.relayerfeeusd + pathShowViewModel.networkcostusd).toFixed(2) + "USD";
             pathShowViewModel.fromChain = sourceChain.chainName;
             pathShowViewModel.fromToken = sourceToken.symbol;
             pathShowViewModel.fromAmount = amount.toString();
@@ -880,6 +887,8 @@ export class CryptoService {
             pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmountMin, lifiPath.action.toToken.decimals)).toString();
             pathShowViewModel.aggregator = "lifi";
             pathShowViewModel.aggregatorOrderType = orderType;
+            pathShowViewModel.approvalAddress = lifiPath.estimate.approvalAddress;
+            pathShowViewModel.entire = lifiPath;
             return pathShowViewModel;
         }
         catch (error) {
@@ -905,6 +914,8 @@ export class CryptoService {
             pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(responseRangoPath.route.outputAmountMin.toString(), destToken.decimal)).toString();;
             pathShowViewModel.aggregator = "rango";
             pathShowViewModel.aggregatorOrderType = orderType;
+            pathShowViewModel.approvalAddress = responseRangoPath.tx?.txTo;
+            pathShowViewModel.entire = responseRangoPath;
             return pathShowViewModel;
         }
         catch (error) {
@@ -916,14 +927,16 @@ export class CryptoService {
 
     async createOwltoPathShowViewModel(responseOwltoPath: ResponseOwltoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
         try {
-            debugger;
+
 
 
             const pathShowViewModel = new PathShowViewModel();
             pathShowViewModel.estTime = "less than 1 min";
             let responseOwltoDTC = new ResponseOwltoDTC()
             responseOwltoDTC = await this.getOwltoDTC(sourceChain, destChain, sourceToken, destToken, amount, "", "FASTEST");
-            pathShowViewModel.gasafee = (Number(responseOwltoDTC.dtc) + Number(responseOwltoDTC.bridgefee)) + " " + sourceToken.symbol;
+            let price = (await this.GetTokenData(sourceToken)).data.price;
+            let gasafee = (Number(responseOwltoDTC.dtc) + Number(responseOwltoDTC.bridgefee)) * price;
+            pathShowViewModel.gasafee = gasafee.toFixed(2) + "USD";
             pathShowViewModel.fromChain = sourceChain.chainName;
             pathShowViewModel.fromToken = sourceToken.symbol;
             pathShowViewModel.fromAmount = amount.toString();
@@ -933,6 +946,8 @@ export class CryptoService {
             pathShowViewModel.receivedAmount = (amount).toString();;
             pathShowViewModel.aggregator = "Owlto";
             pathShowViewModel.aggregatorOrderType = orderType;
+            pathShowViewModel.approvalAddress = responseOwltoPath.msg.maker_address;
+            pathShowViewModel.entire = responseOwltoPath;
             return pathShowViewModel;
         }
         catch (error) {

@@ -1,5 +1,5 @@
 import { ActionType } from "@/shared/Enum/Common.enum";
-import { Chains, PreDefinedTokensForChains, WalletConnectData } from "@/shared/Models/Common.model";
+import { Chains, PreDefinedTokensForChains, TransactionRequestoDto, WalletConnectData } from "@/shared/Models/Common.model";
 
 export function OpenWalletModalA(data: boolean){
     return {
@@ -33,5 +33,26 @@ export function SetPredineTokensForChainA(obj: PreDefinedTokensForChains){
     return {
         type: ActionType.PreDefineTokensForChain,
         data: obj
+    }
+}
+
+export function SetActiveTransactionA(obj: TransactionRequestoDto){
+    return {
+        type: ActionType.ActiveTransaction,
+        data: obj
+    }
+}
+
+export function UpdateTransactionGuid(guid: string){
+    return {
+        type: ActionType.UpdateTransactionGuid,
+        data: guid
+    }
+}
+
+export function UpdateTransactionStatusA(status: number){
+    return {
+        type: ActionType.UpdateTransactionStatus,
+        data: status
     }
 }

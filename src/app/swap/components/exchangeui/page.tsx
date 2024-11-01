@@ -1,6 +1,6 @@
 "use client"
-import { DataSource, Keys } from "@/shared/Enum/Common.enum";
-import { BridgeMessage, Chains, PathShowViewModel, RequestTransaction, Tokens } from "@/shared/Models/Common.model";
+import { DataSource, Keys, TransactionStatus } from "@/shared/Enum/Common.enum";
+import { BridgeMessage, Chains, PathShowViewModel, RequestTransaction, Tokens, TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useRef, useState } from "react";
@@ -9,7 +9,7 @@ import Pathshow from "../pathshow/page";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import Skeleton from "react-loading-skeleton";
 import { useDispatch, useSelector } from "react-redux";
-import { OpenWalletModalA } from "@/app/redux-store/action/action-redux";
+import { OpenWalletModalA, SetActiveTransactionA, UpdateTransactionGuid } from "@/app/redux-store/action/action-redux";
 import { mainnet, sepolia } from 'wagmi/chains';
 import { config } from '../../../wagmi/config';// Go up a level if needed
 import { Chain } from "wagmi/chains";
@@ -19,6 +19,8 @@ import BridgeView from "../bridge-view/page";
 import { parseEther } from 'viem';
 import { readContract, writeContract } from '@wagmi/core';
 import * as definedChains from "wagmi/chains";
+import { CryptoService } from "@/shared/Services/CryptoService";
+import SubBridgeView from "../sub-bridge-view/page";
 
 type propsType = {
     sourceChain: Chains,
@@ -38,7 +40,6 @@ export default function Exchangeui(props: propsType) {
     let sharedService = SharedService.getSharedServiceInstance();
     let walletData = useSelector((state: any) => state.WalletData);
     let utilityService = new UtilityService();
-    let transactionService = new TransactionService();
     let [totalAvailablePath, setTotalAvailablePath] = useState<number>(0);
     let [isPathShow, setIsPathShow] = useState<boolean>(false);
     let [selectedPath, setSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
@@ -46,6 +47,7 @@ export default function Exchangeui(props: propsType) {
     let dispatch = useDispatch();
     const { open } = useWeb3Modal();
     let account = useAccount();
+    let activeTransactionData = useSelector((state: any) => state.ActiveTransactionData);
     const {
         switchChain,
         error,
@@ -66,8 +68,7 @@ export default function Exchangeui(props: propsType) {
     let [isBridgeMessage, setIsBridgeMessage] = useState<string>('');
     const { sendTransactionAsync, isPending: isTransactionPending, isError: isTransactionError } = useSendTransaction();
     let [startBridging, setStartBridging] = useState<boolean>(false);
-
-
+    let [showSubBridgeView, setShowSubBridgeView] = useState<boolean>(false);
 
     const getAllChains = (): Chain[] => {
         return Object.values(definedChains).filter((chain) => chain.id !== undefined) as Chain[];
@@ -129,6 +130,13 @@ export default function Exchangeui(props: propsType) {
         setIsPathShow(status);
     }
 
+    useEffect(()=>{
+        let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
+        if(activeTransactiondata){
+            setShowSubBridgeView(true);
+            dispatch(SetActiveTransactionA(activeTransactiondata));
+        }
+    }, [])
     async function getAllowance() {
 
         const SPENDER_ADDRESS = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
@@ -212,7 +220,7 @@ export default function Exchangeui(props: propsType) {
     }
 
     async function exchange() {
-        setStartBridging(true);
+        //setStartBridging(true);
 
         if (!utilityService.isNullOrEmpty(walletData.address)) {
             let workingRpc = await utilityService.setupProviderForChain(props.sourceChain.chainId, props.sourceChain.rpcUrl);
@@ -268,10 +276,37 @@ export default function Exchangeui(props: propsType) {
                     requestTransaction.value = sendAmount;
 
 
+                    let transactoinObj = new TransactionRequestoDto();
+                    transactoinObj.transactionId = 0;
+                    transactoinObj.transactionGuid = '';
+                    transactoinObj.walletAddress = walletData.address;
+                    transactoinObj.amount = requestTransaction.value;
+                    transactoinObj.approvalAddress = '';
+                    transactoinObj.transactionHash = '';
+                    transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
+                    transactoinObj.quoteDetail = '';
+                    transactoinObj.sourceChainId = props.sourceChain.chainId;
+                    transactoinObj.sourceChainName = props.sourceChain.chainName;
+                    transactoinObj.sourceChainLogoUri = props.sourceChain.logoURI;
+                    transactoinObj.destinationChainId = props.destChain.chainId;
+                    transactoinObj.destinationChainName = props.destChain.chainName;
+                    transactoinObj.destinationChainLogoUri = props.destChain.logoURI;
+                    transactoinObj.sourceTokenName = props.sourceToken.name;
+                    transactoinObj.sourceTokenAddress = props.sourceToken.address;
+                    transactoinObj.sourceTokenSymbol = props.sourceToken.symbol;
+                    transactoinObj.sourceTokenLogoUri = props.sourceToken.logoURI
+                    transactoinObj.destinationTokenName = props.destToken.name;
+                    transactoinObj.destinationTokenAddress = props.destToken.address;
+                    transactoinObj.destinationTokenSymbol = props.destToken.symbol;
+                    transactoinObj.destinationTokenLogoUri = props.destToken.logoURI;
+                    
+                    //store active transaction in local storage and use when realod page
+                    sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, transactoinObj);
 
+                    dispatch(SetActiveTransactionA(transactoinObj));
+                    //addTransactionLog(transactoinObj);
                     setStartBridging(true);
-
-                    getAllowance();
+                    //getAllowance();
 
 
 
@@ -287,12 +322,28 @@ export default function Exchangeui(props: propsType) {
         setStartBridging(false);
         setSendAmount(null);
         setequAmountUSD(null);
+        let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
+        if(activeTransactiondata){
+            setShowSubBridgeView(true);
+        }
     }
+
     return (
         <>
             {
                 !startBridging &&
                 <>
+                    {
+                       showSubBridgeView && 
+                       <>
+                            <SubBridgeView openBridgeView={()=> setStartBridging(true)}></SubBridgeView>
+                       </>
+                    }
+                    <div className="row">
+                        <div className="col-5">
+
+                        </div>
+                    </div>
                     <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
                         <div className="card">
                             <div className="p-24">
@@ -447,7 +498,7 @@ export default function Exchangeui(props: propsType) {
                                 {
                                     !utilityService.isNullOrEmpty(walletData.address) &&
                                     <>
-                                        <button className="btn primary-btn w-100 mt-3" onClick={() => exchange()}>
+                                        <button className="btn primary-btn w-100 mt-3" onClick={() => exchange()} disabled={sendAmount == null}>
                                             Exchange
                                         </button>
                                     </>

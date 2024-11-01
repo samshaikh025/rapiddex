@@ -1,12 +1,13 @@
 import { combineReducers } from "redux";
-import { AvailableChains, OpenWalletModalStatus, PreDefinedTokensForChainsData, SelectedLanguage, WalletData } from "./reducer-redux";
+import { ActiveTransactionData, AvailableChains, OpenWalletModalStatus, PreDefinedTokensForChainsData, SelectedLanguage, WalletData } from "./reducer-redux";
 
 const rootReducer = combineReducers({
     OpenWalletModalStatus,
     WalletData,
     AvailableChains,
     SelectedLanguage,
-    PreDefinedTokensForChainsData
+    PreDefinedTokensForChainsData,
+    ActiveTransactionData
 });
 
 export default rootReducer;

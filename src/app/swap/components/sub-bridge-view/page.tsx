@@ -1,4 +1,27 @@
-export default function SubBridgeView() {
+import { TransactionStatus } from "@/shared/Enum/Common.enum";
+import { UtilityService } from "@/shared/Services/UtilityService";
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
+type propsType = {
+    openBridgeView: () => void;
+}
+export default function SubBridgeView(props: propsType) {
+    
+
+    let activeTransactionData = useSelector((state: any) => state.ActiveTransactionData);
+    let utilityService = new UtilityService();
+
+    useEffect(()=>{
+        checkTransactionStatus();
+    }, [])
+
+    function checkTransactionStatus()
+    {
+        if(!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING){
+            // set interval to check status
+        }
+    }
+
     return (
         <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
             <div className="card">
@@ -8,22 +31,21 @@ export default function SubBridgeView() {
                             <i className="fas fa-chevron-left"></i>
                         </div>
                         <div className="card-title">
-                            Transaction Details
+                            Transaction Is
+                            {
+                               (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE 
+                                || (utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING)) &&
+                                <><span><a href="" onClick={()=>props.openBridgeView()}>Incomplete</a></span></>
+                            }
+                            {
+                               (!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING) &&
+                                <><span><a href=""></a>Pending</span></>
+                            }
                         </div>
                         <div className="card-action-wrapper">
                             <i className="fas fa-cog cursor-pointer"></i>
                         </div>
                     </div>
-
-                    <div className="inner-card w-100 py-2 px-3 mt-3">
-                        <label className="mb-2 fw-600">Bridge</label>
-                        <div className="">
-                            <div className="m-5 text-center">Chain Switch Successfully</div>
-                            <div className="m-5 text-center">Setting Token Allowance</div>
-                            <div className="m-5 text-center">Transaction Status</div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
         </div>

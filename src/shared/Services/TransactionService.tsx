@@ -1,59 +1,35 @@
-import { ethers } from 'ethers';
+import { SwapProvider } from "../Enum/Common.enum";
+import { OperationResult, TransactionRequestoDto } from "../Models/Common.model";
 
-import { BigNumberish } from 'ethers';
-//import { Chain } from 'viem';
-import { Chains, RequestTransaction, ResponseTransaction, TokenBase, Tokens } from '../Models/Common.model';
-import type { Chain } from "wagmi/chains"; // Import Chain type
-import * as definedChains from "wagmi/chains";
-import { i18n } from '../Const/i18n';
-import { JsonRpcProvider } from 'ethers/providers';
 
 
 export class TransactionService {
-
-
-
-
-    async sendTransaction(
-        requestTransaction: RequestTransaction, workingRPC: string
-
-    ): Promise<ResponseTransaction> {
-        try {
-            // Initial validation and preparation
-
-
-            const provider = new JsonRpcProvider(workingRPC);
-
-            const signer = await provider.getSigner(); // Get the signer from the provider
-
-
-
-
-
-            // Create transaction object
-            const transaction = {
-                to: requestTransaction.to,
-                value: ethers.parseEther(requestTransaction.value.toString()),
-
-            };
-
-            // Send transaction
-            const tx = await signer.sendTransaction(transaction);
-
-            // Wait for confirmation
-            const receipt = await tx.wait();
-
-            return {
-                success: true,
-                hash: tx.hash,
-                receipt,
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: error.message,
-            };
+    async AddTransactionLog(input: TransactionRequestoDto){
+        let loggedResult = new OperationResult();
+        let payLoad = {
+            apiType : 'POST',
+            apiUrl : 'Crypto/AddTransaction',
+            apiData : input,
+            apiProvider: SwapProvider.DOTNET
         }
+        try{
+            let apiResult = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+    
+            });
+            if(apiResult.status == 200){
+                let data = await apiResult.json();
+                loggedResult = data?.Data;
+            }
+        }catch(error){
+            console.log(error);
+        }
+        
+        return loggedResult; 
     }
 
 }

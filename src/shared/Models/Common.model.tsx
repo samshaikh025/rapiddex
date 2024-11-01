@@ -148,3 +148,28 @@ export class ResponseTransaction {
 
 }
 
+export class TransactionRequestoDto{
+  transactionId : number = 0;
+  transactionGuid: string = '';
+  walletAddress : string = '';
+  amount : number = 0;
+  approvalAddress : string = '';
+  transactionHash : string = '';
+  transactionStatus : number  = 0;
+  quoteDetail : string = '';
+  sourceChainId : number = 0;
+  sourceChainName : string = '';
+  sourceChainLogoUri : string = '';
+  destinationChainId : number = 0;
+  destinationChainName : string = '';
+  destinationChainLogoUri : string = '';
+  sourceTokenName : string = '';
+  sourceTokenAddress : string = '';
+  sourceTokenSymbol : string = '';
+  sourceTokenLogoUri : string = '';
+  destinationTokenName : string = '';
+  destinationTokenAddress : string = '';
+  destinationTokenSymbol : string = '';
+  destinationTokenLogoUri : string = '';
+}
+

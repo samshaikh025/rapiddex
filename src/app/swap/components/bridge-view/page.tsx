@@ -11,9 +11,7 @@ import { SetActiveTransactionA, UpdateTransactionStatusA } from "@/app/redux-sto
 import { UtilityService } from "@/shared/Services/UtilityService";
 import { TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { TransactionService } from "@/shared/Services/TransactionService";
-import { ActiveTransactionData } from "@/app/redux-store/reducer/reducer-redux";
 import { SharedService } from "@/shared/Services/SharedService";
-import { useAppDispatch, useAppSelector } from "@/app/redux-store/hook/hook";
 
 type propsType = {
     closeBridgeView: () => void;
@@ -21,8 +19,6 @@ type propsType = {
 export default function BridgeView(props: propsType) {
     let activeTransactionData = useSelector((state: any) => state.ActiveTransactionData);
     let dispatch = useDispatch();
-    let activeTransactionDataTyped = useAppSelector((state: any) => state.ActiveTransactionData);
-    let dispatchTyped = useAppDispatch();
     let utilityService = new UtilityService();
     let transactionService = new TransactionService();
     let sharedService = SharedService.getSharedServiceInstance();

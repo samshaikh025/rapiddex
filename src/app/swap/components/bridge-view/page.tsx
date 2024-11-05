@@ -6,13 +6,14 @@ import { config } from '../../../wagmi/config';// Go up a level if needed
 import { readContract, writeContract } from '@wagmi/core';
 import * as definedChains from "wagmi/chains";
 import { useSendTransaction } from "wagmi";
-import { Keys, TransactionStatus } from "@/shared/Enum/Common.enum";
+import { Keys, TransactionStatus, TransactionSubStatus } from "@/shared/Enum/Common.enum";
 import { SetActiveTransactionA, UpdateTransactionStatusA } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import { TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { TransactionService } from "@/shared/Services/TransactionService";
 import { ActiveTransactionData } from "@/app/redux-store/reducer/reducer-redux";
 import { SharedService } from "@/shared/Services/SharedService";
+import { useAppDispatch, useAppSelector } from "@/app/redux-store/hook/hook";
 
 type propsType = {
     closeBridgeView: () => void;
@@ -20,6 +21,8 @@ type propsType = {
 export default function BridgeView(props: propsType) {
     let activeTransactionData = useSelector((state: any) => state.ActiveTransactionData);
     let dispatch = useDispatch();
+    let activeTransactionDataTyped = useAppSelector((state: any) => state.ActiveTransactionData);
+    let dispatchTyped = useAppDispatch();
     let utilityService = new UtilityService();
     let transactionService = new TransactionService();
     let sharedService = SharedService.getSharedServiceInstance();
@@ -39,16 +42,64 @@ export default function BridgeView(props: propsType) {
     // Type assertion to tuple
     const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
 
-    useEffect(()=>{
-        processTransaction();
-    },[])
+    // useEffect(()=>{
+    //     processTransaction();
+    // },[])
 
-    function addTransactionLog()
+    useEffect(()=>{
+        const SPENDER_ADDRESS = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
+        const amountToSend = parseEther(activeTransactionData.amount.toString());
+        
+        async function transactionSteps(){
+            
+            if(activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE){
+                let allowanceAmount = await checkAllowance();
+                if(allowanceAmount >= Number(amountToSend)){
+                    dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
+                } 
+            }
+            if(activeTransactionData.transactionStatus == TransactionStatus.PENDING){
+                sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
+                //Proceed with the main transaction
+                const tx = await sendTransactionAsync({
+                    to: SPENDER_ADDRESS,
+                    value: amountToSend,
+                });
+
+                let payLoad = {
+                    ...activeTransactionData,
+                    transactionGuid: utilityService.uuidv4(),
+                    transactionStatus: TransactionStatus.COMPLETED,
+                    transactionSubStatus : TransactionSubStatus.DONE
+                }
+                //addTransactionLog(payLoad);
+                dispatch(SetActiveTransactionA(payLoad));
+            }
+            if(activeTransactionData.transactionStatus == TransactionStatus.COMPLETED){
+                //set interval to check status in 10 sec
+                //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
+                sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+                if(activeTransactionData.subTransactionStatus == TransactionSubStatus.DONE || activeTransactionData.subTransactionStatus == TransactionSubStatus.FAILED){
+                    //sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+                    //dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
+                }else if(activeTransactionData.subTransactionStatus == TransactionSubStatus.PENDING){
+                    // set time out for checking status
+                    // break if failed or done 
+                    // update status in API 
+                }
+            }
+        }
+
+        transactionSteps();
+        
+    },[activeTransactionData.transactionStatus])
+
+    function addTransactionLog(payLoad: TransactionRequestoDto)
     {
-         transactionService.AddTransactionLog(activeTransactionData).then((response) => {
+         transactionService.AddTransactionLog(payLoad).then((response) => {
             if (response?.data && response.data.transactionGuid) {
-              dispatch(SetActiveTransactionA(response.data));
-              sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, response.data);
+              //dispatch(SetActiveTransactionA(response.data));
+              //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, response.data);
               console.log('transaction added successfully');
             }
           }).catch((error) => {
@@ -124,10 +175,10 @@ export default function BridgeView(props: propsType) {
         
         const SPENDER_ADDRESS = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
         const amountToSend = parseEther(activeTransactionData.amount.toString());
-        
+
         try {
             if(activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE){
-                // Check allowance
+                 //Check allowance
                  let allowanceAmount = await checkAllowance();
                  if(allowanceAmount >= Number(amountToSend)){
                     dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
@@ -137,13 +188,14 @@ export default function BridgeView(props: propsType) {
             }
             if(utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING){
                 // Proceed with the main transaction
-                const tx = await sendTransactionAsync({
-                    to: SPENDER_ADDRESS,
-                    value: amountToSend,
-                });
-                addTransactionLog();
-                console.log('Transaction successful:', tx);
-                alert('Transaction sent successfully!');
+                // const tx = await sendTransactionAsync({
+                //     to: SPENDER_ADDRESS,
+                //     value: amountToSend,
+                // });
+                // addTransactionLog();
+                //console.log('Transaction successful:', tx);
+                console.log('if executed');
+                //alert('Transaction sent successfully!');
             }
             if(!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING){
                 //set interval to check status in 10 sec
@@ -155,17 +207,21 @@ export default function BridgeView(props: propsType) {
             alert('Transaction failed. Please try again.');
         }
     }
-
+    function completeTransaction(){
+        sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+        //dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
+        props.closeBridgeView();
+    }
     return (
         <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
             <div className="card">
                 <div className="p-24">
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                        <div className="card-action-wrapper cursor-pointer" id="back-to-swap" onClick={() => props.closeBridgeView()}>
+                        <div className="card-action-wrapper cursor-pointer" id="back-to-swap" onClick={() => {console.log(0);props.closeBridgeView()}}>
                             <i className="fas fa-chevron-left"></i>
                         </div>
                         <div className="card-title">
-                            Transaction Details
+                            Swap
                         </div>
                         <div className="card-action-wrapper">
                             <i className="fas fa-cog cursor-pointer"></i>
@@ -173,11 +229,94 @@ export default function BridgeView(props: propsType) {
                     </div>
 
                     <div className="inner-card w-100 py-2 px-3 mt-3">
-                        <label className="mb-2 fw-600">Bridge</label>
-                        <div className="">
-                            <div className="m-5 text-center">Chain Switch Successfully</div>
-                            <div className="m-5 text-center">Setting Token Allowance</div>
-                            <div className="m-5 text-center">Transaction Status</div>
+                        <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE ? 'step-active' : ''}`}>
+                            <div>
+                                <div className="circle">
+                                    {
+                                        activeTransactionData.transactionStatus > TransactionStatus.ALLOWANCSTATE &&
+                                        <>
+                                            <i className="fa fa-check"></i>
+                                        </>
+                                    }
+                                    {
+                                        activeTransactionData.transactionStatus <= TransactionStatus.ALLOWANCSTATE &&
+                                        <>
+                                            <span>1</span>
+                                        </>
+                                    }
+                                </div>
+                            </div>
+                            <div>
+                                <div className="title">Transaction Allowance</div>
+                                <div className="caption">Only For non native token</div>
+                            </div>
+                        </div>
+                        <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.PENDING ? 'step-active' : ''}`}>
+                            <div>
+                                <div className="circle">
+                                    {
+                                        activeTransactionData.transactionStatus > TransactionStatus.PENDING &&
+                                        <>
+                                            <i className="fa fa-check"></i>
+                                        </>
+                                    }
+                                    {
+                                        activeTransactionData.transactionStatus <= TransactionStatus.PENDING &&
+                                        <>
+                                            <span>2</span>
+                                        </>
+                                    }
+                                </div>
+                            </div>
+                            <div>
+                                <div className="title">Transaction Init</div>
+                                <div className="caption">Your transaction is started.</div>
+                            </div>
+                        </div>
+                        <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.COMPLETED ? 'step-active' : ''}`}>
+                            <div>
+                                <div className="circle">
+                                    {
+                                        activeTransactionData.transactionStatus > TransactionStatus.COMPLETED &&
+                                        <>
+                                            <i className="fa fa-check"></i>
+                                        </>
+                                    }
+                                    {
+                                        activeTransactionData.transactionStatus <= TransactionStatus.COMPLETED &&
+                                        <>
+                                            <span>3</span>
+                                        </>
+                                    }
+                                </div>
+                            </div>
+                            <div>
+                                <div className="title">Transaction Status</div>
+                                <div className="caption">
+                                    Your transaction is
+                                    {
+                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING &&
+                                        <><span>Pending</span></>
+                                    }
+                                    {
+                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED &&
+                                        <>
+                                            <span>Failed</span>
+                                            <br></br>
+                                            <button className="btn btn-primary" onClick={()=> props.closeBridgeView()}>swap more</button>
+                                        </>
+
+                                    } 
+                                    {
+                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE &&
+                                        <><span>Done</span>
+                                        <br></br>
+                                        <button className="btn btn-primary" onClick={()=> props.closeBridgeView()}>swap more</button>
+                                        </>
+
+                                    }   
+                                </div>
+                            </div>
                         </div>
                     </div>
 

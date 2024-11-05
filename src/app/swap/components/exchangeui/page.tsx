@@ -325,6 +325,8 @@ export default function Exchangeui(props: propsType) {
         let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
         if (activeTransactiondata) {
             setShowSubBridgeView(true);
+        }else{
+            setShowSubBridgeView(false);
         }
     }
 

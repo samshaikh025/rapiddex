@@ -35,7 +35,7 @@ export default function SubBridgeView(props: propsType) {
                             {
                                (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE 
                                 || (utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING)) &&
-                                <><span><a href="" onClick={()=>props.openBridgeView()}>Incomplete</a></span></>
+                                <><span><a role="button" onClick={()=>props.openBridgeView()}>Incomplete</a></span></>
                             }
                             {
                                (!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING) &&

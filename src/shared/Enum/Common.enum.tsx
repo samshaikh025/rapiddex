@@ -38,7 +38,15 @@ export enum ActionType {
 export enum TransactionStatus {
     ALLOWANCSTATE = 1,
     PENDING = 2,
-    DONE = 3,
-    FAILED = 4,
-    NOT_FOUND = 5
+    COMPLETED = 3,
+    // DONE = 3,
+    // FAILED = 4,
+    // NOT_FOUND = 5
+}
+
+export enum TransactionSubStatus {
+    PENDING = 1,
+    DONE = 2,
+    FAILED = 3,
+    // NOT_FOUND = 4
 }

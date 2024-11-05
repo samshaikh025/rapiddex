@@ -118,7 +118,7 @@ export default function Tokenui(props: propsType) {
                                 <i className="fas fa-chevron-left"></i>
                             </div>
                             <div className="card-title">
-                                Exchange {props.dataSource == DataSource.From ? 'From' : 'To'} abc:{abc}{preDefineTokensContextData?.length}
+                                Exchange {props.dataSource == DataSource.From ? 'From' : 'To'}
                             </div>
                         </div>
 

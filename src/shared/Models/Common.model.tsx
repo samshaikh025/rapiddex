@@ -156,6 +156,7 @@ export class TransactionRequestoDto{
   approvalAddress : string = '';
   transactionHash : string = '';
   transactionStatus : number  = 0;
+  transactionSubStatus : number  = 0;
   quoteDetail : string = '';
   sourceChainId : number = 0;
   sourceChainName : string = '';

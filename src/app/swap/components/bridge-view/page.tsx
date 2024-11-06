@@ -1,6 +1,6 @@
 'use client'
 import { useEffect } from "react";
-import { useDispatch, useSelector,  } from "react-redux";
+import { useDispatch, useSelector, } from "react-redux";
 import { Chain, parseEther } from "viem";
 import { config } from '../../../wagmi/config';// Go up a level if needed
 import { readContract, writeContract } from '@wagmi/core';
@@ -9,7 +9,7 @@ import { useSendTransaction } from "wagmi";
 import { Keys, TransactionStatus, TransactionSubStatus } from "@/shared/Enum/Common.enum";
 import { SetActiveTransactionA, UpdateTransactionStatusA } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
-import { TransactionRequestoDto } from "@/shared/Models/Common.model";
+import { Chains, TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { TransactionService } from "@/shared/Services/TransactionService";
 import { SharedService } from "@/shared/Services/SharedService";
 
@@ -17,7 +17,7 @@ type propsType = {
     closeBridgeView: () => void;
 }
 export default function BridgeView(props: propsType) {
-    let activeTransactionData = useSelector((state: any) => state.ActiveTransactionData);
+    let activeTransactionData: TransactionRequestoDto = useSelector((state: any) => state.ActiveTransactionData);
     let dispatch = useDispatch();
     let utilityService = new UtilityService();
     let transactionService = new TransactionService();
@@ -42,43 +42,77 @@ export default function BridgeView(props: propsType) {
     //     processTransaction();
     // },[])
 
-    useEffect(()=>{
-        const SPENDER_ADDRESS = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
+    useEffect(() => {
+        const SPENDER_ADDRESS = activeTransactionData.approvalAddress;
         const amountToSend = parseEther(activeTransactionData.amount.toString());
-        
-        async function transactionSteps(){
-            
-            if(activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE){
-                let allowanceAmount = await checkAllowance();
-                if(allowanceAmount >= Number(amountToSend)){
-                    dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
-                } 
-            }
-            if(activeTransactionData.transactionStatus == TransactionStatus.PENDING){
-                sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
-                //Proceed with the main transaction
-                const tx = await sendTransactionAsync({
-                    to: SPENDER_ADDRESS,
-                    value: amountToSend,
-                });
 
-                let payLoad = {
-                    ...activeTransactionData,
-                    transactionGuid: utilityService.uuidv4(),
-                    transactionStatus: TransactionStatus.COMPLETED,
-                    transactionSubStatus : TransactionSubStatus.DONE
+        async function transactionSteps() {
+
+            if (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE) {
+
+                if (activeTransactionData.isNativeToken) {
+                    dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
                 }
-                //addTransactionLog(payLoad);
-                dispatch(SetActiveTransactionA(payLoad));
+                else {
+                    let allowanceAmount = await checkAllowance();
+                    if (allowanceAmount >= Number(amountToSend)) {
+                        dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
+                    }
+                }
+
             }
-            if(activeTransactionData.transactionStatus == TransactionStatus.COMPLETED){
+            if (activeTransactionData.transactionStatus == TransactionStatus.PENDING) {
+                sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
+                let transactionStatus = '';
+                //Proceed with the main transaction
+                try {
+
+
+                    const tx = await sendTransactionAsync({
+                        to: SPENDER_ADDRESS,
+                        value: amountToSend,
+                    });
+
+                    if (!utilityService.isNullOrEmpty(tx)) {
+                        if (activeTransactionData.transactiionAggregator == 'lifi') {
+                            // check lifi transaction status
+                            console.log(activeTransactionData);
+                        }
+                        else if (activeTransactionData.transactiionAggregator == 'rango') {
+                            // chack rango
+                            console.log(activeTransactionData);
+                        }
+                        else if (activeTransactionData.transactiionAggregator == 'owlto') {
+                            // cheack owlto
+                            console.log(activeTransactionData);
+                        }
+
+                    }
+
+                    let payLoad = {
+                        ...activeTransactionData,
+                        transactionHash: tx ? tx : null,
+                        transactionGuid: utilityService.uuidv4(),
+                        transactionStatus: TransactionStatus.COMPLETED,
+                        transactionSubStatus: TransactionSubStatus.DONE
+                    }
+                    //addTransactionLog(payLoad);
+                    dispatch(SetActiveTransactionA(payLoad));
+                }
+                catch (error) {
+
+                    console.log(error);
+
+                }
+            }
+            if (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) {
                 //set interval to check status in 10 sec
                 //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
                 sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
-                if(activeTransactionData.subTransactionStatus == TransactionSubStatus.DONE || activeTransactionData.subTransactionStatus == TransactionSubStatus.FAILED){
+                if (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) {
                     //sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
                     //dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
-                }else if(activeTransactionData.subTransactionStatus == TransactionSubStatus.PENDING){
+                } else if (activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING) {
                     // set time out for checking status
                     // break if failed or done 
                     // update status in API 
@@ -87,24 +121,23 @@ export default function BridgeView(props: propsType) {
         }
 
         transactionSteps();
-        
-    },[activeTransactionData.transactionStatus])
 
-    function addTransactionLog(payLoad: TransactionRequestoDto)
-    {
-         transactionService.AddTransactionLog(payLoad).then((response) => {
+    }, [activeTransactionData.transactionStatus])
+
+    function addTransactionLog(payLoad: TransactionRequestoDto) {
+        transactionService.AddTransactionLog(payLoad).then((response) => {
             if (response?.data && response.data.transactionGuid) {
-              //dispatch(SetActiveTransactionA(response.data));
-              //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, response.data);
-              console.log('transaction added successfully');
+                //dispatch(SetActiveTransactionA(response.data));
+                //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, response.data);
+                console.log('transaction added successfully');
             }
-          }).catch((error) => {
+        }).catch((error) => {
             console.log(error);
-          });;
+        });;
     }
 
-    async function checkAllowance(){
-        const SPENDER_ADDRESS = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
+    async function checkAllowance() {
+        const SPENDER_ADDRESS = activeTransactionData.approvalAddress;
         const amountToSend = parseEther(activeTransactionData.amount.toString());
         let allowanceAmount = 0;
         // Token approval logic
@@ -130,90 +163,51 @@ export default function BridgeView(props: propsType) {
                 outputs: [{ name: 'success', type: 'bool' }],
             },
         ];
-        try{
+        try {
             const allowance = await readContract(config, {
                 address: activeTransactionData.sourceTokenAddress as `0x${string}`,
                 abi: tokenAbi,
                 functionName: 'allowance',
-                args: [activeTransactionData.address, SPENDER_ADDRESS],
+                args: [activeTransactionData.walletAddress, SPENDER_ADDRESS],
             });
             allowanceAmount = Number(allowance);
-            
+
             // If allowance is insufficient, request approval
             if (Number(allowanceAmount) <= Number(amountToSend)) {
                 console.log("Requesting token approval...");
-    
-                try{
+
+                try {
                     const approvalAllowance = await writeContract(config, {
                         address: activeTransactionData.sourceTokenAddress as `0x${string}`,
                         abi: tokenAbi,
                         functionName: 'approve',
                         args: [SPENDER_ADDRESS, amountToSend],
                         chain: chainsTuple.find(a => a.id == activeTransactionData.sourceChainId), // Add chain
-                        account: activeTransactionData.address as `0x${string}`, // Add account
+                        account: activeTransactionData.walletAddress as `0x${string}`, // Add account
                     });
                     allowanceAmount = Number(approvalAllowance);
-                     console.log("Approval successful:", approvalAllowance);
+                    console.log("Approval successful:", approvalAllowance);
                 }
-                catch(error){
+                catch (error) {
                     console.error('Transaction error:', error);
                     alert('Transaction failed. Please try again.');
                 }
             }
-        }catch(error){
+        } catch (error) {
             console.error('Transaction error:', error);
             alert('Transaction failed. Please try again.');
         }
 
         return allowanceAmount;
     }
-    async function processTransaction() {
-        
-        const SPENDER_ADDRESS = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
-        const amountToSend = parseEther(activeTransactionData.amount.toString());
 
-        try {
-            if(activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE){
-                 //Check allowance
-                 let allowanceAmount = await checkAllowance();
-                 if(allowanceAmount >= Number(amountToSend)){
-                    dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
-                    //store updated active transaction in local storage and use when realod page
-                    sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
-                 }
-            }
-            if(utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING){
-                // Proceed with the main transaction
-                // const tx = await sendTransactionAsync({
-                //     to: SPENDER_ADDRESS,
-                //     value: amountToSend,
-                // });
-                // addTransactionLog();
-                //console.log('Transaction successful:', tx);
-                console.log('if executed');
-                //alert('Transaction sent successfully!');
-            }
-            if(!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING){
-                //set interval to check status in 10 sec
-            }
-            
 
-        } catch (error) {
-            console.error('Transaction error:', error);
-            alert('Transaction failed. Please try again.');
-        }
-    }
-    function completeTransaction(){
-        sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
-        //dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
-        props.closeBridgeView();
-    }
     return (
         <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
             <div className="card">
                 <div className="p-24">
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                        <div className="card-action-wrapper cursor-pointer" id="back-to-swap" onClick={() => {console.log(0);props.closeBridgeView()}}>
+                        <div className="card-action-wrapper cursor-pointer" id="back-to-swap" onClick={() => { console.log(0); props.closeBridgeView() }}>
                             <i className="fas fa-chevron-left"></i>
                         </div>
                         <div className="card-title">
@@ -299,18 +293,18 @@ export default function BridgeView(props: propsType) {
                                         <>
                                             <span>Failed</span>
                                             <br></br>
-                                            <button className="btn btn-primary" onClick={()=> props.closeBridgeView()}>swap more</button>
+                                            <button className="btn btn-primary" onClick={() => props.closeBridgeView()}>swap more</button>
                                         </>
 
-                                    } 
+                                    }
                                     {
                                         activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE &&
                                         <><span>Done</span>
-                                        <br></br>
-                                        <button className="btn btn-primary" onClick={()=> props.closeBridgeView()}>swap more</button>
+                                            <br></br>
+                                            <button className="btn btn-primary" onClick={() => props.closeBridgeView()}>swap more</button>
                                         </>
 
-                                    }   
+                                    }
                                 </div>
                             </div>
                         </div>

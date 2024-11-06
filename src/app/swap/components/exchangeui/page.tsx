@@ -299,6 +299,10 @@ export default function Exchangeui(props: propsType) {
                     transactoinObj.destinationTokenAddress = props.destToken.address;
                     transactoinObj.destinationTokenSymbol = props.destToken.symbol;
                     transactoinObj.destinationTokenLogoUri = props.destToken.logoURI;
+                    transactoinObj.isNativeToken = await utilityService.isNativeCurrency(props.sourceChain, props.sourceToken);
+                    transactoinObj.transactiionAggregator = selectedPath.aggregator;
+                    transactoinObj.transactionAggregatorRequestId = selectedPath.aggergatorRequestId;
+
 
                     //store active transaction in local storage and use when realod page
                     sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, transactoinObj);
@@ -325,8 +329,6 @@ export default function Exchangeui(props: propsType) {
         let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
         if (activeTransactiondata) {
             setShowSubBridgeView(true);
-        }else{
-            setShowSubBridgeView(false);
         }
     }
 

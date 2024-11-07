@@ -71,6 +71,12 @@ export default function BridgeView(props: propsType) {
                     const tx = await sendTransactionAsync({
                         to: SPENDER_ADDRESS,
                         value: amountToSend,
+                        data: activeTransactionData.transactionAggregatorRequestData,
+                        gas: null
+
+
+
+
                     });
 
                     if (!utilityService.isNullOrEmpty(tx)) {

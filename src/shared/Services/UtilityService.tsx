@@ -196,6 +196,31 @@ export class UtilityService {
         }
     }
 
+    async getNativeCurrency(chainDe: Chains): Promise<Chain> {
+
+        const getAllChains = (): Chain[] => {
+            return Object.values(definedChains).filter((chain) => chain.id !== undefined) as Chain[];
+        };
+
+        // Get all chains
+        const allChains = getAllChains();
+
+        // Ensure there's at least one chain
+        if (allChains.length === 0) {
+            throw new Error("No chains available");
+        }
+
+        // Type assertion to tuple
+        const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
+
+
+        const chain = allChains.find(chain => chain.id === chainDe.chainId);
+
+        return chain;
+
+
+    }
+
     Translate(language: string, key: string) {
         return (!this.isNullOrEmpty(language) && !this.isNullOrEmpty(key) && i18n) ? i18n[language][key] : '';
     }
@@ -240,11 +265,11 @@ export class UtilityService {
 
     uuidv4() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-        .replace(/[xy]/g, function (c) {
-            const r = Math.random() * 16 | 0, 
-                v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
+            .replace(/[xy]/g, function (c) {
+                const r = Math.random() * 16 | 0,
+                    v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
     }
 }
 

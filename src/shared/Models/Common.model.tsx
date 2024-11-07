@@ -52,6 +52,10 @@ export class PathShowViewModel {
   approvalAddress: string;
   entire: any;
   aggergatorRequestId: string;
+  gasafeeRequiredTransaction: string;
+  gasPrice: string;
+  gasLimit: string;
+  data: string;
 }
 
 export class ResponseMobulaPricing {
@@ -178,5 +182,8 @@ export class TransactionRequestoDto {
   isNativeToken: boolean = false;
   transactiionAggregator: string;
   transactionAggregatorRequestId: string;
+  transactionAggregatorRequestData: string;
+  transactionAggregatorGasPrice: string;
+  transactionAggregatorGasLimit: string;
 }
 

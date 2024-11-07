@@ -302,6 +302,9 @@ export default function Exchangeui(props: propsType) {
                     transactoinObj.isNativeToken = await utilityService.isNativeCurrency(props.sourceChain, props.sourceToken);
                     transactoinObj.transactiionAggregator = selectedPath.aggregator;
                     transactoinObj.transactionAggregatorRequestId = selectedPath.aggergatorRequestId;
+                    transactoinObj.transactionAggregatorGasLimit = selectedPath.gasLimit;
+                    transactoinObj.transactionAggregatorGasPrice = selectedPath.gasPrice;
+                    transactoinObj.transactionAggregatorRequestData = selectedPath.data;
 
 
                     //store active transaction in local storage and use when realod page

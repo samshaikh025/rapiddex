@@ -889,6 +889,14 @@ export class CryptoService {
             pathShowViewModel.aggregatorOrderType = orderType;
             pathShowViewModel.approvalAddress = lifiPath.estimate.approvalAddress;
             pathShowViewModel.aggergatorRequestId = lifiPath.id;
+
+            const gasPrice = BigInt(lifiPath.transactionRequest.gasLimit);
+            const gasLimit = BigInt(lifiPath.transactionRequest.gasPrice);
+
+            pathShowViewModel.gasafeeRequiredTransaction = (gasPrice * gasLimit).toString();
+            pathShowViewModel.gasPrice = lifiPath.transactionRequest.gasPrice;
+            pathShowViewModel.gasLimit = lifiPath.transactionRequest.gasLimit;
+            pathShowViewModel.data = lifiPath.transactionRequest.data;
             pathShowViewModel.entire = lifiPath;
             return pathShowViewModel;
         }
@@ -917,6 +925,18 @@ export class CryptoService {
             pathShowViewModel.aggregatorOrderType = orderType;
             pathShowViewModel.approvalAddress = responseRangoPath.tx?.txTo;
             pathShowViewModel.aggergatorRequestId = responseRangoPath.requestId;
+
+            const gasPrice = BigInt(responseRangoPath.tx?.gasLimit);
+            const gasLimit = BigInt(responseRangoPath.tx?.gasPrice);
+
+            pathShowViewModel.gasafeeRequiredTransaction = (gasPrice * gasLimit).toString();
+            pathShowViewModel.gasPrice = responseRangoPath.tx?.gasPrice.toString();
+            pathShowViewModel.gasLimit = responseRangoPath.tx?.gasLimit.toString();
+            pathShowViewModel.data = responseRangoPath.tx?.txData;
+
+
+
+
             pathShowViewModel.entire = responseRangoPath;
             return pathShowViewModel;
         }

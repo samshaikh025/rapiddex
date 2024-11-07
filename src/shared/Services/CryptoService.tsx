@@ -979,4 +979,89 @@ export class CryptoService {
         }
     }
 
+    async TransactionStatusLIFI(txHash: string, fromChain: string, toChain: string) {
+        let transactionStatus;
+        let payLoad = {
+            apiType: 'GET',
+            apiUrl: `status?txHash=${txHash}&fromChain=${fromChain}&toChain=${toChain}`,
+            apiData: null,
+            apiProvider: SwapProvider.LIFI
+        }
+        try {
+            let apiResponse = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+
+            });
+            const result = await apiResponse.json();
+            transactionStatus = result?.Data;
+        } catch (error) {
+            console.log(error);
+        }
+
+        return transactionStatus;
+    }
+
+    async TransactionStatusRango(requestId: string, txhash: string, step: number) {
+        let transactionStatus;
+        let bodyParam =
+        {
+            requestId: requestId,
+            txId: txhash,
+            step: step
+        }
+        
+        let payLoad = {
+            apiType: 'POST',
+            apiUrl: `tx/check-status`,
+            apiData: bodyParam,
+            apiProvider: SwapProvider.RANGO
+        }
+        try {
+            let apiResponse = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+
+            });
+            const result = await apiResponse.json();
+            transactionStatus = result?.Data;
+        } catch (error) {
+            console.log(error);
+        }
+
+        return transactionStatus;
+    }
+
+    async TransactionStatusOwlto(chainId: number, txhash: string) {
+        let transactionStatus;
+        
+        let payLoad = {
+            apiType: 'GET',
+            apiUrl: `get-transaction?chainid=${chainId}&tx_hash=${txhash}`,
+            apiData: null,
+            apiProvider: SwapProvider.OWLTO
+        }
+        try {
+            let apiResponse = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+
+            });
+            const result = await apiResponse.json();
+            transactionStatus = result?.Data;
+        } catch (error) {
+            console.log(error);
+        }
+
+        return transactionStatus;
+    }
 }

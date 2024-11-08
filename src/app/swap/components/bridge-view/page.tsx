@@ -67,17 +67,22 @@ export default function BridgeView(props: propsType) {
                 //Proceed with the main transaction
                 try {
 
-
-                    const tx = await sendTransactionAsync({
+                    var transactionRequest = {
                         to: SPENDER_ADDRESS,
-                        value: amountToSend,
+
                         data: activeTransactionData.transactionAggregatorRequestData,
-                        gas: null
+                        gas: null,
+                        chainId: activeTransactionData.sourceChainId,
+                    }
+
+                    // if(activeTransactionData.isNativeToken)
+                    // {
+                    //     transactionRequest[""] = ;
+
+                    // }
 
 
-
-
-                    });
+                    const tx = await sendTransactionAsync(transactionRequest);
 
                     if (!utilityService.isNullOrEmpty(tx)) {
                         if (activeTransactionData.transactiionAggregator == 'lifi') {

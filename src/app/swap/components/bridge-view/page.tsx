@@ -12,6 +12,8 @@ import { UtilityService } from "@/shared/Services/UtilityService";
 import { Chains, TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { TransactionService } from "@/shared/Services/TransactionService";
 import { SharedService } from "@/shared/Services/SharedService";
+import { CryptoService } from "@/shared/Services/CryptoService";
+import { stat } from "fs";
 
 type propsType = {
     closeBridgeView: () => void;
@@ -21,6 +23,7 @@ export default function BridgeView(props: propsType) {
     let dispatch = useDispatch();
     let utilityService = new UtilityService();
     let transactionService = new TransactionService();
+    let cryptoService = new CryptoService();
     let sharedService = SharedService.getSharedServiceInstance();
     const { sendTransactionAsync, isPending: isTransactionPending, isError: isTransactionError } = useSendTransaction();
     const getAllChains = (): Chain[] => {
@@ -41,10 +44,62 @@ export default function BridgeView(props: propsType) {
     // useEffect(()=>{
     //     processTransaction();
     // },[])
+    function getPayloadForTransaction(transactionData: TransactionRequestoDto, tx: string, transactionGuid: string, transactionStatus: number, transactionSubStatus: number) {
+        let payLoad = {
+             TransactionGuid : transactionGuid,
+             WalletAddress : transactionData.walletAddress,
+             Amount : transactionData.amount,
+             ApprovalAddress : transactionData.approvalAddress,
+             TransactionHash : tx,
+             TransactionStatus : transactionStatus,
+             TransactionSubStatus : transactionSubStatus,
+             QuoteDetail : transactionData.quoteDetail,
+             SourceChainId : transactionData.sourceChainId,
+             SourceChainName : transactionData.sourceChainName,
+             SourceChainLogoUri : transactionData.sourceChainLogoUri,
+             DestinationChainId : transactionData.destinationChainId,
+             DestinationChainName : transactionData.destinationChainName,
+             DestinationChainLogoUri : transactionData.destinationChainLogoUri,
+             SourceTokenName : transactionData.sourceTokenName,
+             SourceTokenAddress : transactionData.sourceTokenAddress,
+             SourceTokenSymbol :  transactionData.sourceTokenSymbol,
+             SourceTokenLogoUri : transactionData.sourceTokenLogoUri,
+             DestinationTokenName : transactionData.destinationTokenName,
+             DestinationTokenAddress : transactionData.destinationTokenAddress,
+             DestinationTokenSymbol : transactionData.destinationTokenSymbol,
+             DestinationTokenLogoUri : transactionData.destinationTokenLogoUri
+        }
+        return payLoad;
+    }
 
+    async function GetTransactionStatus(tx: string)
+    {
+        let status = 0;
+        if (!utilityService.isNullOrEmpty(tx)) {
+            if (activeTransactionData.transactiionAggregator == 'lifi') {
+                // check lifi transaction status
+                let response = await cryptoService.TransactionStatusLIFI(tx, activeTransactionData.sourceChainName, activeTransactionData.destinationChainName)
+                console.log(activeTransactionData);
+            }
+            else if (activeTransactionData.transactiionAggregator == 'rango') {
+                // chack rango
+                let response = await cryptoService.TransactionStatusRango(activeTransactionData.transactionAggregatorRequestId, tx, 1);
+                console.log(activeTransactionData);
+            }
+            else if (activeTransactionData.transactiionAggregator == 'owlto') {
+                // cheack owlto
+                let response = await cryptoService.TransactionStatusOwlto(activeTransactionData.sourceChainId, tx);
+                console.log(activeTransactionData);
+            }
+
+        }
+
+        return status;
+    }
     useEffect(() => {
         const SPENDER_ADDRESS = activeTransactionData.approvalAddress;
         const amountToSend = parseEther(activeTransactionData.amount.toString());
+        let tx = '';
 
         async function transactionSteps() {
 
@@ -82,33 +137,20 @@ export default function BridgeView(props: propsType) {
                     // }
 
 
-                    const tx = await sendTransactionAsync(transactionRequest);
+                    tx = await sendTransactionAsync(transactionRequest);
+                    let status = await GetTransactionStatus(tx);
+                    
 
-                    if (!utilityService.isNullOrEmpty(tx)) {
-                        if (activeTransactionData.transactiionAggregator == 'lifi') {
-                            // check lifi transaction status
-                            console.log(activeTransactionData);
-                        }
-                        else if (activeTransactionData.transactiionAggregator == 'rango') {
-                            // chack rango
-                            console.log(activeTransactionData);
-                        }
-                        else if (activeTransactionData.transactiionAggregator == 'owlto') {
-                            // cheack owlto
-                            console.log(activeTransactionData);
-                        }
-
-                    }
-
-                    let payLoad = {
+                    let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
+                    //addTransactionLog(requestPayload);
+                    let updateTransactionData = {
                         ...activeTransactionData,
                         transactionHash: tx ? tx : null,
                         transactionGuid: utilityService.uuidv4(),
                         transactionStatus: TransactionStatus.COMPLETED,
-                        transactionSubStatus: TransactionSubStatus.DONE
+                        transactionSubStatus: status
                     }
-                    //addTransactionLog(payLoad);
-                    dispatch(SetActiveTransactionA(payLoad));
+                    dispatch(SetActiveTransactionA(updateTransactionData));
                 }
                 catch (error) {
 
@@ -119,14 +161,27 @@ export default function BridgeView(props: propsType) {
             if (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) {
                 //set interval to check status in 10 sec
                 //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
-                sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+                //sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
                 if (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) {
                     //sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
                     //dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
                 } else if (activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING) {
                     // set time out for checking status
                     // break if failed or done 
-                    // update status in API 
+                    // update status in API
+                    setInterval(async () => {
+                        let status = await GetTransactionStatus(tx);
+                        if(status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED)
+                        {
+                            let updateTransactionData = {
+                                ...activeTransactionData,
+                                transactionSubStatus: status
+                            }
+                            dispatch(SetActiveTransactionA(updateTransactionData));
+                            let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
+                           //addTransactionLog(requestPayload);
+                        }
+                    }, 30000) 
                 }
             }
         }

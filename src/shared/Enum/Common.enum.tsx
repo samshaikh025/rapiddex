@@ -50,3 +50,17 @@ export enum TransactionSubStatus {
     FAILED = 3,
     // NOT_FOUND = 4
 }
+
+export enum TransactionSubStatusLIFI {
+    PENDING = 1,
+    DONE = 2,
+    FAILED = 3,
+    NOT_FOUND = 3
+}
+
+export enum TransactionSubStatusRango {
+    running = 1,
+    failed = 2,
+    success = 3
+}
+

@@ -17,6 +17,9 @@
         line-height: 22px;
         padding: 0 16px 0 16px;
     }
+    .header-btn{
+        display: unset;
+    }
 }
 @media(max-width:768.98px){
     .header .header-wrapper .site-logo .desktop-logo{

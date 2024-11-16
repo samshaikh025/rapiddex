@@ -32,6 +32,8 @@ export class Tokens {
   logoURI: string = '';
   name: string = '';
   decimal: number = 0;
+  price: number = 0;
+  chainId: number = 0;
 }
 
 export class PathShowViewModel {

@@ -31,6 +31,14 @@ export class UtilityService {
         }
     }
 
+    async convertEtherToWei(amount: string) {
+        return ethers.parseUnits(amount.toString(), "ether");
+    }
+
+    async convertGweiToEther(amount: string) {
+        return ethers.formatEther(amount);
+    }
+
     async formatDuration(seconds) {
         let result;
         if (seconds < 1) {
@@ -55,14 +63,16 @@ export class UtilityService {
     // Function to convert hexadecimal to decimal
     async hexToDecimal(hexValue) {
         try {
-            // Convert the hex value to BigNumber
-            const decimalValue = BigInt(hexValue);
-            // Return the decimal value as a string
-            return decimalValue;
+            const normalizedHex = hexValue.startsWith('0x') ? hexValue : `0x${hexValue}`;
+            return ethers.toBigInt(normalizedHex);
         } catch (error) {
             console.error('Invalid hexadecimal value:', error);
             return null;
         }
+    }
+
+    async gweitowei(value: string) {
+        return ethers.parseUnits(value, "gwei");
     }
 
     async checkCoinNative(chain: Chains, token: Tokens) {

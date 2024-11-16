@@ -50,6 +50,8 @@ export class CryptoService {
                 obj.symbol = coin.symbol;
                 obj.logoURI = coin.logoURI;
                 obj.decimal = coin.decimals;
+                obj.price = Number(coin.priceUSD);
+                obj.chainId = selectedChain.chainId;
                 this.AvailableCoins.push(obj);
             })
         }
@@ -84,6 +86,8 @@ export class CryptoService {
                     obj.symbol = coin.symbol;
                     obj.logoURI = coin.image;
                     obj.decimal = coin.decimals;
+                    obj.price = Number(coin.usdPrice);
+                    obj.chainId = selectedChain.chainId;
                     this.AvailableCoins.push(obj);
                 }
             })
@@ -308,18 +312,23 @@ export class CryptoService {
 
             this.SetOwltoChains?.map((chain) => {
                 let includeLength = this.AvailableChains.filter(x => x.chainId == parseInt(chain.chainId)).length;
-                if (this.AvailableChains.filter(x => x.chainId == chain.chainId).length == 0) {
-                    let obj = new Chains();
-                    obj.chainId = chain.chainId;
-                    obj.chainName = chain.aliasName;
-                    obj.lifiName = '';
-                    obj.rangoName = '';
-                    obj.logoURI = chain.icon;
+                // if (this.AvailableChains.filter(x => x.chainId == chain.chainId).length == 0) {
+                //     let obj = new Chains();
+                //     obj.chainId = chain.chainId;
+                //     obj.chainName = chain.aliasName;
+                //     obj.lifiName = '';
+                //     obj.rangoName = '';
+                //     obj.logoURI = chain.icon;
 
 
-                    this.AvailableChains.push(obj);
-                }
-                else if (includeLength == 1) {
+                //     this.AvailableChains.push(obj);
+                // }
+                // else if (includeLength == 1) {
+                //     let index = this.AvailableChains?.findIndex(x => x.chainId == parseInt(chain.chainId));
+                //     this.AvailableChains[index].owltoName = chain.name;
+                // }
+
+                if (includeLength == 1) {
                     let index = this.AvailableChains?.findIndex(x => x.chainId == parseInt(chain.chainId));
                     this.AvailableChains[index].owltoName = chain.name;
                 }
@@ -890,8 +899,10 @@ export class CryptoService {
             pathShowViewModel.approvalAddress = lifiPath.estimate.approvalAddress;
             pathShowViewModel.aggergatorRequestId = lifiPath.id;
 
+
             const gasPrice = BigInt(lifiPath.transactionRequest.gasLimit);
             const gasLimit = BigInt(lifiPath.transactionRequest.gasPrice);
+
 
             pathShowViewModel.gasafeeRequiredTransaction = (gasPrice * gasLimit).toString();
             pathShowViewModel.gasPrice = lifiPath.transactionRequest.gasPrice;
@@ -912,6 +923,8 @@ export class CryptoService {
 
             const pathShowViewModel = new PathShowViewModel();
             pathShowViewModel.estTime = await this.utilityService.formatDuration(responseRangoPath.route.estimatedTimeInSeconds);
+            pathShowViewModel.relayerfeeusd = Number(responseRangoPath.route.feeUsd.toFixed(2));
+            pathShowViewModel.networkcostusd = 0;
             pathShowViewModel.gasafee = responseRangoPath.route.feeUsd.toFixed(2) + " USD";
 
             pathShowViewModel.fromChain = sourceChain.chainName;
@@ -925,6 +938,7 @@ export class CryptoService {
             pathShowViewModel.aggregatorOrderType = orderType;
             pathShowViewModel.approvalAddress = responseRangoPath.tx?.txTo;
             pathShowViewModel.aggergatorRequestId = responseRangoPath.requestId;
+
 
             const gasPrice = BigInt(responseRangoPath.tx?.gasLimit);
             const gasLimit = BigInt(responseRangoPath.tx?.gasPrice);
@@ -949,6 +963,19 @@ export class CryptoService {
 
     async createOwltoPathShowViewModel(responseOwltoPath: ResponseOwltoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
         try {
+            debugger;
+
+            let amountInWei = await this.utilityService.convertEtherToWei(amount.toString());
+
+            console.log("Converted owlto ", amountInWei);
+
+            if (!(Number(responseOwltoPath.msg.min) < amountInWei && Number(responseOwltoPath.msg.max) > amountInWei)) {
+                return null;
+
+            }
+
+
+
 
 
 
@@ -956,9 +983,15 @@ export class CryptoService {
             pathShowViewModel.estTime = "less than 1 min";
             let responseOwltoDTC = new ResponseOwltoDTC()
             responseOwltoDTC = await this.getOwltoDTC(sourceChain, destChain, sourceToken, destToken, amount, "", "FASTEST");
-            let price = (await this.GetTokenData(sourceToken)).data.price;
-            let gasafee = (Number(responseOwltoDTC.dtc) + Number(responseOwltoDTC.bridgefee)) * price;
+            if (!(responseOwltoDTC)) {
+                return null;
+            }
+            let price = sourceToken.price;
+            let bridgefee = await this.utilityService.convertGweiToEther(responseOwltoDTC.bridgefee);
+            let gasafee = (Number(responseOwltoDTC.dtc) + Number(bridgefee)) * price;
             pathShowViewModel.gasafee = gasafee.toFixed(2) + "USD";
+            pathShowViewModel.relayerfeeusd = Number(gasafee.toFixed(2));
+            pathShowViewModel.networkcostusd = 0;
             pathShowViewModel.fromChain = sourceChain.chainName;
             pathShowViewModel.fromToken = sourceToken.symbol;
             pathShowViewModel.fromAmount = amount.toString();
@@ -970,6 +1003,7 @@ export class CryptoService {
             pathShowViewModel.aggregatorOrderType = orderType;
             pathShowViewModel.approvalAddress = responseOwltoPath.msg.maker_address;
             pathShowViewModel.aggergatorRequestId = '';
+            pathShowViewModel.gasafeeRequiredTransaction = responseOwltoPath.msg.estimated_gas;
             pathShowViewModel.entire = responseOwltoPath;
 
             return pathShowViewModel;
@@ -1013,7 +1047,7 @@ export class CryptoService {
             txId: txhash,
             step: step
         }
-        
+
         let payLoad = {
             apiType: 'POST',
             apiUrl: `tx/check-status`,
@@ -1040,7 +1074,7 @@ export class CryptoService {
 
     async TransactionStatusOwlto(chainId: number, txhash: string) {
         let transactionStatus;
-        
+
         let payLoad = {
             apiType: 'GET',
             apiUrl: `get-transaction?chainid=${chainId}&tx_hash=${txhash}`,

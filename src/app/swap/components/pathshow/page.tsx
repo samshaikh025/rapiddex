@@ -14,73 +14,74 @@ type PropsType = {
   destToken: Tokens;
   sendInitData: (data: PathShowViewModel[]) => void;
   sendSelectedPath: (data: PathShowViewModel) => void;
-  isPathLoadingParent: (status:boolean) => void;
+  isPathLoadingParent: (status: boolean) => void;
 };
 
 export default function Pathshow(props: PropsType) {
   const [pathShowSpinner, setPathShowSpinner] = useState<boolean>(false);
   let [availablePaths, setAvailablePaths] = useState<PathShowViewModel[]>([]);
   let [currentSelectedPath, setCurrentSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
-  let bridgeMessage:BridgeMessage = new BridgeMessage();
-
-  
+  let bridgeMessage: BridgeMessage = new BridgeMessage();
 
   let walletData = useSelector((state: any) => state.WalletData);
-  let walletAddress ="";
+  let walletAddress = "";
   let utilityService = new UtilityService();
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
-        const cryptoService = new CryptoService();
-        setPathShowSpinner(true);
-        props.isPathLoadingParent(true);
-        try {
-          if(!utilityService.isNullOrEmpty(walletData.address))
-          {
-            walletAddress = walletData.address;
 
-          }
-          
-          let result = await cryptoService.getBestPathFromChosenChains(
-            props.sourceChain,
-            props.destChain,
-            props.sourceToken,
-            props.destToken,
-            props.Amountpathshow,
-            walletAddress
-          );
-          if(result && result.length > 0){
-            //result = result.slice(0,2);
-            result.forEach((item, index)=>{
-              item.pathId = index + 1;
-            });
-            props.sendInitData(result);
-            setCurrentSelectedPath(result[0]);
-            setAvailablePaths(result);
-            setPathShowSpinner(false);
-            props.isPathLoadingParent(false);
-          }
-          else
-          {
-            setPathShowSpinner(false);
-            bridgeMessage.message = "No path found";
-            props.isPathLoadingParent(false);
-            
-          }
-          
-        } catch (error) {
+  const fetchData = async () => {
+    if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
+      const cryptoService = new CryptoService();
+      setPathShowSpinner(true);
+      props.isPathLoadingParent(true);
+      try {
+        if (!utilityService.isNullOrEmpty(walletData.address)) {
+          walletAddress = walletData.address;
+
+        }
+
+        let result = await cryptoService.getBestPathFromChosenChains(
+          props.sourceChain,
+          props.destChain,
+          props.sourceToken,
+          props.destToken,
+          props.Amountpathshow,
+          walletAddress
+        );
+        if (result && result.length > 0) {
+          //result = result.slice(0,2);
+          result.forEach((item, index) => {
+            item.pathId = index + 1;
+          });
+          props.sendInitData(result);
+          setCurrentSelectedPath(result[0]);
+          setAvailablePaths(result);
           setPathShowSpinner(false);
           props.isPathLoadingParent(false);
-          console.error('Error fetching path data:', error);
         }
-      }
-    };
+        else {
+          setPathShowSpinner(false);
+          bridgeMessage.message = "No path found";
+          props.isPathLoadingParent(false);
 
+        }
+
+      } catch (error) {
+        setPathShowSpinner(false);
+        props.isPathLoadingParent(false);
+        console.error('Error fetching path data:', error);
+      }
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [props.Amountpathshow, props.sourceChain, props.destChain, props.sourceToken, props.destToken]);
 
-  function sendSelectedPathToParent(path: PathShowViewModel){
+  useEffect(() => {
+
+    fetchData();
+
+  }, [walletData.address]);
+  function sendSelectedPathToParent(path: PathShowViewModel) {
     setCurrentSelectedPath(path);
     props.sendSelectedPath(path);
     //close offcanvas
@@ -88,7 +89,7 @@ export default function Pathshow(props: PropsType) {
   }
   return (
     <>
-    { availablePaths.length > 0 && 
+      {availablePaths.length > 0 &&
         <>
           <div className="col-lg-7 col-md-12 col-sm-12 col-12 d-none d-lg-block">
             <div className="card">
@@ -192,7 +193,7 @@ export default function Pathshow(props: PropsType) {
                       {
                         availablePaths.length > 0 &&
                         availablePaths.map((pathshow, index) => (
-                          <div key={index} className={`inner-card w-100 py-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`}  onClick={() => sendSelectedPathToParent(pathshow)}>
+                          <div key={index} className={`inner-card w-100 py-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} onClick={() => sendSelectedPathToParent(pathshow)}>
                             <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap px-3 pb-2 bottom-border-line">
                               <div className="d-flex align-items-center gap-2">
                                 <label className="font-16">
@@ -290,17 +291,17 @@ export default function Pathshow(props: PropsType) {
               </div>
             </div>
           </div>
-        </> 
-    }
-    <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasBottom"  data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{height: '50%'}}>
-      <div className="offcanvas-header">
-        <h5 className="offcanvas-title primary-text" id="offcanvasBottomLabel">Showing {availablePaths.length} Routes</h5>
-        <button type="button" className="btn-close text-reset primary-text" data-bs-dismiss="offcanvas" aria-label="Close">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>
-        </button>
-      </div>
-      <div className="offcanvas-body small">
-            <div className='d-flex gap-3 flex-column add-scroll-bar'>
+        </>
+      }
+      <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasBottom" data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{ height: '50%' }}>
+        <div className="offcanvas-header">
+          <h5 className="offcanvas-title primary-text" id="offcanvasBottomLabel">Showing {availablePaths.length} Routes</h5>
+          <button type="button" className="btn-close text-reset primary-text" data-bs-dismiss="offcanvas" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
+          </button>
+        </div>
+        <div className="offcanvas-body small">
+          <div className='d-flex gap-3 flex-column add-scroll-bar'>
             {
               availablePaths.length > 0 &&
               availablePaths.map((pathshow, index) => (
@@ -325,9 +326,9 @@ export default function Pathshow(props: PropsType) {
                 </div>
               ))
             }
-            </div>
+          </div>
+        </div>
       </div>
-    </div>
     </>
   );
 }

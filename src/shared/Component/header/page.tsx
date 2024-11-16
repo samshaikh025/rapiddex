@@ -48,7 +48,7 @@ export default function Header() {
         obj.chainLogo = allAvailableChains.length > 0 ? allAvailableChains?.find(x => x.chainId == data.chain?.id)?.logoURI : '';
         obj.blockExplorer = data.chain.blockExplorers.default;
         dispatch(SetWalletDataA(obj));
-        if(!data.isReconnected) {
+        if (!data.isReconnected) {
           userService.AddLog(obj).then((response) => {
             if (response?.data && response.data == 1) {
               console.log('logged successfully');

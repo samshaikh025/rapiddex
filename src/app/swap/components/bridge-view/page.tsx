@@ -66,6 +66,7 @@ export default function BridgeView(props: propsType) {
                 let transactionStatus = '';
                 //Proceed with the main transaction
                 try {
+                    console.log(activeTransactionData);
 
                     var transactionRequest = {
                         to: SPENDER_ADDRESS,
@@ -75,11 +76,11 @@ export default function BridgeView(props: propsType) {
                         chainId: activeTransactionData.sourceChainId,
                     }
 
-                    // if(activeTransactionData.isNativeToken)
-                    // {
-                    //     transactionRequest[""] = ;
+                    if (activeTransactionData.isNativeToken) {
+                        transactionRequest["value"] = amountToSend;
+                    }
 
-                    // }
+
 
 
                     const tx = await sendTransactionAsync(transactionRequest);

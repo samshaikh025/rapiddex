@@ -16,7 +16,7 @@ import { Chain } from "wagmi/chains";
 import { TransactionService } from "@/shared/Services/TransactionService";
 
 import BridgeView from "../bridge-view/page";
-import { parseEther } from 'viem';
+import { formatUnits, parseEther } from 'viem';
 import { readContract, writeContract } from '@wagmi/core';
 import * as definedChains from "wagmi/chains";
 import { CryptoService } from "@/shared/Services/CryptoService";
@@ -69,6 +69,8 @@ export default function Exchangeui(props: propsType) {
     const { sendTransactionAsync, isPending: isTransactionPending, isError: isTransactionError } = useSendTransaction();
     let [startBridging, setStartBridging] = useState<boolean>(false);
     let [showSubBridgeView, setShowSubBridgeView] = useState<boolean>(false);
+    let [showMinOneUSDAmountErr, setShowMinOneUSDAmountErr] = useState<boolean>(false);
+    let cryptoService = new CryptoService();
 
     const getAllChains = (): Chain[] => {
         return Object.values(definedChains).filter((chain) => chain.id !== undefined) as Chain[];
@@ -94,11 +96,13 @@ export default function Exchangeui(props: propsType) {
                 if (props.sourceTokenAmount > 0 && Number(amount) > 0) {
                     let eq = (amount * props.sourceTokenAmount);
                     setequAmountUSD(eq);
+                    //shwo validation message if balance is less than 1 USD
+                    eq < 1 ? setShowMinOneUSDAmountErr(true) : setShowMinOneUSDAmountErr(false);
                 }
             } else {
                 setSendAmount(null);
                 setequAmountUSD(null);
-
+                setShowMinOneUSDAmountErr(false);
             }
             setIsBridgeMessageVisible(false);
             setIsBridgeMessage("");
@@ -137,6 +141,8 @@ export default function Exchangeui(props: propsType) {
             dispatch(SetActiveTransactionA(activeTransactiondata));
         }
     }, [])
+
+
     async function getAllowance() {
 
         const SPENDER_ADDRESS = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
@@ -219,6 +225,113 @@ export default function Exchangeui(props: propsType) {
 
     }
 
+
+
+    async function isGasEnough(balance: string) {
+
+        let totalGasCost = 0;
+        let totalGasCostNative = 0;
+
+        let payableGasChain = allChains.find(a => a.id == props.sourceChain.chainId);
+        let payableGasToken = new Tokens();
+
+        if (payableGasChain.nativeCurrency.symbol == "ETH") {
+            payableGasToken.address = "0x0000000000000000000000000000000000000000";
+        }
+
+        payableGasToken.symbol = payableGasChain.nativeCurrency.symbol;
+        payableGasToken.decimal = payableGasChain.nativeCurrency.decimals;
+        payableGasToken.name = payableGasChain.nativeCurrency.name;
+
+        let payableprice = (await cryptoService.GetTokenData(payableGasToken)).data.price;
+
+        let gasafeeRequiredTransactionEther = formatUnits(BigInt(selectedPath.gasafeeRequiredTransaction), payableGasToken.decimal)
+
+        let payablewalletfee = Number(gasafeeRequiredTransactionEther) * payableprice;
+
+        totalGasCost = selectedPath.networkcostusd + selectedPath.relayerfeeusd + payablewalletfee;
+
+        totalGasCostNative = totalGasCost / payableprice;
+
+        let currentBalance = Number(balance);
+
+        let totalBalanceGas = totalGasCostNative + sendAmount;
+
+        if (currentBalance < totalBalanceGas) {
+
+            bridgeMessage.message = "You don't have enough Gas to Complete this transaction. You required atleast " + totalGasCostNative + "  " + payableGasToken.symbol;
+            setIsBridgeMessageVisible(true);
+            setIsBridgeMessage(bridgeMessage.message);
+            return false;
+
+        }
+        else {
+
+            bridgeMessage.message = "";
+            setIsBridgeMessageVisible(false);
+            setIsBridgeMessage("");
+            return true;
+
+        }
+
+
+
+
+
+
+
+    }
+
+    async function prepareTransactionRequest() {
+
+        let requestTransaction = new RequestTransaction();
+
+        requestTransaction.to = selectedPath.approvalAddress;
+
+        requestTransaction.value = sendAmount;
+
+
+        let transactoinObj = new TransactionRequestoDto();
+        transactoinObj.transactionId = 0;
+        transactoinObj.transactionGuid = '';
+        transactoinObj.walletAddress = walletData.address;
+        transactoinObj.amount = requestTransaction.value;
+        transactoinObj.approvalAddress = requestTransaction.to;
+        transactoinObj.transactionHash = '';
+        transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
+        transactoinObj.quoteDetail = JSON.stringify(selectedPath.entire);
+        transactoinObj.sourceChainId = props.sourceChain.chainId;
+        transactoinObj.sourceChainName = props.sourceChain.chainName;
+        transactoinObj.sourceChainLogoUri = props.sourceChain.logoURI;
+        transactoinObj.destinationChainId = props.destChain.chainId;
+        transactoinObj.destinationChainName = props.destChain.chainName;
+        transactoinObj.destinationChainLogoUri = props.destChain.logoURI;
+        transactoinObj.sourceTokenName = props.sourceToken.name;
+        transactoinObj.sourceTokenAddress = props.sourceToken.address;
+        transactoinObj.sourceTokenSymbol = props.sourceToken.symbol;
+        transactoinObj.sourceTokenLogoUri = props.sourceToken.logoURI
+        transactoinObj.destinationTokenName = props.destToken.name;
+        transactoinObj.destinationTokenAddress = props.destToken.address;
+        transactoinObj.destinationTokenSymbol = props.destToken.symbol;
+        transactoinObj.destinationTokenLogoUri = props.destToken.logoURI;
+        transactoinObj.isNativeToken = await utilityService.isNativeCurrency(props.sourceChain, props.sourceToken);
+        transactoinObj.transactiionAggregator = selectedPath.aggregator;
+        transactoinObj.transactionAggregatorRequestId = selectedPath.aggergatorRequestId;
+        transactoinObj.transactionAggregatorGasLimit = selectedPath.gasLimit;
+        transactoinObj.transactionAggregatorGasPrice = selectedPath.gasPrice;
+        transactoinObj.transactionAggregatorRequestData = selectedPath.data;
+
+
+        //store active transaction in local storage and use when realod page
+        sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, transactoinObj);
+
+        dispatch(SetActiveTransactionA(transactoinObj));
+        //addTransactionLog(transactoinObj);
+        setStartBridging(true);
+        //getAllowance();
+
+    }
+
     async function exchange() {
         //setStartBridging(true);
 
@@ -260,60 +373,24 @@ export default function Exchangeui(props: propsType) {
 
                     bridgeMessage.message = "You don't have enough " + props.sourceToken.symbol + " to complete the transaction.";
                     setIsBridgeMessageVisible(true);
-                    setIsBridgeMessage("You don't have enough " + props.sourceToken.symbol + " to complete the transaction.");
+                    setIsBridgeMessage(bridgeMessage.message);
+                    return false;
 
                 }
                 else {
 
-                    bridgeMessage.message = "";
-                    setIsBridgeMessageVisible(false);
-                    setIsBridgeMessage("");
+                    if (await isGasEnough(balance)) {
 
-                    let requestTransaction = new RequestTransaction();
+                        await prepareTransactionRequest();
 
-                    requestTransaction.to = selectedPath.approvalAddress;
+                    }
+                    else {
 
-                    requestTransaction.value = sendAmount;
+                        return false;
 
-
-                    let transactoinObj = new TransactionRequestoDto();
-                    transactoinObj.transactionId = 0;
-                    transactoinObj.transactionGuid = '';
-                    transactoinObj.walletAddress = walletData.address;
-                    transactoinObj.amount = requestTransaction.value;
-                    transactoinObj.approvalAddress = requestTransaction.to;
-                    transactoinObj.transactionHash = '';
-                    transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
-                    transactoinObj.quoteDetail = JSON.stringify(selectedPath.entire);
-                    transactoinObj.sourceChainId = props.sourceChain.chainId;
-                    transactoinObj.sourceChainName = props.sourceChain.chainName;
-                    transactoinObj.sourceChainLogoUri = props.sourceChain.logoURI;
-                    transactoinObj.destinationChainId = props.destChain.chainId;
-                    transactoinObj.destinationChainName = props.destChain.chainName;
-                    transactoinObj.destinationChainLogoUri = props.destChain.logoURI;
-                    transactoinObj.sourceTokenName = props.sourceToken.name;
-                    transactoinObj.sourceTokenAddress = props.sourceToken.address;
-                    transactoinObj.sourceTokenSymbol = props.sourceToken.symbol;
-                    transactoinObj.sourceTokenLogoUri = props.sourceToken.logoURI
-                    transactoinObj.destinationTokenName = props.destToken.name;
-                    transactoinObj.destinationTokenAddress = props.destToken.address;
-                    transactoinObj.destinationTokenSymbol = props.destToken.symbol;
-                    transactoinObj.destinationTokenLogoUri = props.destToken.logoURI;
-                    transactoinObj.isNativeToken = await utilityService.isNativeCurrency(props.sourceChain, props.sourceToken);
-                    transactoinObj.transactiionAggregator = selectedPath.aggregator;
-                    transactoinObj.transactionAggregatorRequestId = selectedPath.aggergatorRequestId;
-                    transactoinObj.transactionAggregatorGasLimit = selectedPath.gasLimit;
-                    transactoinObj.transactionAggregatorGasPrice = selectedPath.gasPrice;
-                    transactoinObj.transactionAggregatorRequestData = selectedPath.data;
+                    }
 
 
-                    //store active transaction in local storage and use when realod page
-                    sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, transactoinObj);
-
-                    dispatch(SetActiveTransactionA(transactoinObj));
-                    //addTransactionLog(transactoinObj);
-                    setStartBridging(true);
-                    //getAllowance();
 
 
 
@@ -451,6 +528,12 @@ export default function Exchangeui(props: propsType) {
 
                                             </div>
                                         </div>
+                                    </>
+                                }
+                                {
+                                    showMinOneUSDAmountErr &&
+                                    <>
+                                        <span>Minimum Amount is 1 USD</span>
                                     </>
                                 }
                                 {

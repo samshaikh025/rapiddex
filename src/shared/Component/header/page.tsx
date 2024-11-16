@@ -255,7 +255,7 @@ export default function Header() {
                     <span>{walletData.chainName}</span>
                   </a>
                   </div>
-                  <i className="fa-regular fa-clipboard px-2 py-2" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
+                  <i className="fa-regular fa-clipboard px-2 py-1" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
                 </div>
               </div>
               <li><a href="#" className="dropdown-item">View Transaction</a></li>

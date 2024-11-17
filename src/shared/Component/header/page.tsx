@@ -129,7 +129,7 @@ export default function Header() {
           </div>
 
           <div className="btn-wrapper d-flex align-items-center gap-2">
-            <div className="theme-mode">
+            <div className="theme-mode position-relative">
               <input type="checkbox" className="checkbox" id="checkbox" onChange={(e) => toggleTheme(e.currentTarget.checked)} />
               <label htmlFor="checkbox" className="checkbox-label">
                 <i className="fas fa-sun"></i>
@@ -149,7 +149,7 @@ export default function Header() {
                 !utilityService.isNullOrEmpty(walletData.address) &&
                 <>
                   {/* button for small screen */}
-                  <button className="btn primary-btn dropdown-toggle d-block d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWalletData" aria-controls="offcanvasWalletData">
+                  <button className="btn primary-btn dropdown-toggle d-flex d-lg-none header-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWalletData" aria-controls="offcanvasWalletData">
                     <div className="position-relative coin-wrapper">
                       {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
                         className="coin" alt="coin" />}
@@ -160,7 +160,7 @@ export default function Header() {
                   </button>
 
                   {/* button for large screen */}
-                  <button className="btn primary-btn dropdown-toggle d-none d-lg-block" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <button className="btn primary-btn dropdown-toggle d-none d-lg-flex header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <div className="position-relative coin-wrapper">
                       {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
                         className="coin" alt="coin" />}
@@ -177,11 +177,13 @@ export default function Header() {
                         {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
                           className="coin-small" alt="coin" />}
                       </div>
-                      <div className="d-flex flex-column">
-                        <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
-                        <a href="#">
-                          <span>{walletData.chainName}</span>
-                        </a>
+                      <div className="d-flex align-items-center">
+                        <div>
+                          <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
+                          <a href="#">
+                            <span>{walletData.chainName}</span>
+                          </a>
+                        </div>
                         <i className="fa-regular fa-clipboard px-2" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
                       </div>
                     </div>
@@ -236,7 +238,7 @@ export default function Header() {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
           </button>
         </div>
-        <div className="offcanvas-body small">
+        <div className="offcanvas-body small pt-0">
           <div className='d-flex gap-3 flex-column add-scroll-bar'>
             <ul>
               <div className="d-flex align-items-center user-profile">
@@ -246,11 +248,14 @@ export default function Header() {
                   {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
                     className="coin-small" alt="coin" />}
                 </div>
-                <div className="d-flex flex-column">
+                <div className="d-flex gap-2">
+                  <div className="d-flex flex-column">
                   <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
                   <a href="#">
                     <span>{walletData.chainName}</span>
                   </a>
+                  </div>
+                  <i className="fa-regular fa-clipboard px-2 py-1" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
                 </div>
               </div>
               <li><a href="#" className="dropdown-item">View Transaction</a></li>

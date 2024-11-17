@@ -9,7 +9,7 @@ export const CommonConfig = [
     },
     {
         apiKey:'',
-        apiUrl:'https://owlto.finance/api/'
+        apiUrl:'https://owlto.finance/'
     },
     {
         apiKey:'',
@@ -22,3 +22,11 @@ export const CommonConfig = [
 ]
 
 export const SupportedLang = ['en', 'es']
+
+export const OwltoSubStatus = {
+    "0" : 2, // done
+    "908": 1, // pending
+    "909": 3, //fail
+    "901": 3, // Chain name not found
+    "907": 3 //Tx hash not found on chain,
+}

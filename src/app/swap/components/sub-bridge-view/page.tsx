@@ -1,13 +1,15 @@
 import { SetActiveTransactionA } from "@/app/redux-store/action/action-redux";
-import { TransactionStatus, TransactionSubStatus } from "@/shared/Enum/Common.enum";
+import { Keys, TransactionStatus, TransactionSubStatus } from "@/shared/Enum/Common.enum";
 import { TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { CryptoService } from "@/shared/Services/CryptoService";
+import { SharedService } from "@/shared/Services/SharedService";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { parseEther } from "viem";
 type propsType = {
     openBridgeView: () => void;
+    closeSubBridgeView: () => void;
 }
 export default function SubBridgeView(props: propsType) {
 
@@ -16,6 +18,8 @@ export default function SubBridgeView(props: propsType) {
     let utilityService = new UtilityService();
     let dispatch = useDispatch();
     let cryptoService = new CryptoService();
+    let sharedService = SharedService.getSharedServiceInstance();
+
 
     useEffect(() => {
         const SPENDER_ADDRESS = activeTransactionData.approvalAddress;
@@ -35,8 +39,8 @@ export default function SubBridgeView(props: propsType) {
                     // set time out for checking status
                     // break if failed or done 
                     // update status in API
-                    setInterval(async () => {
-                        let status = await GetTransactionStatus(tx);
+                    let intervalInit =  setInterval(async () => {
+                        let status = await GetTransactionStatus(activeTransactionData.transactionHash);
                         if (status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED) {
                             let updateTransactionData = {
                                 ...activeTransactionData,
@@ -45,8 +49,9 @@ export default function SubBridgeView(props: propsType) {
                             dispatch(SetActiveTransactionA(updateTransactionData));
                             let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
                             //addTransactionLog(requestPayload);
+                            clearInterval(intervalInit);
                         }
-                    }, 30000)
+                    }, 10000)
                 }
             }
         }
@@ -107,6 +112,14 @@ export default function SubBridgeView(props: propsType) {
         return payLoad;
     }
 
+    function closeSubBridgeView(){
+        if(activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED){
+          sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+          dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
+        }
+        props.closeSubBridgeView();
+    }
+
     return (
         <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
             <div className="card">
@@ -116,15 +129,28 @@ export default function SubBridgeView(props: propsType) {
                             <i className="fas fa-chevron-left"></i>
                         </div>
                         <div className="card-title">
-                            Transaction Is
+                            Transaction Is 
                             {
                                 (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE
-                                    || (utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING)) &&
+                                    || activeTransactionData.transactionStatus == TransactionStatus.PENDING) &&
                                 <><span><a role="button" onClick={() => props.openBridgeView()}>Incomplete</a></span></>
                             }
                             {
-                                (!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING) &&
-                                <><span><a href=""></a>Pending</span></>
+                                (!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) &&
+                                <>
+                                {
+                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE && 
+                                    <><span><a href=""></a>Done</span> <button className="btn-primary" onClick={()=>closeSubBridgeView()}>X</button></>
+                                }
+                                {
+                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING && 
+                                    <><span><a href="" onClick={() => props.openBridgeView()}>Pending</a></span></>
+                                }
+                                {
+                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED && 
+                                    <><span><a href=""></a>Failed</span></>
+                                }
+                                </>
                             }
                         </div>
                         <div className="card-action-wrapper">

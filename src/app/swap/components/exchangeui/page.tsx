@@ -327,6 +327,7 @@ export default function Exchangeui(props: propsType) {
 
         dispatch(SetActiveTransactionA(transactoinObj));
         //addTransactionLog(transactoinObj);
+        setShowSubBridgeView(false);
         setStartBridging(true);
         //getAllowance();
 
@@ -349,6 +350,7 @@ export default function Exchangeui(props: propsType) {
 
                     try {
                         await switchChain({ chainId: props.sourceChain.chainId }) // Call switchChain with only chainId
+                        console.log("Chain Switched")
                     }
                     catch (error) {
 
@@ -406,12 +408,13 @@ export default function Exchangeui(props: propsType) {
         setStartBridging(false);
         setSendAmount(null);
         setequAmountUSD(null);
-        let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
-        if (activeTransactiondata) {
-            setShowSubBridgeView(true);
-        }
+        openOrCloseSubBridBridgeView();
     }
 
+    function openOrCloseSubBridBridgeView(){
+        let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
+        activeTransactiondata ? setShowSubBridgeView(true) : setShowSubBridgeView(false);
+    }
     return (
         <>
             {
@@ -420,7 +423,7 @@ export default function Exchangeui(props: propsType) {
                     {
                         showSubBridgeView &&
                         <>
-                            <SubBridgeView openBridgeView={() => setStartBridging(true)}></SubBridgeView>
+                            <SubBridgeView openBridgeView={() => setStartBridging(true)} closeSubBridgeView={()=>openOrCloseSubBridBridgeView()}></SubBridgeView>
                         </>
                     }
                     <div className="row">

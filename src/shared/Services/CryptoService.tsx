@@ -230,7 +230,7 @@ export class CryptoService {
         let owltCoins = [];
         let payLoad = {
             apiType: 'GET',
-            apiUrl: `config/all-tokens`,
+            apiUrl: `api/config/all-tokens`,
             apiData: null,
             apiProvider: SwapProvider.OWLTO
         }
@@ -426,7 +426,7 @@ export class CryptoService {
         let owltoChains = [];
         let payLoad = {
             apiType: 'GET',
-            apiUrl: 'config/all-chains',
+            apiUrl: 'api/config/all-chains',
             apiData: null,
             apiProvider: SwapProvider.OWLTO
         }
@@ -650,7 +650,7 @@ export class CryptoService {
 
                 const requestOwltoPath = await this.createOwltoPathRequest(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, order);
                 const params = this.createOwltoUrlParams(requestOwltoPath);
-                const url = `lp-info?${params.toString()}`;
+                const url = `api/lp-info?${params.toString()}`;
 
                 const payLoad = {
                     apiType: "GET",
@@ -695,7 +695,7 @@ export class CryptoService {
         try {
             const requestOwltoDTC = await this.createOwltoDTCRequest(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, order);
             const params = this.createOwltoDTCUrlParams(requestOwltoDTC);
-            const url = `dynamic-dtc?${params.toString()}`;
+            const url = `api/dynamic-dtc?${params.toString()}`;
 
             const payLoad = {
                 apiType: "GET",
@@ -1075,10 +1075,14 @@ export class CryptoService {
     async TransactionStatusOwlto(chainId: number, txhash: string) {
         let transactionStatus;
 
+        let request = {
+            from_chain_hash:txhash
+        }
+
         let payLoad = {
-            apiType: 'GET',
-            apiUrl: `get-transaction?chainid=${chainId}&tx_hash=${txhash}`,
-            apiData: null,
+            apiType: 'POST',
+            apiUrl: `bridge_api/v1/get_receipt`,
+            apiData: request,
             apiProvider: SwapProvider.OWLTO
         }
         try {

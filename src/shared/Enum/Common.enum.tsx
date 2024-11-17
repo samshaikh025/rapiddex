@@ -60,7 +60,7 @@ export enum TransactionSubStatusLIFI {
 
 export enum TransactionSubStatusRango {
     running = 1,
-    failed = 2,
-    success = 3
+    failed = 3,
+    success = 2
 }
 

@@ -53,3 +53,27 @@ export class ResponseOwltoDTC {
 
 }
 
+export class OwltoTransactionResponse {
+  status: {
+    code: number;
+    message: string;
+  };
+  data: {
+    token_name: string;
+    from_chain_name: string;
+    to_chain_name: string;
+    to_chain_hash: string;
+    user_send_value: ValueDetail;
+    user_receive_value: ValueDetail;
+    from_chain_token_address: string;
+    to_chain_token_address: string;
+  };
+}
+
+export class ValueDetail {
+  raw_value: string;
+  ui_value: string;
+  decimals: number;
+}
+
+

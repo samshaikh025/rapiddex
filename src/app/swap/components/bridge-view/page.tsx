@@ -15,6 +15,9 @@ import { SharedService } from "@/shared/Services/SharedService";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import { stat } from "fs";
 import { LiFiTransactionResponse } from "@/shared/Models/Lifi";
+import { OwltoTransactionResponse } from "@/shared/Models/Owlto";
+import { OwltoSubStatus } from "@/shared/Const/Common.const";
+import { ActiveTransactionData } from "@/app/redux-store/reducer/reducer-redux";
 
 type propsType = {
     closeBridgeView: () => void;
@@ -92,10 +95,11 @@ export default function BridgeView(props: propsType) {
             }
             else if (activeTransactionData.transactiionAggregator == 'owlto') {
                 // cheack owlto
-                let response = await cryptoService.TransactionStatusOwlto(activeTransactionData.sourceChainId, tx);
-                console.log(activeTransactionData);
+                let response : OwltoTransactionResponse = await cryptoService.TransactionStatusOwlto(activeTransactionData.sourceChainId, tx);
+                if (response && response.status) {
+                    status = OwltoSubStatus[String(response.status.code)];
+                }
             }
-
         }
 
         return status;
@@ -167,15 +171,12 @@ export default function BridgeView(props: propsType) {
                 //set interval to check status in 10 sec
                 //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
                 //sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
-                if (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) {
-                    //sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
-                    //dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
-                } else if (activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING) {
+                if (activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING) {
                     // set time out for checking status
                     // break if failed or done 
                     // update status in API
-                    setInterval(async () => {
-                        let status = await GetTransactionStatus(tx);
+                    const intervalId = setInterval(async () => {
+                        let status = await GetTransactionStatus(activeTransactionData.transactionHash);
                         if (status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED) {
                             let updateTransactionData = {
                                 ...activeTransactionData,
@@ -184,8 +185,9 @@ export default function BridgeView(props: propsType) {
                             dispatch(SetActiveTransactionA(updateTransactionData));
                             let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
                             //addTransactionLog(requestPayload);
+                            clearInterval(intervalId);
                         }
-                    }, 30000)
+                    }, 10000)
                 }
             }
         }
@@ -239,6 +241,7 @@ export default function BridgeView(props: propsType) {
                 abi: tokenAbi,
                 functionName: 'allowance',
                 args: [activeTransactionData.walletAddress, SPENDER_ADDRESS],
+                chainId:activeTransactionData.sourceChainId
             });
             allowanceAmount = Number(allowance);
 
@@ -254,6 +257,7 @@ export default function BridgeView(props: propsType) {
                         args: [SPENDER_ADDRESS, amountToSend],
                         chain: chainsTuple.find(a => a.id == activeTransactionData.sourceChainId), // Add chain
                         account: activeTransactionData.walletAddress as `0x${string}`, // Add account
+                        chainId:activeTransactionData.sourceChainId
                     });
                     allowanceAmount = Number(approvalAllowance);
                     console.log("Approval successful:", approvalAllowance);
@@ -271,13 +275,20 @@ export default function BridgeView(props: propsType) {
         return allowanceAmount;
     }
 
+    function closeBridgeView(){
+        if(activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED){
+          sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+          dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
+        }
+        props.closeBridgeView();
+    }
 
     return (
         <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
             <div className="card">
                 <div className="p-24">
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                        <div className="card-action-wrapper cursor-pointer" id="back-to-swap" onClick={() => { console.log(0); props.closeBridgeView() }}>
+                        <div className="card-action-wrapper cursor-pointer" id="back-to-swap" onClick={() =>  closeBridgeView() }>
                             <i className="fas fa-chevron-left"></i>
                         </div>
                         <div className="card-title">
@@ -371,7 +382,7 @@ export default function BridgeView(props: propsType) {
                                         activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE &&
                                         <><span>Done</span>
                                             <br></br>
-                                            <button className="btn btn-primary" onClick={() => props.closeBridgeView()}>swap more</button>
+                                            <button className="btn btn-primary" onClick={() => closeBridgeView()}>swap more</button>
                                         </>
 
                                     }

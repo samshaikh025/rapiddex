@@ -151,3 +151,96 @@ export class TransactionRequest {
   gasLimit: string;
 }
 
+//lifi response modal
+
+
+export class TokenModal {
+  address: string;
+  chainId: number;
+  symbol: string;
+  decimals: number;
+  name: string;
+  coinKey: string;
+  logoURI: string;
+  priceUSD: string;
+}
+
+export class GasCost {
+  type: string;
+  price: string;
+  estimate: string;
+  limit: string;
+  amount: string;
+  amountUSD: string;
+  token: TokenModal;
+}
+
+export class StepTransactionEstimate {
+  tool: string;
+  fromAmount: string;
+  fromAmountUSD: string;
+  toAmount: string;
+  toAmountMin: string;
+  toAmountUSD: string;
+  approvalAddress: string;
+  feeCosts: any[];
+  gasCosts: GasCost[];
+  executionDuration: number;
+}
+
+export class StepTransaction {
+  estimate: StepTransactionEstimate;
+}
+
+export class ToolDetails {
+  key: string;
+  name: string;
+  logoURI: string;
+  webUrl: string;
+}
+
+export class IncludedStep {
+  tool: string;
+  toolDetails: ToolDetails;
+  fromAmount: string;
+  fromToken: TokenModal;
+  toToken: TokenModal;
+  toAmount: string;
+  bridgedAmount: string | null;
+}
+
+export class TransactionDetails {
+  txHash: string;
+  txLink: string;
+  amount: string;
+  token: TokenModal;
+  chainId: number;
+  gasPrice: string;
+  gasUsed: string;
+  gasToken: TokenModal;
+  gasAmount: string;
+  gasAmountUSD: string;
+  amountUSD: string;
+  value: string;
+  includedSteps?: IncludedStep[];
+  timestamp: number;
+}
+
+export class Metadata {
+  integrator: string;
+}
+
+export class LiFiTransactionResponse {
+  transactionId: string;
+  stepTransaction: StepTransaction;
+  sending: TransactionDetails;
+  receiving: TransactionDetails;
+  lifiExplorerLink: string;
+  fromAddress: string;
+  toAddress: string;
+  tool: string;
+  status: string;
+  substatus: string;
+  substatusMessage: string;
+  metadata: Metadata;
+}

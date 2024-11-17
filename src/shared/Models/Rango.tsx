@@ -154,3 +154,35 @@ class ErrorInfo {
   traceId: number;
   [key: string]: any; // For additional fields
 }
+
+
+//response modal
+
+export class LiFiTransactionResponse {
+  status: string; // Example: "success"
+  error: string | null; // Null if no error, else an error message
+  diagnosisUrl: string | null; // URL for diagnosis, if applicable
+  explorerUrl: ExplorerUrl[]; // Array of URLs with descriptions
+  output: any | null; // Output data if present, otherwise null
+  bridgeData: BridgeData | null; // Details about the bridge transaction
+}
+
+export class ExplorerUrl {
+  url: string; // Example: "https://polygonscan.com/tx/..."
+  description: string; // Description of the explorer link, e.g., "swap"
+}
+
+export class BridgeData {
+  srcChainId: number; // Source chain ID, e.g., 137 for Polygon
+  srcTxHash: string; // Transaction hash on source chain
+  srcToken: string; // Source token contract address
+  srcTokenAmt: string; // Amount of the source token, e.g., "100000"
+  srcTokenDecimals: number; // Number of decimals for the source token
+  srcTokenPrice: string; // Price of the source token
+  destChainId: number; // Destination chain ID
+  destTxHash: string | null; // Transaction hash on destination chain, if available
+  destToken: string; // Destination token contract address
+  destTokenDecimals: number; // Number of decimals for the destination token
+  destTokenAmt: string | null; // Amount of the destination token, if available
+  destTokenPrice: string; // Price of the destination token
+}

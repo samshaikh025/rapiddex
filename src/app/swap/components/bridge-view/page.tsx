@@ -6,7 +6,7 @@ import { config } from '../../../wagmi/config';// Go up a level if needed
 import { readContract, writeContract } from '@wagmi/core';
 import * as definedChains from "wagmi/chains";
 import { useSendTransaction } from "wagmi";
-import { Keys, TransactionStatus, TransactionSubStatus } from "@/shared/Enum/Common.enum";
+import { Keys, TransactionStatus, TransactionSubStatus, TransactionSubStatusLIFI, TransactionSubStatusRango } from "@/shared/Enum/Common.enum";
 import { SetActiveTransactionA, UpdateTransactionStatusA } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import { Chains, TransactionRequestoDto } from "@/shared/Models/Common.model";
@@ -14,6 +14,7 @@ import { TransactionService } from "@/shared/Services/TransactionService";
 import { SharedService } from "@/shared/Services/SharedService";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import { stat } from "fs";
+import { LiFiTransactionResponse } from "@/shared/Models/Lifi";
 
 type propsType = {
     closeBridgeView: () => void;
@@ -46,45 +47,48 @@ export default function BridgeView(props: propsType) {
     // },[])
     function getPayloadForTransaction(transactionData: TransactionRequestoDto, tx: string, transactionGuid: string, transactionStatus: number, transactionSubStatus: number) {
         let payLoad = {
-             TransactionGuid : transactionGuid,
-             WalletAddress : transactionData.walletAddress,
-             Amount : transactionData.amount,
-             ApprovalAddress : transactionData.approvalAddress,
-             TransactionHash : tx,
-             TransactionStatus : transactionStatus,
-             TransactionSubStatus : transactionSubStatus,
-             QuoteDetail : transactionData.quoteDetail,
-             SourceChainId : transactionData.sourceChainId,
-             SourceChainName : transactionData.sourceChainName,
-             SourceChainLogoUri : transactionData.sourceChainLogoUri,
-             DestinationChainId : transactionData.destinationChainId,
-             DestinationChainName : transactionData.destinationChainName,
-             DestinationChainLogoUri : transactionData.destinationChainLogoUri,
-             SourceTokenName : transactionData.sourceTokenName,
-             SourceTokenAddress : transactionData.sourceTokenAddress,
-             SourceTokenSymbol :  transactionData.sourceTokenSymbol,
-             SourceTokenLogoUri : transactionData.sourceTokenLogoUri,
-             DestinationTokenName : transactionData.destinationTokenName,
-             DestinationTokenAddress : transactionData.destinationTokenAddress,
-             DestinationTokenSymbol : transactionData.destinationTokenSymbol,
-             DestinationTokenLogoUri : transactionData.destinationTokenLogoUri
+            TransactionGuid: transactionGuid,
+            WalletAddress: transactionData.walletAddress,
+            Amount: transactionData.amount,
+            ApprovalAddress: transactionData.approvalAddress,
+            TransactionHash: tx,
+            TransactionStatus: transactionStatus,
+            TransactionSubStatus: transactionSubStatus,
+            QuoteDetail: transactionData.quoteDetail,
+            SourceChainId: transactionData.sourceChainId,
+            SourceChainName: transactionData.sourceChainName,
+            SourceChainLogoUri: transactionData.sourceChainLogoUri,
+            DestinationChainId: transactionData.destinationChainId,
+            DestinationChainName: transactionData.destinationChainName,
+            DestinationChainLogoUri: transactionData.destinationChainLogoUri,
+            SourceTokenName: transactionData.sourceTokenName,
+            SourceTokenAddress: transactionData.sourceTokenAddress,
+            SourceTokenSymbol: transactionData.sourceTokenSymbol,
+            SourceTokenLogoUri: transactionData.sourceTokenLogoUri,
+            DestinationTokenName: transactionData.destinationTokenName,
+            DestinationTokenAddress: transactionData.destinationTokenAddress,
+            DestinationTokenSymbol: transactionData.destinationTokenSymbol,
+            DestinationTokenLogoUri: transactionData.destinationTokenLogoUri
         }
         return payLoad;
     }
 
-    async function GetTransactionStatus(tx: string)
-    {
+    async function GetTransactionStatus(tx: string) {
         let status = 0;
         if (!utilityService.isNullOrEmpty(tx)) {
             if (activeTransactionData.transactiionAggregator == 'lifi') {
                 // check lifi transaction status
-                let response = await cryptoService.TransactionStatusLIFI(tx, activeTransactionData.sourceChainName, activeTransactionData.destinationChainName)
-                console.log(activeTransactionData);
+                let response: LiFiTransactionResponse = await cryptoService.TransactionStatusLIFI(tx, activeTransactionData.sourceChainId, activeTransactionData.destinationChainId)
+                if (response && response.status) {
+                    status = TransactionSubStatusLIFI[response.status];
+                }
             }
             else if (activeTransactionData.transactiionAggregator == 'rango') {
                 // chack rango
-                let response = await cryptoService.TransactionStatusRango(activeTransactionData.transactionAggregatorRequestId, tx, 1);
-                console.log(activeTransactionData);
+                let response: LiFiTransactionResponse = await cryptoService.TransactionStatusRango(activeTransactionData.transactionAggregatorRequestId, tx, 1);
+                if (response && response.status) {
+                    status = TransactionSubStatusRango[response.status];
+                }
             }
             else if (activeTransactionData.transactiionAggregator == 'owlto') {
                 // cheack owlto
@@ -140,7 +144,7 @@ export default function BridgeView(props: propsType) {
 
                     tx = await sendTransactionAsync(transactionRequest);
                     let status = await GetTransactionStatus(tx);
-                    
+
 
                     let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
                     //addTransactionLog(requestPayload);
@@ -172,17 +176,16 @@ export default function BridgeView(props: propsType) {
                     // update status in API
                     setInterval(async () => {
                         let status = await GetTransactionStatus(tx);
-                        if(status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED)
-                        {
+                        if (status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED) {
                             let updateTransactionData = {
                                 ...activeTransactionData,
                                 transactionSubStatus: status
                             }
                             dispatch(SetActiveTransactionA(updateTransactionData));
                             let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
-                           //addTransactionLog(requestPayload);
+                            //addTransactionLog(requestPayload);
                         }
-                    }, 30000) 
+                    }, 30000)
                 }
             }
         }

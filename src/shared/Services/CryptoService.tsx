@@ -1013,11 +1013,11 @@ export class CryptoService {
         }
     }
 
-    async TransactionStatusLIFI(txHash: string, fromChain: string, toChain: string) {
+    async TransactionStatusLIFI(txHash: string, fromChainId: number, toChainId: number) {
         let transactionStatus;
         let payLoad = {
             apiType: 'GET',
-            apiUrl: `status?txHash=${txHash}&fromChain=${fromChain}&toChain=${toChain}`,
+            apiUrl: `status?txHash=${txHash}&fromChain=${fromChainId}&toChain=${toChainId}`,
             apiData: null,
             apiProvider: SwapProvider.LIFI
         }

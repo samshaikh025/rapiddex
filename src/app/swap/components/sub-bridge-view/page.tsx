@@ -10,9 +10,9 @@ type propsType = {
     openBridgeView: () => void;
 }
 export default function SubBridgeView(props: propsType) {
-    
 
-    let activeTransactionData = useSelector((state: any) => state.ActiveTransactionData);
+
+    let activeTransactionData: TransactionRequestoDto = useSelector((state: any) => state.ActiveTransactionData);
     let utilityService = new UtilityService();
     let dispatch = useDispatch();
     let cryptoService = new CryptoService();
@@ -23,7 +23,7 @@ export default function SubBridgeView(props: propsType) {
         let tx = '';
 
         async function transactionSteps() {
-            
+
             if (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) {
                 //set interval to check status in 10 sec
                 //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
@@ -37,17 +37,16 @@ export default function SubBridgeView(props: propsType) {
                     // update status in API
                     setInterval(async () => {
                         let status = await GetTransactionStatus(tx);
-                        if(status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED)
-                        {
+                        if (status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED) {
                             let updateTransactionData = {
                                 ...activeTransactionData,
                                 transactionSubStatus: status
                             }
                             dispatch(SetActiveTransactionA(updateTransactionData));
                             let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
-                           //addTransactionLog(requestPayload);
+                            //addTransactionLog(requestPayload);
                         }
-                    }, 30000) 
+                    }, 30000)
                 }
             }
         }
@@ -56,13 +55,12 @@ export default function SubBridgeView(props: propsType) {
 
     }, [activeTransactionData.transactionStatus]);
 
-    async function GetTransactionStatus(tx: string)
-    {
+    async function GetTransactionStatus(tx: string) {
         let status = 0;
         if (!utilityService.isNullOrEmpty(tx)) {
             if (activeTransactionData.transactiionAggregator == 'lifi') {
                 // check lifi transaction status
-                let response = await cryptoService.TransactionStatusLIFI(tx, activeTransactionData.sourceChainName, activeTransactionData.destinationChainName)
+                let response = await cryptoService.TransactionStatusLIFI(tx, activeTransactionData.sourceChainId, activeTransactionData.destinationChainId)
                 console.log(activeTransactionData);
             }
             else if (activeTransactionData.transactiionAggregator == 'rango') {
@@ -83,32 +81,32 @@ export default function SubBridgeView(props: propsType) {
 
     function getPayloadForTransaction(transactionData: TransactionRequestoDto, tx: string, transactionGuid: string, transactionStatus: number, transactionSubStatus: number) {
         let payLoad = {
-             TransactionGuid : transactionGuid,
-             WalletAddress : transactionData.walletAddress,
-             Amount : transactionData.amount,
-             ApprovalAddress : transactionData.approvalAddress,
-             TransactionHash : tx,
-             TransactionStatus : transactionStatus,
-             TransactionSubStatus : transactionSubStatus,
-             QuoteDetail : transactionData.quoteDetail,
-             SourceChainId : transactionData.sourceChainId,
-             SourceChainName : transactionData.sourceChainName,
-             SourceChainLogoUri : transactionData.sourceChainLogoUri,
-             DestinationChainId : transactionData.destinationChainId,
-             DestinationChainName : transactionData.destinationChainName,
-             DestinationChainLogoUri : transactionData.destinationChainLogoUri,
-             SourceTokenName : transactionData.sourceTokenName,
-             SourceTokenAddress : transactionData.sourceTokenAddress,
-             SourceTokenSymbol :  transactionData.sourceTokenSymbol,
-             SourceTokenLogoUri : transactionData.sourceTokenLogoUri,
-             DestinationTokenName : transactionData.destinationTokenName,
-             DestinationTokenAddress : transactionData.destinationTokenAddress,
-             DestinationTokenSymbol : transactionData.destinationTokenSymbol,
-             DestinationTokenLogoUri : transactionData.destinationTokenLogoUri
+            TransactionGuid: transactionGuid,
+            WalletAddress: transactionData.walletAddress,
+            Amount: transactionData.amount,
+            ApprovalAddress: transactionData.approvalAddress,
+            TransactionHash: tx,
+            TransactionStatus: transactionStatus,
+            TransactionSubStatus: transactionSubStatus,
+            QuoteDetail: transactionData.quoteDetail,
+            SourceChainId: transactionData.sourceChainId,
+            SourceChainName: transactionData.sourceChainName,
+            SourceChainLogoUri: transactionData.sourceChainLogoUri,
+            DestinationChainId: transactionData.destinationChainId,
+            DestinationChainName: transactionData.destinationChainName,
+            DestinationChainLogoUri: transactionData.destinationChainLogoUri,
+            SourceTokenName: transactionData.sourceTokenName,
+            SourceTokenAddress: transactionData.sourceTokenAddress,
+            SourceTokenSymbol: transactionData.sourceTokenSymbol,
+            SourceTokenLogoUri: transactionData.sourceTokenLogoUri,
+            DestinationTokenName: transactionData.destinationTokenName,
+            DestinationTokenAddress: transactionData.destinationTokenAddress,
+            DestinationTokenSymbol: transactionData.destinationTokenSymbol,
+            DestinationTokenLogoUri: transactionData.destinationTokenLogoUri
         }
         return payLoad;
     }
-    
+
     return (
         <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
             <div className="card">
@@ -120,12 +118,12 @@ export default function SubBridgeView(props: propsType) {
                         <div className="card-title">
                             Transaction Is
                             {
-                               (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE 
-                                || (utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING)) &&
-                                <><span><a role="button" onClick={()=>props.openBridgeView()}>Incomplete</a></span></>
+                                (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE
+                                    || (utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING)) &&
+                                <><span><a role="button" onClick={() => props.openBridgeView()}>Incomplete</a></span></>
                             }
                             {
-                               (!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING) &&
+                                (!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.PENDING) &&
                                 <><span><a href=""></a>Pending</span></>
                             }
                         </div>

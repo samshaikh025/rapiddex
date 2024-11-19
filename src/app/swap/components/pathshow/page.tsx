@@ -91,18 +91,18 @@ export default function Pathshow(props: PropsType) {
     <>
       {availablePaths.length > 0 &&
         <>
-          <div className="col-lg-7 col-md-12 col-sm-12 col-12 d-none d-lg-block">
+          <div className="col-lg-5 col-md-12 col-sm-12 col-12 d-none d-lg-block">
             <div className="card">
               <div className="p-24">
-                <div className="d-flex justify-content-between align-items-center mb-2 gap-3 flex-wrap-reverse">
+                <div className="d-flex justify-content-between align-items-center mb-2 gap-3">
                   <div className="card-title">
-                    Select route
-                    <p className="mt-2 font-16 mb-0">
-                      Sorted by estimated output minus gas fees
-                    </p>
+                    Well Get At Chain Name
+                  </div>
+                  <div className="bar">
+                    <div className="in"></div>
                   </div>
                   <div className="card-action-wrapper d-flex align-items-center gap-2">
-                    <div className="dropdown">
+                    {/* <div className="dropdown">
                       <button
                         className="btn primary-btn dropdown-toggle"
                         type="button"
@@ -111,11 +111,11 @@ export default function Pathshow(props: PropsType) {
                       >
                         Maximum Return
                       </button>
-                      {/* <ul className="dropdown-menu">
+                      <ul className="dropdown-menu">
                                         <li><a className="" href="#">Fastest Transfer</a></li>
-                                    </ul> */}
+                                    </ul>
                     </div>
-                    <i className="fas fa-redo-alt"></i>
+                    <i className="fas fa-redo-alt"></i> */}
                   </div>
                 </div>
                 {
@@ -194,7 +194,7 @@ export default function Pathshow(props: PropsType) {
                         availablePaths.length > 0 &&
                         availablePaths.map((pathshow, index) => (
                           <div key={index} className={`inner-card w-100 py-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} onClick={() => sendSelectedPathToParent(pathshow)}>
-                            <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap px-3 pb-2 bottom-border-line">
+                            {/* <div className="d-block text-end align-items-center justify-content-between gap-3 flex-wrap px-3 pb-2 bottom-border-line">
                               <div className="d-flex align-items-center gap-2">
                                 <label className="font-16">
                                   <span className="fw-600">Est:</span>{" "}
@@ -205,7 +205,7 @@ export default function Pathshow(props: PropsType) {
                                   {pathshow.gasafee}
                                 </label>
                               </div>
-                              <div className="d-flex align-items-center gap-2 flex-wrap">
+                              <div className="d-block align-items-center gap-2 flex-wrap">
                                 <label className="best-return fw-600 px-2 py-1">
                                   Best Return
                                 </label>
@@ -213,9 +213,9 @@ export default function Pathshow(props: PropsType) {
                                   {pathshow.aggregatorOrderType}
                                 </label>
                               </div>
-                            </div>
-                            <div className="px-3 d-flex justify-content-between py-2 middle-align-card">
-                              <div>
+                            </div> */}
+                            <div className="px-3 d-block justify-content-between py-2 middle-align-card">
+                              {/* <div>
                                 <label className="fw-600">From</label>
                                 <div className="d-flex align-items-center gap-3">
                                   <div className="position-relative coin-wrapper">
@@ -239,8 +239,8 @@ export default function Pathshow(props: PropsType) {
                                     </label>
                                   </div>
                                 </div>
-                              </div>
-                              <div className="relative center-card-with-line d-flex align-items-center gap-2 inner-card px-3 py-2 my-3">
+                              </div> */}
+                              {/* <div className="relative center-card-with-line d-flex align-items-center gap-2 inner-card px-3 py-2 my-3">
                                 <img
                                   src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg"
                                   width="100%"
@@ -249,19 +249,11 @@ export default function Pathshow(props: PropsType) {
                                 <label className="font-16 fw-600">
                                   {pathshow.aggregator}
                                 </label>
-                              </div>
-                              <div>
-                                <label className="fw-600 d-block">To</label>
+                              </div> */}
+                              <div className='d-flex justify-content-between'>
+                                {/* <label className="fw-600 d-block">To</label> */}
                                 <div className="d-flex align-items-center gap-3">
-                                  <div className="d-flex flex-column">
-                                    <label className="coin-name d-block fw-600">
-                                      {pathshow.toChain}
-                                    </label>
-                                    <label className="coin-sub-name">
-                                      {pathshow.toToken}
-                                    </label>
-                                  </div>
-                                  <div className="position-relative coin-wrapper">
+                                  {/* <div className="position-relative coin-wrapper">
                                     <img
                                       src={props.destChain.logoURI}
                                       className="coin"
@@ -272,17 +264,53 @@ export default function Pathshow(props: PropsType) {
                                       className="coin-small"
                                       alt="coin"
                                     />
+                                  </div> */}
+                                  <div className="selcet-coin coin-wrapper">
+                                    <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
+                                  </div>
+                                  <div className="d-flex flex-column">
+                                    <label className="coin-name d-block fw-600">
+                                      {/* {pathshow.toChain} */}
+                                      0.005 ETH
+                                    </label>
+                                    <label className="coin-sub-name">
+                                      {/* {pathshow.toToken} */}
+                                      $ 0.001
+                                    </label>
                                   </div>
                                 </div>
+                                <div className="d-block align-items-center gap-2 flex-wrap">
+                                  <label className="best-return fw-600 px-2 py-1">
+                                    Best Return
+                                  </label>
+                                  {/* <label className="faster fw-600 px-2 py-1">
+                                  {pathshow.aggregatorOrderType}
+                                </label> */}
+                                </div>
+                              </div>
+
+                            </div>
+                            <div className="px-4 py-1">
+                              <div className="d-flex align-items-center gap-2">
+                                <label className="font-16 d-flex align-items-center gap-2">
+                                  {/* <span className="fw-600">Est:</span>{" "} */}
+                                  <i className="fa-regular fa-clock "></i>
+                                  {pathshow.estTime}
+                                </label>
+                                <label className="font-16 d-flex align-items-center gap-2">
+                                  {/* <span className="fw-600">Gas Fees:</span> $ */}
+                                  <i className="fa-solid fa-gas-pump"></i>
+                                  {pathshow.gasafee}
+                                </label>
                               </div>
                             </div>
-                            <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap px-3 pt-2 top-border-line">
+                            {/* <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap px-3 pt-2 top-border-line">
                               <i className="fas fa-bolt primary-text"></i>{" "}
                               <label className="font-16">
                                 <span className="fw-600">$0.708</span> higher output
                                 than any other route
                               </label>
-                            </div>
+                            </div> */}
                           </div>
                         ))}
                     </div>
@@ -305,8 +333,8 @@ export default function Pathshow(props: PropsType) {
             {
               availablePaths.length > 0 &&
               availablePaths.map((pathshow, index) => (
-                <div className={`inner-card w-100 py-2 px-3 mt-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} data-bs-dismiss="offcanvas" aria-label="Close" onClick={() => sendSelectedPathToParent(pathshow)} key={index}>
-                  <div className="d-flex align-items-center gap-3">
+                <div className={`inner-card w-100 py-3 px-3 mt-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} data-bs-dismiss="offcanvas" aria-label="Close" onClick={() => sendSelectedPathToParent(pathshow)} key={index}>
+                  {/* <div className="d-flex align-items-center gap-3">
                     <div className="selcet-coin coin-wrapper">
                       <img src="https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/ethereum.svg" className="coin" alt="" />
                     </div>
@@ -321,6 +349,36 @@ export default function Pathshow(props: PropsType) {
                             </span>
                             USDC</span>
                         </p><span className="">&nbsp;</span><p className="m-0 p-0 font-medium primary-text"><span>Gas Fees: </span> <span className="fw-400">${pathshow.gasafee}</span></p></div>
+                    </div>
+                  </div> */}
+                  <div className="d-flex gap-3">
+                    <div className="selcet-coin coin-wrapper">
+                      <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
+                    </div>
+                    <div className="d-flex flex-column w-100">
+                      <label className="coin-name d-flex gap-2 justify-content-between">
+                        <label className="coin-name d-block ">
+                          <span className="d-block fw-600"> 0.005 ETH </span>
+                          <span className="d-block coin-sub-name" >$ 0.001</span>
+                        </label>
+                        <p className="faster fw-600 px-2 py-1">
+                          Faster
+                        </p>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="px-2 py-1">
+                    <div className="d-flex align-items-center gap-2">
+                      <label className="font-16 d-flex align-items-center gap-2">
+                        {/* <span className="fw-600">Est:</span>{" "} */}
+                        <i className="fa-regular fa-clock "></i>
+                        30 seconds
+                      </label>
+                      <label className="font-16 d-flex align-items-center gap-2">
+                        {/* <span className="fw-600">Gas Fees:</span> $ */}
+                        <i className="fa-solid fa-gas-pump"></i>
+                        18.25USD
+                      </label>
                     </div>
                   </div>
                 </div>

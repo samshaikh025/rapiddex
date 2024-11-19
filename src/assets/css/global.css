@@ -178,6 +178,9 @@ img {
 .inner-card label {
   color:var(--black-color)
 }
+.inner-card p {
+  color:var(--black-color)
+}
 .card-action-wrapper {
   font-size: 24px;
   color: var(--primary-icon-color);

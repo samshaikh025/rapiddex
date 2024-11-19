@@ -411,7 +411,7 @@ export default function Exchangeui(props: propsType) {
         openOrCloseSubBridBridgeView();
     }
 
-    function openOrCloseSubBridBridgeView(){
+    function openOrCloseSubBridBridgeView() {
         let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
         activeTransactiondata ? setShowSubBridgeView(true) : setShowSubBridgeView(false);
     }
@@ -423,7 +423,7 @@ export default function Exchangeui(props: propsType) {
                     {
                         showSubBridgeView &&
                         <>
-                            <SubBridgeView openBridgeView={() => setStartBridging(true)} closeSubBridgeView={()=>openOrCloseSubBridBridgeView()}></SubBridgeView>
+                            <SubBridgeView openBridgeView={() => setStartBridging(true)} closeSubBridgeView={() => openOrCloseSubBridBridgeView()}></SubBridgeView>
                         </>
                     }
                     <div className="row">
@@ -542,8 +542,8 @@ export default function Exchangeui(props: propsType) {
                                 {
                                     sendAmount != null && sendAmount > 0 &&
                                     <>
-                                        <div className="inner-card w-100 py-2 px-3 mt-2">
-                                            <div className="d-flex align-items-center gap-3">
+                                        <div className="inner-card w-100 py-3 px-3 mt-2">
+                                            <div className="">
                                                 {isPathShow &&
                                                     <>
                                                         <div className="selcet-coin coin-wrapper">
@@ -563,7 +563,7 @@ export default function Exchangeui(props: propsType) {
                                                 {
                                                     (!isPathShow && totalAvailablePath > 0) &&
                                                     <>
-                                                        <div className="selcet-coin coin-wrapper">
+                                                        {/* <div className="selcet-coin coin-wrapper">
                                                             <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
                                                         </div>
                                                         <div className="d-flex flex-column">
@@ -577,8 +577,40 @@ export default function Exchangeui(props: propsType) {
                                                                         </span>
                                                                         USDC</span>
                                                                 </p><span className="">&nbsp;</span><p className="m-0 p-0 font-medium primary-text"><span>Gas Fees: </span> <span className="fw-400">${selectedPath.gasafee}</span></p></div>
+                                                        </div> */}
+
+                                                        <div className="d-flex gap-3">
+                                                            <div className="selcet-coin coin-wrapper">
+                                                                <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
+                                                            </div>
+                                                            <div className="d-flex flex-column w-100">
+                                                                <label className="coin-name d-flex gap-2 justify-content-between">
+                                                                    <label className="coin-name d-block ">
+                                                                        <span className="d-block fw-600"> 0.005 ETH </span>
+                                                                        <span className="d-block coin-sub-name" >$ 0.001</span>
+                                                                    </label>
+                                                                    <p className="faster fw-600 px-2 py-1">
+                                                                        Faster
+                                                                    </p>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                        <div className="px-2 py-1">
+                                                            <div className="d-flex align-items-center gap-2">
+                                                                <label className="font-16 d-flex align-items-center gap-2">
+                                                                    {/* <span className="fw-600">Est:</span>{" "} */}
+                                                                    <i className="fa-regular fa-clock "></i>
+                                                                    30 seconds
+                                                                </label>
+                                                                <label className="font-16 d-flex align-items-center gap-2">
+                                                                    {/* <span className="fw-600">Gas Fees:</span> $ */}
+                                                                    <i className="fa-solid fa-gas-pump"></i>
+                                                                    18.25USD
+                                                                </label>
+                                                            </div>
                                                         </div>
                                                     </>
+
                                                 }
                                             </div>
                                         </div>

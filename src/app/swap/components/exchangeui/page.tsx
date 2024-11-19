@@ -546,12 +546,33 @@ export default function Exchangeui(props: propsType) {
                                             <div className="">
                                                 {isPathShow &&
                                                     <>
-                                                        <div className="selcet-coin coin-wrapper">
-                                                            <Skeleton circle={true} width={50} height={50} />
+                                                        <div className="d-flex gap-3">
+                                                            <div className="selcet-coin coin-wrapper">
+                                                                <Skeleton circle={true} width={50} height={50} />
+                                                            </div>
+                                                            <div className="d-flex flex-column w-100">
+                                                                <label className="coin-name d-flex gap-2 justify-content-between">
+                                                                    <label className="coin-name d-block ">
+                                                                        <span className="d-block fw-600"> <Skeleton width={90} height={15} /> </span>
+                                                                        <span className="d-block coin-sub-name" ><Skeleton width={50} height={10} /></span>
+                                                                    </label>
+                                                                    <p className="fw-600 px-2 py-1">
+                                                                        <Skeleton width={90} height={20} />
+                                                                    </p>
+                                                                </label>
+                                                            </div>
                                                         </div>
-                                                        <div className="d-flex flex-column">
-                                                            <Skeleton width={50} height={10} />
-                                                            <Skeleton width={250} height={10} />
+                                                        <div className="px-2 py-1">
+                                                            <div className="d-flex align-items-center gap-2">
+                                                                <label className="font-16 d-flex align-items-center gap-2">
+                                                                    <Skeleton width={10} height={10} circle={true} />
+                                                                    <Skeleton width={90} height={10} />
+                                                                </label>
+                                                                <label className="font-16 d-flex align-items-center gap-2">
+                                                                    <Skeleton width={10} height={10} circle={true} />
+                                                                    <Skeleton width={90} height={10} />
+                                                                </label>
+                                                            </div>
                                                         </div>
                                                     </>
                                                 }
@@ -586,8 +607,8 @@ export default function Exchangeui(props: propsType) {
                                                             <div className="d-flex flex-column w-100">
                                                                 <label className="coin-name d-flex gap-2 justify-content-between">
                                                                     <label className="coin-name d-block ">
-                                                                        <span className="d-block fw-600"> 0.005 ETH </span>
-                                                                        <span className="d-block coin-sub-name" >$ 0.001</span>
+                                                                        <span className="d-block fw-600"> {selectedPath.fromAmount} {selectedPath.fromToken} </span>
+                                                                        <span className="d-block coin-sub-name" >$ {selectedPath.fromAmountUsd}</span>
                                                                     </label>
                                                                     <p className="faster fw-600 px-2 py-1">
                                                                         Faster
@@ -598,14 +619,12 @@ export default function Exchangeui(props: propsType) {
                                                         <div className="px-2 py-1">
                                                             <div className="d-flex align-items-center gap-2">
                                                                 <label className="font-16 d-flex align-items-center gap-2">
-                                                                    {/* <span className="fw-600">Est:</span>{" "} */}
                                                                     <i className="fa-regular fa-clock "></i>
-                                                                    30 seconds
+                                                                    {selectedPath.estTime}
                                                                 </label>
                                                                 <label className="font-16 d-flex align-items-center gap-2">
-                                                                    {/* <span className="fw-600">Gas Fees:</span> $ */}
                                                                     <i className="fa-solid fa-gas-pump"></i>
-                                                                    18.25USD
+                                                                    {selectedPath.gasafee}
                                                                 </label>
                                                             </div>
                                                         </div>
@@ -650,7 +669,9 @@ export default function Exchangeui(props: propsType) {
                             destToken={props.destToken}
                             sendInitData={(result: PathShowViewModel[]) => getInitData(result)}
                             sendSelectedPath={(result: PathShowViewModel) => getSelectedPath(result)}
-                            isPathLoadingParent={(status: boolean) => setIsPathLoading(status)} />
+                            isPathLoadingParent={(status: boolean) => setIsPathLoading(status)} 
+                            amountInUsd = {equAmountUSD}
+                            />
                     }
                 </>
             }

@@ -43,6 +43,7 @@ export class PathShowViewModel {
   fromChain: string;
   fromToken: string;
   fromAmount: string;
+  fromAmountUsd: string;
   toChain: string;
   toToken: string;
   toAmount: string;

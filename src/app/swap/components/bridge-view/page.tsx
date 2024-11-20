@@ -318,8 +318,8 @@ export default function BridgeView(props: propsType) {
                                 </div>
                             </div>
                             <div>
-                                <div className="title">Transaction Allowance</div>
-                                <div className="caption">Only For non native token</div>
+                                <div className="title">Token Allowance</div>
+                                <div className="caption">Allowance To Non Native Token</div>
                             </div>
                         </div>
                         <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.PENDING ? 'step-active' : ''}`}>
@@ -340,8 +340,8 @@ export default function BridgeView(props: propsType) {
                                 </div>
                             </div>
                             <div>
-                                <div className="title">Transaction Init</div>
-                                <div className="caption">Your transaction is started.</div>
+                                <div className="title">Swap Transaction</div>
+                                <div className="caption">Transaction Swap Via Bridge</div>
                             </div>
                         </div>
                         <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.COMPLETED ? 'step-active' : ''}`}>
@@ -364,30 +364,53 @@ export default function BridgeView(props: propsType) {
                             <div>
                                 <div className="title">Transaction Status</div>
                                 <div className="caption">
-                                    Your transaction is
+                                    Swap Transaction
+                                    {
+                                        activeTransactionData.transactionSubStatus == 0 &&
+                                        <>
+                                            <span className="alert alert-secondary px-2 p-0 mx-1" role="alert">
+                                                Not Started
+                                            </span>
+                                        </>
+                                        
+                                    }
                                     {
                                         activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING &&
-                                        <><span>Pending</span></>
+                                        <>
+                                            <span className="alert alert-warning px-2 p-0 mx-1" role="alert">
+                                                Pending
+                                            </span>
+                                        </>
+                                        
                                     }
                                     {
                                         activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED &&
                                         <>
-                                            <span>Failed</span>
-                                            <br></br>
-                                            <button className="btn btn-primary" onClick={() => props.closeBridgeView()}>swap more</button>
+                                            <span className="alert alert-danger px-2 mx-1" role="alert">
+                                                Failed
+                                            </span>
                                         </>
 
                                     }
                                     {
                                         activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE &&
-                                        <><span>Done</span>
-                                            <br></br>
-                                            <button className="btn btn-primary" onClick={() => closeBridgeView()}>swap more</button>
+                                        <>
+                                            <span className="alert alert-success px-2 p-0 mx-1" role="alert">
+                                                Success
+                                            </span>
                                         </>
 
                                     }
                                 </div>
                             </div>
+                        </div>
+                        <div>
+                        {
+                                        (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) &&
+                                        <>
+                                            <button className="btn btn-primary" onClick={() => props.closeBridgeView()}>Swap More</button>
+                                        </>
+                        }
                         </div>
                     </div>
 

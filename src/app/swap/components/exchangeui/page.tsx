@@ -299,6 +299,7 @@ export default function Exchangeui(props: propsType) {
         transactoinObj.approvalAddress = requestTransaction.to;
         transactoinObj.transactionHash = '';
         transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
+        transactoinObj.transactionSubStatus = 0;
         transactoinObj.quoteDetail = JSON.stringify(selectedPath.entire);
         transactoinObj.sourceChainId = props.sourceChain.chainId;
         transactoinObj.sourceChainName = props.sourceChain.chainName;

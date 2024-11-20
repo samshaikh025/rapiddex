@@ -129,26 +129,26 @@ export default function SubBridgeView(props: propsType) {
                             <i className="fas fa-chevron-left"></i>
                         </div>
                         <div className="card-title">
-                            Transaction Is 
+                            Previous Swap 
                             {
                                 (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE
                                     || activeTransactionData.transactionStatus == TransactionStatus.PENDING) &&
-                                <><span><a role="button" onClick={() => props.openBridgeView()}>Incomplete</a></span></>
+                                <><span className="alert alert-warning px-2 p-0 mx-1"><a role="button" onClick={() => props.openBridgeView()}>Incomplete</a></span></>
                             }
                             {
                                 (!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) &&
                                 <>
                                 {
                                     activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE && 
-                                    <><span><a href=""></a>Done</span> <button className="btn-primary" onClick={()=>closeSubBridgeView()}>X</button></>
+                                    <><span className="alert alert-success px-2 p-0 mx-1"><a href=""></a>Done</span> <button className="btn-primary" onClick={()=>closeSubBridgeView()}>X</button></>
                                 }
                                 {
                                     activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING && 
-                                    <><span><a href="" onClick={() => props.openBridgeView()}>Pending</a></span></>
+                                    <><span className="alert alert-warning px-2 p-0 mx-1"><a href="" onClick={() => props.openBridgeView()}>Pending</a></span></>
                                 }
                                 {
                                     activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED && 
-                                    <><span><a href=""></a>Failed</span></>
+                                    <><span className="alert alert-danger px-2 p-0 mx-1"><a href=""></a>Failed</span> <button className="btn-primary" onClick={()=>closeSubBridgeView()}>X</button></>
                                 }
                                 </>
                             }

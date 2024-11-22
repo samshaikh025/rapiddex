@@ -108,6 +108,7 @@ export class WalletConnectData {
   chainName: string = '';
   chainLogo: string = '';
   blockExplorer: WalletDataBlockExplorer = new WalletDataBlockExplorer();
+  isReconnected: boolean;
 }
 
 export class WalletDataBlockExplorer {

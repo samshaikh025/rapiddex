@@ -516,7 +516,7 @@ export class CryptoService {
 
             // Log message if the default wallet address is used
             if (walletAddress === "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0") {
-                console.log("Wallet is not connected");
+                //console.log("Wallet is not connected");
             }
 
             // Create PathShowViewModel concurrently with timeout

@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BridgeMessage, Chains, PathShowViewModel, Tokens } from '@/shared/Models/Common.model';
 import { CryptoService } from '@/shared/Services/CryptoService';
 import Skeleton from 'react-loading-skeleton';
@@ -23,49 +23,63 @@ export default function Pathshow(props: PropsType) {
   let [availablePaths, setAvailablePaths] = useState<PathShowViewModel[]>([]);
   let [currentSelectedPath, setCurrentSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
   let bridgeMessage: BridgeMessage = new BridgeMessage();
-
+  let [isShowPathShowTimer, setIsShowPathShowTimer] = useState<boolean>(false);
+  let pathReloadIntervalId = useRef<number | null>(null);
+  let abc = useRef<number>(5);
+ 
   let walletData = useSelector((state: any) => state.WalletData);
   let walletAddress = "";
   let utilityService = new UtilityService();
+  const cryptoService = new CryptoService();
 
-  const fetchData = async () => {
+  console.log('component load')
+  console.log('pathshow id: ', pathReloadIntervalId)
+  function fetchData(){
+  console.log('pathshow id inside fun: ', pathReloadIntervalId)
+  console.log('abc inside fn',abc);
+
     if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
-      const cryptoService = new CryptoService();
-      setPathShowSpinner(true);
       props.isPathLoadingParent(true);
+      setPathShowSpinner(true);
+      console.log('spinner for : '+ props.Amountpathshow)
+      setIsShowPathShowTimer(false);
+      console.log(pathReloadIntervalId);
+      if(pathReloadIntervalId.current != null){
+        clearInterval(pathReloadIntervalId.current);
+        pathReloadIntervalId.current = null;
+      }
       try {
-        if (!utilityService.isNullOrEmpty(walletData.address)) {
-          walletAddress = walletData.address;
-
-        }
-
-        let result = await cryptoService.getBestPathFromChosenChains(
+        walletAddress = !utilityService.isNullOrEmpty(walletData.address) ? walletData.address : '';
+        cryptoService.getBestPathFromChosenChains(
           props.sourceChain,
           props.destChain,
           props.sourceToken,
           props.destToken,
           props.Amountpathshow,
           walletAddress
-        );
-        if (result && result.length > 0) {
-          //result = result.slice(0,2);
-          result.forEach((item, index) => {
-            item.pathId = index + 1;
-            item.fromAmountUsd = String(props.amountInUsd);
-          });
-          props.sendInitData(result);
-          setCurrentSelectedPath(result[0]);
-          setAvailablePaths(result);
-          setPathShowSpinner(false);
-          props.isPathLoadingParent(false);
-        }
-        else {
+        ).then((result) => {
+          if (result && result.length > 0) {
+            //result = result.slice(0,2);
+            result.forEach((item, index) => {
+              item.pathId = index + 1;
+              item.fromAmountUsd = String(props.amountInUsd);
+            });
+            props.sendInitData(result);
+            setCurrentSelectedPath(result[0]);
+            setAvailablePaths(result);
+            setPathShowSpinner(false);
+            console.log('amount: ' + props.Amountpathshow + 'data recived');
+            props.isPathLoadingParent(false);
+            abc.current = 10;
+            setIsShowPathShowTimer(true);
+            //call time out for realod path
+              invokeTimeOutForReloadPath();
+          }
+        }).catch((error) => {
           setPathShowSpinner(false);
           bridgeMessage.message = "No path found";
           props.isPathLoadingParent(false);
-
-        }
-
+        })
       } catch (error) {
         setPathShowSpinner(false);
         props.isPathLoadingParent(false);
@@ -75,23 +89,31 @@ export default function Pathshow(props: PropsType) {
   };
 
   useEffect(() => {
+    console.log('amount change: '+ props.Amountpathshow);
     fetchData();
-  }, [props.Amountpathshow, props.sourceChain, props.destChain, props.sourceToken, props.destToken]);
+  }, [props.Amountpathshow]);
 
   useEffect(() => {
-
-    fetchData();
-
-  }, [walletData.address]);
+    if(walletData.isReconnected == false){
+      fetchData();
+    }
+  }, [walletData.isReconnected]);
+  
   function sendSelectedPathToParent(path: PathShowViewModel) {
     setCurrentSelectedPath(path);
     props.sendSelectedPath(path);
     //close offcanvas
     //document.getElementById('offcanvasBottom').classList.remove('show')
   }
+  
+  function invokeTimeOutForReloadPath(){
+    let reloadPathShow = setTimeout(() => {
+      fetchData();    
+    }, 60000);
+    pathReloadIntervalId.current = (reloadPathShow as unknown as number);
+  }
   return (
     <>
-      {availablePaths.length > 0 &&
         <>
           <div className="col-lg-5 col-md-12 col-sm-12 col-12 d-none d-lg-block">
             <div className="card">
@@ -100,9 +122,15 @@ export default function Pathshow(props: PropsType) {
                   <div className="card-title">
                     Well Get At Chain Name
                   </div>
-                  <div className="bar">
+                  {/* <div className="bar">
                     <div className="in"></div>
-                  </div>
+                  </div> */}
+                <div id="countdown" className={isShowPathShowTimer ? 'd-block' : 'd-none'}>
+                  <div id="countdown-number"></div>
+                  <svg>
+                    <circle r="18" cx="20" cy="20"></circle>
+                  </svg>
+                </div>
                   <div className="card-action-wrapper d-flex align-items-center gap-2">
                     {/* <div className="dropdown">
                       <button
@@ -218,7 +246,6 @@ export default function Pathshow(props: PropsType) {
             </div>
           </div>
         </>
-      }
       <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasBottom" data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{ height: '50%' }}>
         <div className="offcanvas-header">
           <h5 className="offcanvas-title primary-text" id="offcanvasBottomLabel">Showing {availablePaths.length} Routes</h5>

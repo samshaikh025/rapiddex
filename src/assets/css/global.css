@@ -132,7 +132,7 @@ img {
   display: none;
 }
 .dropdown-menu.show {
-  background: var(--inner-card-bg);
+  background: var(--inner-card-bg-2);
   border: 1px solid var(--border-color);
   border-radius: 16px;
 }
@@ -167,7 +167,8 @@ img {
   line-height: 17.11px;
   letter-spacing: -0.20533332228660583px;
   color: var(--black-color);
-  margin:0
+  margin:0;
+  text-align: center;
 }
 .inner-card {
   background: var(--inner-card-bg);
@@ -183,8 +184,18 @@ img {
 }
 .card-action-wrapper {
   font-size: 24px;
+  position: relative;
   color: var(--primary-icon-color);
 }
+.left-arrow{
+  font-size: 24px;
+  position: absolute;
+  color: var(--primary-icon-color);
+  top: 15px;
+}
+
+
+
 @media (max-width: 991.98px) {
   .container {
     max-width: 100%;

@@ -1,3 +1,4 @@
+"use client"
 import { SetActiveTransactionA } from "@/app/redux-store/action/action-redux";
 import { Keys, TransactionStatus, TransactionSubStatus } from "@/shared/Enum/Common.enum";
 import { TransactionRequestoDto } from "@/shared/Models/Common.model";
@@ -39,7 +40,7 @@ export default function SubBridgeView(props: propsType) {
                     // set time out for checking status
                     // break if failed or done 
                     // update status in API
-                    let intervalInit =  setInterval(async () => {
+                    let intervalInit = setInterval(async () => {
                         let status = await GetTransactionStatus(activeTransactionData.transactionHash);
                         if (status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED) {
                             let updateTransactionData = {
@@ -112,10 +113,10 @@ export default function SubBridgeView(props: propsType) {
         return payLoad;
     }
 
-    function closeSubBridgeView(){
-        if(activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED){
-          sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
-          dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
+    function closeSubBridgeView() {
+        if (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) {
+            sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+            dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
         }
         props.closeSubBridgeView();
     }
@@ -129,7 +130,7 @@ export default function SubBridgeView(props: propsType) {
                             <i className="fas fa-chevron-left"></i>
                         </div>
                         <div className="card-title">
-                            Previous Swap 
+                            Previous Swap
                             {
                                 (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE
                                     || activeTransactionData.transactionStatus == TransactionStatus.PENDING) &&
@@ -138,18 +139,18 @@ export default function SubBridgeView(props: propsType) {
                             {
                                 (!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) &&
                                 <>
-                                {
-                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE && 
-                                    <><span className="alert alert-success px-2 p-0 mx-1"><a href=""></a>Done</span> <button className="btn-primary" onClick={()=>closeSubBridgeView()}>X</button></>
-                                }
-                                {
-                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING && 
-                                    <><span className="alert alert-warning px-2 p-0 mx-1"><a href="" onClick={() => props.openBridgeView()}>Pending</a></span></>
-                                }
-                                {
-                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED && 
-                                    <><span className="alert alert-danger px-2 p-0 mx-1"><a href=""></a>Failed</span> <button className="btn-primary" onClick={()=>closeSubBridgeView()}>X</button></>
-                                }
+                                    {
+                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE &&
+                                        <><span className="alert alert-success px-2 p-0 mx-1"><a href=""></a>Done</span> <button className="btn-primary" onClick={() => closeSubBridgeView()}>X</button></>
+                                    }
+                                    {
+                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING &&
+                                        <><span className="alert alert-warning px-2 p-0 mx-1"><a href="" onClick={() => props.openBridgeView()}>Pending</a></span></>
+                                    }
+                                    {
+                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED &&
+                                        <><span className="alert alert-danger px-2 p-0 mx-1"><a href=""></a>Failed</span> <button className="btn-primary" onClick={() => closeSubBridgeView()}>X</button></>
+                                    }
                                 </>
                             }
                         </div>

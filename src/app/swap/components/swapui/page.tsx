@@ -19,6 +19,7 @@ export default function Swapui(props: propsType) {
     const [showChainUI, setshowChainUI] = useState<boolean>(false);
     const [dataSource, setDataSource] = useState<string>('');
 
+
     const [sourceChain, setSourceChain] = useState<Chains>(new Chains());
     const [destChain, setDestChain] = useState<Chains>(new Chains());
     const [sourceToken, setSourceToken] = useState<Tokens>(new Tokens());
@@ -32,6 +33,32 @@ export default function Swapui(props: propsType) {
     useEffect(() => {
         dispatch(SetAllAvailableChainsA(props.chains));
     }, []);
+
+    useEffect(() => {
+
+
+        if (
+            sourceChain.chainId === destChain.chainId &&
+            sourceToken.address === destToken.address
+        ) {
+            if (dataSource == DataSource.From) {
+
+
+                setDestChain(new Chains());
+                setDestToken(new Tokens());
+                setDestTokenAmount(0);
+
+            } else if (dataSource == DataSource.To) {
+
+
+                setSourceChain(new Chains());
+                setSourceToken(new Tokens());
+                setSourceTokenAmount(0);
+            }
+
+        }
+    }, [sourceChain, destChain, sourceToken, destToken]);
+
 
     function OpenTokenUI(dataSource: string) {
         setDataSource(dataSource);

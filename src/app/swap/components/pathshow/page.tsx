@@ -25,6 +25,7 @@ export default function Pathshow(props: PropsType) {
   let bridgeMessage: BridgeMessage = new BridgeMessage();
   let [isShowPathShowTimer, setIsShowPathShowTimer] = useState<boolean>(false);
   let pathReloadIntervalId = useRef<number | null>(null);
+  let pathShowInvokedForAmount = useRef<number | null>(null);
   let abc = useRef<number>(5);
  
   let walletData = useSelector((state: any) => state.WalletData);
@@ -32,24 +33,19 @@ export default function Pathshow(props: PropsType) {
   let utilityService = new UtilityService();
   const cryptoService = new CryptoService();
 
-  console.log('component load')
-  console.log('pathshow id: ', pathReloadIntervalId)
   function fetchData(){
-  console.log('pathshow id inside fun: ', pathReloadIntervalId)
-  console.log('abc inside fn',abc);
 
     if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
       props.isPathLoadingParent(true);
       setPathShowSpinner(true);
-      console.log('spinner for : '+ props.Amountpathshow)
       setIsShowPathShowTimer(false);
-      console.log(pathReloadIntervalId);
       if(pathReloadIntervalId.current != null){
         clearInterval(pathReloadIntervalId.current);
         pathReloadIntervalId.current = null;
       }
       try {
         walletAddress = !utilityService.isNullOrEmpty(walletData.address) ? walletData.address : '';
+        pathShowInvokedForAmount.current = props.Amountpathshow;
         cryptoService.getBestPathFromChosenChains(
           props.sourceChain,
           props.destChain,
@@ -58,7 +54,7 @@ export default function Pathshow(props: PropsType) {
           props.Amountpathshow,
           walletAddress
         ).then((result) => {
-          if (result && result.length > 0) {
+          if (result && result.length > 0 && props.Amountpathshow == pathShowInvokedForAmount.current) {
             //result = result.slice(0,2);
             result.forEach((item, index) => {
               item.pathId = index + 1;
@@ -68,7 +64,6 @@ export default function Pathshow(props: PropsType) {
             setCurrentSelectedPath(result[0]);
             setAvailablePaths(result);
             setPathShowSpinner(false);
-            console.log('amount: ' + props.Amountpathshow + 'data recived');
             props.isPathLoadingParent(false);
             abc.current = 10;
             setIsShowPathShowTimer(true);
@@ -89,7 +84,6 @@ export default function Pathshow(props: PropsType) {
   };
 
   useEffect(() => {
-    console.log('amount change: '+ props.Amountpathshow);
     fetchData();
   }, [props.Amountpathshow]);
 
@@ -112,6 +106,13 @@ export default function Pathshow(props: PropsType) {
     }, 60000);
     pathReloadIntervalId.current = (reloadPathShow as unknown as number);
   }
+
+  useEffect(()=>{
+    // Cleanup function to clear the interval
+    return () => {
+      clearInterval(pathReloadIntervalId.current);
+    };
+  }, [])
   return (
     <>
         <>
@@ -126,9 +127,9 @@ export default function Pathshow(props: PropsType) {
                     <div className="in"></div>
                   </div> */}
                 <div id="countdown" className={isShowPathShowTimer ? 'd-block' : 'd-none'}>
-                  <div id="countdown-number"></div>
                   <svg>
-                    <circle r="18" cx="20" cy="20"></circle>
+                    <circle r="18" cx="20" cy="20" className="background-circle"></circle>
+                    <circle r="18" cx="20" cy="20" className="animated-circle"></circle>
                   </svg>
                 </div>
                   <div className="card-action-wrapper d-flex align-items-center gap-2">

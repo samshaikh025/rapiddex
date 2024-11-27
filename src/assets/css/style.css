@@ -525,39 +525,42 @@ button.swap-btn{
     text-align: center;
     top: 10px;
     right: 30px;
-  }
-  
-#countdown-number {
-  color: white;
-  display: inline-block;
-  line-height: 40px;
 }
 
 #countdown svg {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 40px;
-  height: 40px;
-  transform: rotateY(-180deg) rotateZ(-90deg);
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    transform: rotateY(-180deg) rotateZ(-90deg);
 }
 
-#countdown svg circle {
-  stroke-dasharray: 113px;
-  stroke-dashoffset: 0px;
-  stroke-linecap: round;
-  stroke-width: 4px;
-  stroke: #5244d2;
-  fill: none;
-  animation: reloadPath 60s linear infinite forwards;
+#countdown svg .background-circle {
+    stroke-width: 4px;
+    stroke: #e0e0e0;
+    /* Light gray for background */
+    fill: none;
 }
-  
-@keyframes reloadPath {
-  from {
+
+#countdown svg .animated-circle {
+    stroke-dasharray: 113px;
     stroke-dashoffset: 0px;
-  }
-  to {
-    stroke-dashoffset: 113px;
-  }
+    stroke-linecap: round;
+    stroke-width: 4px;
+    stroke: #5244d2;
+    /* Main animated color */
+    fill: none;
+    animation: reloadPath 60s linear infinite forwards;
+}
+
+@keyframes reloadPath {
+    from {
+        stroke-dashoffset: 0px;
+    }
+
+    to {
+        stroke-dashoffset: 113px;
+    }
 }
 /* progress bar end*/

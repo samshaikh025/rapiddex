@@ -563,7 +563,7 @@ export default function Exchangeui(props: propsType) {
                                                                 </label>
                                                             </div>
                                                         </div>
-                                                        <div className="px-2 py-1">
+                                                        <div className=" py-1 px-2 d-flex align-item-center justify-content-between">
                                                             <div className="d-flex align-items-center gap-2">
                                                                 <label className="font-16 d-flex align-items-center gap-2">
                                                                     <Skeleton width={10} height={10} circle={true} />
@@ -573,6 +573,9 @@ export default function Exchangeui(props: propsType) {
                                                                     <Skeleton width={10} height={10} circle={true} />
                                                                     <Skeleton width={90} height={10} />
                                                                 </label>
+                                                            </div>
+                                                            <div className='d-flex'>
+                                                                <Skeleton width={90} height={20} />
                                                             </div>
                                                         </div>
                                                     </>

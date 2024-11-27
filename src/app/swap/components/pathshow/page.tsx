@@ -176,8 +176,8 @@ export default function Pathshow(props: PropsType) {
                           </div>
 
                         </div>
-                        <div className="px-4 py-1">
-                          <div className="d-flex align-items-center gap-2">
+                        <div className="px-3 py-1 d-flex align-item-center justify-content-between">
+                            <div className="d-flex align-items-center gap-2">
                             <label className="font-16 d-flex align-items-center gap-2">
                               <Skeleton width={10} height={10} circle={true} />
                               <Skeleton width={90} height={10} />
@@ -186,6 +186,9 @@ export default function Pathshow(props: PropsType) {
                               <Skeleton width={10} height={10} circle={true} />
                               <Skeleton width={90} height={10} />
                             </label>
+                          </div>
+                          <div className='d-block align-items-end gap-2'>
+                              <Skeleton width={90} height={20} />
                           </div>
                         </div>
                       </div>

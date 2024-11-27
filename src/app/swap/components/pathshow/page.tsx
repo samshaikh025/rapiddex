@@ -207,7 +207,7 @@ export default function Pathshow(props: PropsType) {
                                     <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
                                   </div>
                                   <div className="d-flex flex-column">
-                                    <label className="coin-name d-block fw-600">
+                                    <label className="coin-name price-name d-block fw-600">
                                       {pathshow.fromAmount} {pathshow.fromToken}
                                     </label>
                                     <label className="coin-sub-name">
@@ -226,7 +226,7 @@ export default function Pathshow(props: PropsType) {
                               </div>
 
                             </div>
-                            <div className="px-4 py-1">
+                            <div className="px-3 py-1 d-flex align-item-center justify-content-between">
                               <div className="d-flex align-items-center gap-2">
                                 <label className="font-16 d-flex align-items-center gap-2">
                                   <i className="fa-regular fa-clock "></i>
@@ -236,6 +236,9 @@ export default function Pathshow(props: PropsType) {
                                   <i className="fa-solid fa-gas-pump"></i>
                                   {pathshow.gasafee}
                                 </label>
+                              </div>
+                              <div className='d-flex align-item-center gap-2 aggrigator-box'>
+                                  <img src="https://files.readme.io/bb20f210c4e395acdbec4f273221b35183d5b07a2aa16a8c0ef3044972c0d5f3-Rango-Logo-RGB.svg" alt="" />
                               </div>
                             </div>
                           </div>
@@ -276,7 +279,7 @@ export default function Pathshow(props: PropsType) {
                       </label>
                     </div>
                   </div>
-                  <div className="px-2 py-1">
+                  <div className="px-2 py-1 d-flex align-item-center justify-content-between">
                     <div className="d-flex align-items-center gap-2">
                       <label className="font-16 d-flex align-items-center gap-2">
                         <i className="fa-regular fa-clock "></i>
@@ -286,6 +289,9 @@ export default function Pathshow(props: PropsType) {
                         <i className="fa-solid fa-gas-pump"></i>
                         {pathshow.gasafee}
                       </label>
+                    </div>
+                    <div className='d-flex align-item-center gap-2 aggrigator-box'>
+                      <img src="https://files.readme.io/bb20f210c4e395acdbec4f273221b35183d5b07a2aa16a8c0ef3044972c0d5f3-Rango-Logo-RGB.svg" alt="" />
                     </div>
                   </div>
                 </div>

@@ -493,7 +493,7 @@ export default function Exchangeui(props: propsType) {
                                 </div>
                                 <div className="inner-card w-100 py-2 px-3 mt-3">
                                     <label className="mb-2 fw-600">Send</label>
-                                    <div className="d-flex align-items-center gap-3">
+                                    <div className="d-flex align-items-center gap-3 pb-2">
                                         <div className="position-relative coin-wrapper">
                                             {utilityService.isNullOrEmpty(props.sourceChain.logoURI) && <div className="coin"></div>}
                                             {utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <div className="coin-small"></div>}
@@ -503,7 +503,7 @@ export default function Exchangeui(props: propsType) {
                                             {!utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <img src={props.sourceToken.logoURI}
                                                 className="coin-small" alt="coin" />}
                                         </div>
-                                        <div className="d-flex flex-column pb-2">
+                                        <div className="d-flex flex-column">
                                             <input type="text" ref={amountTextBoxRef} className="transparent-input" onKeyUp={(e) =>
                                                 updateAmount(e.currentTarget.value)} placeholder="0" />
                                             {(equAmountUSD != null && equAmountUSD > 0) && <label className="coin-sub-name">$ {equAmountUSD}</label>}
@@ -543,7 +543,7 @@ export default function Exchangeui(props: propsType) {
                                 {
                                     sendAmount != null && sendAmount > 0 &&
                                     <>
-                                        <div className="inner-card w-100 py-3 px-3 mt-2">
+                                        <div className="inner-card w-100 py-3 px-3 mt-3">
                                             <div className="">
                                                 {isPathShow &&
                                                     <>
@@ -617,7 +617,7 @@ export default function Exchangeui(props: propsType) {
                                                                 </label>
                                                             </div>
                                                         </div>
-                                                        <div className="px-2 py-1">
+                                                        <div className=" py-1  py-1 d-flex align-item-center justify-content-between">
                                                             <div className="d-flex align-items-center gap-2">
                                                                 <label className="font-16 d-flex align-items-center gap-2">
                                                                     <i className="fa-regular fa-clock "></i>
@@ -627,6 +627,9 @@ export default function Exchangeui(props: propsType) {
                                                                     <i className="fa-solid fa-gas-pump"></i>
                                                                     {selectedPath.gasafee}
                                                                 </label>
+                                                            </div>
+                                                            <div className='d-flex align-item-center gap-2 aggrigator-box'>
+                                                                 <img src="https://files.readme.io/bb20f210c4e395acdbec4f273221b35183d5b07a2aa16a8c0ef3044972c0d5f3-Rango-Logo-RGB.svg" alt="" />
                                                             </div>
                                                         </div>
                                                     </>

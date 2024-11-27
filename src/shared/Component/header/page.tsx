@@ -100,6 +100,7 @@ export default function Header() {
 
   function clearWalletData() {
     sharedService.removeData(Keys.WALLET_CONNECT_DATA);
+    sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
     dispatch(SetWalletDataA(new WalletConnectData()));
     dispatch(OpenWalletModalA(false))
   }
@@ -251,10 +252,10 @@ export default function Header() {
                 </div>
                 <div className="d-flex gap-2">
                   <div className="d-flex flex-column">
-                  <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
-                  <a href="#">
-                    <span>{walletData.chainName}</span>
-                  </a>
+                    <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
+                    <a href="#">
+                      <span>{walletData.chainName}</span>
+                    </a>
                   </div>
                   <i className="fa-regular fa-clipboard px-2 py-1" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
                 </div>

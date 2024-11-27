@@ -122,14 +122,14 @@ export default function SubBridgeView(props: propsType) {
     }
 
     return (
-        <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
+        <div className="col-lg-5 col-md-12 col-sm-12 col-12 mb-2" id="swap-wrapper">
             <div className="card">
                 <div className="p-24">
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                        <div className="card-action-wrapper cursor-pointer" id="back-to-swap">
+                        {/* <div className="card-action-wrapper cursor-pointer" id="back-to-swap">
                             <i className="fas fa-chevron-left"></i>
-                        </div>
-                        <div className="card-title">
+                        </div> */}
+                        <div className="card-title w-100">
                             Previous Swap
                             {
                                 (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE
@@ -154,7 +154,7 @@ export default function SubBridgeView(props: propsType) {
                                 </>
                             }
                         </div>
-                        <div className="card-action-wrapper">
+                        <div className="card-action-wrapper ">
                             <i className="fas fa-cog cursor-pointer"></i>
                         </div>
                     </div>

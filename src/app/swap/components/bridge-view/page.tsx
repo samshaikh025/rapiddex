@@ -95,7 +95,7 @@ export default function BridgeView(props: propsType) {
             }
             else if (activeTransactionData.transactiionAggregator == 'owlto') {
                 // cheack owlto
-                let response : OwltoTransactionResponse = await cryptoService.TransactionStatusOwlto(activeTransactionData.sourceChainId, tx);
+                let response: OwltoTransactionResponse = await cryptoService.TransactionStatusOwlto(activeTransactionData.sourceChainId, tx);
                 if (response && response.status) {
                     status = OwltoSubStatus[String(response.status.code)];
                 }
@@ -241,7 +241,7 @@ export default function BridgeView(props: propsType) {
                 abi: tokenAbi,
                 functionName: 'allowance',
                 args: [activeTransactionData.walletAddress, SPENDER_ADDRESS],
-                chainId:activeTransactionData.sourceChainId
+                chainId: activeTransactionData.sourceChainId
             });
             allowanceAmount = Number(allowance);
 
@@ -257,7 +257,7 @@ export default function BridgeView(props: propsType) {
                         args: [SPENDER_ADDRESS, amountToSend],
                         chain: chainsTuple.find(a => a.id == activeTransactionData.sourceChainId), // Add chain
                         account: activeTransactionData.walletAddress as `0x${string}`, // Add account
-                        chainId:activeTransactionData.sourceChainId
+                        chainId: activeTransactionData.sourceChainId
                     });
                     allowanceAmount = Number(approvalAllowance);
                     console.log("Approval successful:", approvalAllowance);
@@ -275,10 +275,10 @@ export default function BridgeView(props: propsType) {
         return allowanceAmount;
     }
 
-    function closeBridgeView(){
-        if(activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED){
-          sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
-          dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
+    function closeBridgeView() {
+        if (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) {
+            sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+            dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
         }
         props.closeBridgeView();
     }
@@ -287,19 +287,19 @@ export default function BridgeView(props: propsType) {
         <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
             <div className="card">
                 <div className="p-24">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                        <div className="card-action-wrapper cursor-pointer" id="back-to-swap" onClick={() =>  closeBridgeView() }>
+                    <div className="d-block gap-3 align-items-center mb-2">
+                        <div className="card-action-wrapper cursor-pointer left-arrow" id="back-to-swap" onClick={() => closeBridgeView()}>
                             <i className="fas fa-chevron-left"></i>
                         </div>
                         <div className="card-title">
                             Swap
                         </div>
-                        <div className="card-action-wrapper">
+                        {/* <div className="card-action-wrapper">
                             <i className="fas fa-cog cursor-pointer"></i>
-                        </div>
+                        </div> */}
                     </div>
 
-                    <div className="inner-card w-100 py-2 px-3 mt-3">
+                    <div className="inner-card w-100 p-4 mt-3 swap-card">
                         <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE ? 'step-active' : ''}`}>
                             <div>
                                 <div className="circle">
@@ -310,9 +310,15 @@ export default function BridgeView(props: propsType) {
                                         </>
                                     }
                                     {
-                                        activeTransactionData.transactionStatus <= TransactionStatus.ALLOWANCSTATE &&
+                                        activeTransactionData.transactionStatus < TransactionStatus.ALLOWANCSTATE &&
                                         <>
                                             <span>1</span>
+                                        </>
+                                    }
+                                    {
+                                        activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE &&
+                                        <>
+                                            <span><i className="fas fa-spinner fa-spin"></i></span>
                                         </>
                                     }
                                 </div>
@@ -332,9 +338,15 @@ export default function BridgeView(props: propsType) {
                                         </>
                                     }
                                     {
-                                        activeTransactionData.transactionStatus <= TransactionStatus.PENDING &&
+                                        activeTransactionData.transactionStatus < TransactionStatus.PENDING &&
                                         <>
                                             <span>2</span>
+                                        </>
+                                    }
+                                    {
+                                        activeTransactionData.transactionStatus == TransactionStatus.PENDING &&
+                                        <>
+                                            <span><i className="fas fa-spinner fa-spin"></i></span>
                                         </>
                                     }
                                 </div>
@@ -354,9 +366,15 @@ export default function BridgeView(props: propsType) {
                                         </>
                                     }
                                     {
-                                        activeTransactionData.transactionStatus <= TransactionStatus.COMPLETED &&
+                                        activeTransactionData.transactionStatus < TransactionStatus.COMPLETED &&
                                         <>
                                             <span>3</span>
+                                        </>
+                                    }
+                                    {
+                                        activeTransactionData.transactionStatus == TransactionStatus.COMPLETED &&
+                                        <>
+                                            <span><i className="fas fa-spinner fa-spin"></i></span>
                                         </>
                                     }
                                 </div>
@@ -372,7 +390,7 @@ export default function BridgeView(props: propsType) {
                                                 Not Started
                                             </span>
                                         </>
-                                        
+
                                     }
                                     {
                                         activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING &&
@@ -381,7 +399,7 @@ export default function BridgeView(props: propsType) {
                                                 Pending
                                             </span>
                                         </>
-                                        
+
                                     }
                                     {
                                         activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED &&
@@ -404,16 +422,15 @@ export default function BridgeView(props: propsType) {
                                 </div>
                             </div>
                         </div>
-                        <div>
                         {
-                                        (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) &&
-                                        <>
-                                            <button className="btn btn-primary" onClick={() => props.closeBridgeView()}>Swap More</button>
-                                        </>
+                            (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) &&
+                            <>
+                                <div className="inner-card swap-card-btn mt-2">
+                                    <label><a href="" role="button" onClick={() => props.closeBridgeView()}>Swap More</a></label>
+                                </div>
+                            </>
                         }
-                        </div>
                     </div>
-
                 </div>
             </div>
         </div>

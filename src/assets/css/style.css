@@ -347,6 +347,9 @@
     --inner-card-box-shadow: 50px 38px 102.37px 0px #78769424;
     --offcanvas: #0f0d1d;
     --active-card: #fff;
+    --inner-card-bg-2: #372A77;
+    --black-color-2: #151231;
+    --border-color-2: #fff;
 }
 
 /* Set the light mode variables... */
@@ -366,6 +369,9 @@
     --inner-card-box-shadow: 50px 38px 102.37px 0px #78769424;
     --offcanvas: #fff;
     --active-card: #5244d2;
+    --inner-card-bg-2: linear-gradient(241.25deg, rgb(255 255 255 / 95%) 4.4%, rgb(255 255 255) 61.77%, rgb(255 255 255) 119.94%);
+    --black-color-2: #151231;
+    --border-color-2: #8080804f;
 }
 
 /* -------------------------------------------------------------------------
@@ -389,29 +395,53 @@
 }
 
 .step>div:not(:first-child) {
-    margin-left: 1.5em;
+    margin-left: 2em;
     padding-left: 1em;
 }
 
-.step.step-active {
-    color: #4285f4
+.step.step-active .title{
+    color: var(--primary-icon-color)
+}
+
+.step.step-active .caption{
+    color: var(--primary-icon-color);
 }
 
 .step.step-active .circle {
-    background-color: #4285f4;
+    background-color: var(--primary-icon-color);
+    color: var(--white-color);
 }
+
+button.swap-btn{
+    background: linear-gradient(135deg, #454cdc 0%, #411dbf 19.24%, #4f31d8 68.64%, #4c32dc 81.77%, #372dbc 100%);
+    color: var(--white-color);
+    font-size: 16px !important;
+    font-weight: 600;
+    height: 40px;
+    display: inline-block;
+    text-align: center;
+}
+/* .swap-btn-box{
+    display: inline-block;
+    text-align: center;
+    width: 100%;
+} */
+
+/* .swap-card{
+    background: unset;
+} */
 
 /* Circle */
 .circle {
-    background: gray;
+    background: rgb(229, 225, 235);
     position: relative;
-    width: 1.5em;
-    height: 1.5em;
-    line-height: 1.5em;
+    width: 2em;
+    height: 2em;
+    line-height: 2em;
     border-radius: 100%;
-    color: #fff;
+    color: var(--black-color-2);
     text-align: center;
-    box-shadow: 0 0 0 3px #fff;
+    box-shadow: 0 0 0 3px  var(--border-color-40);
 }
 
 /* Vertical Line */
@@ -427,22 +457,39 @@
     width: 1px;
     transform: scale(1, 2);
     transform-origin: 50% -100%;
-    background-color: rgba(0, 0, 0, 0.25);
-    z-index: -1;
+    background-color: var(--border-color-2);
+    z-index: 0;
 }
 
-.step:last-child .circle:after {
-    display: none
+.step:nth-child(3) .circle:after {
+    /* display: none; */
+    background-color: transparent;
+}
+
+.swap-card-btn{
+    padding: 10px;
+    text-align: center;
+}
+
+.swap-card-btn a{
+    text-align: center;
+    color: var(--primary-color);
+    display: block;
+    font-weight: 600;
+    font-size: 20px;
 }
 
 /* Stepper Titles */
 .title {
+    font-size: 20px;
     line-height: 1.5em;
-    font-weight: bold;
+    font-weight: 600    ;
+    color: var(--black-color);
 }
 
 .caption {
     font-size: 0.8em;
+    color: var(--black-color);
 }
 
 .bar {
@@ -471,45 +518,49 @@
 
 /*progress bar for realod path on every 60s*/
 #countdown {
-    position: relative;
+    position: absolute;
     margin: auto;
-    margin-top: 100px;
     height: 40px;
     width: 40px;
     text-align: center;
-  }
-  
-#countdown-number {
-  color: white;
-  display: inline-block;
-  line-height: 40px;
+    top: 10px;
+    right: 30px;
 }
 
 #countdown svg {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 40px;
-  height: 40px;
-  transform: rotateY(-180deg) rotateZ(-90deg);
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    transform: rotateY(-180deg) rotateZ(-90deg);
 }
 
-#countdown svg circle {
-  stroke-dasharray: 113px;
-  stroke-dashoffset: 0px;
-  stroke-linecap: round;
-  stroke-width: 4px;
-  stroke: #5244d2;
-  fill: none;
-  animation: reloadPath 60s linear infinite forwards;
+#countdown svg .background-circle {
+    stroke-width: 4px;
+    stroke: #e0e0e0;
+    /* Light gray for background */
+    fill: none;
 }
-  
-@keyframes reloadPath {
-  from {
+
+#countdown svg .animated-circle {
+    stroke-dasharray: 113px;
     stroke-dashoffset: 0px;
-  }
-  to {
-    stroke-dashoffset: 113px;
-  }
+    stroke-linecap: round;
+    stroke-width: 4px;
+    stroke: #5244d2;
+    /* Main animated color */
+    fill: none;
+    animation: reloadPath 60s linear infinite forwards;
+}
+
+@keyframes reloadPath {
+    from {
+        stroke-dashoffset: 0px;
+    }
+
+    to {
+        stroke-dashoffset: 113px;
+    }
 }
 /* progress bar end*/

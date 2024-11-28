@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector, } from "react-redux";
 import { Chain, parseEther } from "viem";
 import { config } from '../../../wagmi/config';// Go up a level if needed
@@ -29,6 +29,7 @@ export default function BridgeView(props: propsType) {
     let transactionService = new TransactionService();
     let cryptoService = new CryptoService();
     let sharedService = SharedService.getSharedServiceInstance();
+    let statusIntervalId = useRef<number>();
     const { sendTransactionAsync, isPending: isTransactionPending, isError: isTransactionError } = useSendTransaction();
     const getAllChains = (): Chain[] => {
         return Object.values(definedChains).filter((chain) => chain.id !== undefined) as Chain[];
@@ -45,9 +46,28 @@ export default function BridgeView(props: propsType) {
     // Type assertion to tuple
     const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
 
-    // useEffect(()=>{
-    //     processTransaction();
-    // },[])
+    let [AllowanceError, setAllowanceError] = useState("");
+
+    let [SwapTransactionError, setSwapTransactionError] = useState("");
+
+    let [TransactionStatusError, setTransactionStatusError] = useState("");
+
+    let [TryAgain, setTryAgain] = useState<number>(0);
+
+
+    useEffect(() => {
+        //clean up function
+        return () => {
+            clearInterval(statusIntervalId.current);
+        }
+    }, []);
+
+    useEffect(() => {
+        if ((AllowanceError && AllowanceError.length > 0) || (SwapTransactionError && SwapTransactionError.length > 0) || (TransactionStatusError && TransactionStatusError.length > 0)) {
+            // Show the offcanvas when there's an error
+            document.getElementById('offcanvasBottom').classList.add('show');
+        }
+    }, [AllowanceError, SwapTransactionError]);
     function getPayloadForTransaction(transactionData: TransactionRequestoDto, tx: string, transactionGuid: string, transactionStatus: number, transactionSubStatus: number) {
         let payLoad = {
             TransactionGuid: transactionGuid,
@@ -111,12 +131,19 @@ export default function BridgeView(props: propsType) {
 
         async function transactionSteps() {
 
+            setAllowanceError("");
+            setSwapTransactionError("");
+            setTransactionStatusError("");
+
             if (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE) {
 
                 if (activeTransactionData.isNativeToken) {
                     dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
                 }
+
+
                 else {
+
                     let allowanceAmount = await checkAllowance();
                     if (allowanceAmount >= Number(amountToSend)) {
                         dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
@@ -163,38 +190,49 @@ export default function BridgeView(props: propsType) {
                 }
                 catch (error) {
 
+                    setSwapTransactionError(error.shortMessage);
+
                     console.log(error);
 
                 }
             }
             if (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) {
-                //set interval to check status in 10 sec
-                //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
-                //sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
-                if (activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING) {
-                    // set time out for checking status
-                    // break if failed or done 
-                    // update status in API
-                    const intervalId = setInterval(async () => {
-                        let status = await GetTransactionStatus(activeTransactionData.transactionHash);
-                        if (status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED) {
-                            let updateTransactionData = {
-                                ...activeTransactionData,
-                                transactionSubStatus: status
+                try {
+
+
+                    //set interval to check status in 10 sec
+                    //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
+                    //sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+                    if (activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING) {
+                        // set time out for checking status
+                        // break if failed or done 
+                        // update status in API
+                        const intervalId = setInterval(async () => {
+                            let status = await GetTransactionStatus(activeTransactionData.transactionHash);
+                            if (status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED) {
+                                let updateTransactionData = {
+                                    ...activeTransactionData,
+                                    transactionSubStatus: status
+                                }
+                                dispatch(SetActiveTransactionA(updateTransactionData));
+                                let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
+                                //addTransactionLog(requestPayload);
+                                clearInterval(statusIntervalId.current);
                             }
-                            dispatch(SetActiveTransactionA(updateTransactionData));
-                            let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
-                            //addTransactionLog(requestPayload);
-                            clearInterval(intervalId);
-                        }
-                    }, 10000)
+                        }, 10000)
+                        statusIntervalId.current = (intervalId as unknown as number);
+                    }
+                }
+                catch (error) {
+                    setTransactionStatusError(error);
+
                 }
             }
         }
 
         transactionSteps();
 
-    }, [activeTransactionData.transactionStatus])
+    }, [activeTransactionData.transactionStatus, TryAgain])
 
     function addTransactionLog(payLoad: TransactionRequestoDto) {
         transactionService.AddTransactionLog(payLoad).then((response) => {
@@ -236,6 +274,7 @@ export default function BridgeView(props: propsType) {
             },
         ];
         try {
+
             const allowance = await readContract(config, {
                 address: activeTransactionData.sourceTokenAddress as `0x${string}`,
                 abi: tokenAbi,
@@ -257,19 +296,22 @@ export default function BridgeView(props: propsType) {
                         args: [SPENDER_ADDRESS, amountToSend],
                         chain: chainsTuple.find(a => a.id == activeTransactionData.sourceChainId), // Add chain
                         account: activeTransactionData.walletAddress as `0x${string}`, // Add account
-                        chainId: activeTransactionData.sourceChainId
+                        chainId: activeTransactionData.sourceChainId,
                     });
                     allowanceAmount = Number(approvalAllowance);
                     console.log("Approval successful:", approvalAllowance);
                 }
                 catch (error) {
+                    setAllowanceError(error.shortMessage);
+                    console.log("aaaaaaaa" + AllowanceError);
                     console.error('Transaction error:', error);
-                    alert('Transaction failed. Please try again.');
+
                 }
             }
         } catch (error) {
+            setAllowanceError(error.shortMessage);
             console.error('Transaction error:', error);
-            alert('Transaction failed. Please try again.');
+
         }
 
         return allowanceAmount;
@@ -281,6 +323,13 @@ export default function BridgeView(props: propsType) {
             dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
         }
         props.closeBridgeView();
+    }
+
+    async function tryAgain() {
+        document.getElementById('offcanvasBottom').classList.remove('show');
+        setTryAgain(TryAgain + 1);
+
+
     }
 
     return (
@@ -326,6 +375,10 @@ export default function BridgeView(props: propsType) {
                             <div>
                                 <div className="title">Token Allowance</div>
                                 <div className="caption">Allowance To Non Native Token</div>
+                                {
+                                    AllowanceError?.length > 0 &&
+                                    <div className="text-danger">{AllowanceError}</div>
+                                }
                             </div>
                         </div>
                         <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.PENDING ? 'step-active' : ''}`}>
@@ -354,6 +407,10 @@ export default function BridgeView(props: propsType) {
                             <div>
                                 <div className="title">Swap Transaction</div>
                                 <div className="caption">Transaction Swap Via Bridge</div>
+                                {
+                                    SwapTransactionError?.length > 0 &&
+                                    <div className="text-danger">{SwapTransactionError}</div>
+                                }
                             </div>
                         </div>
                         <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.COMPLETED ? 'step-active' : ''}`}>
@@ -419,6 +476,11 @@ export default function BridgeView(props: propsType) {
                                         </>
 
                                     }
+
+                                    {
+                                        TransactionStatusError?.length > 0 &&
+                                        <div className="text-danger">{TransactionStatusError}</div>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -426,14 +488,48 @@ export default function BridgeView(props: propsType) {
                             (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) &&
                             <>
                                 <div className="inner-card swap-card-btn mt-2">
-                                    <label><a href="" role="button" onClick={() => props.closeBridgeView()}>Swap More</a></label>
+                                    <label><a href="" role="button" onClick={() => closeBridgeView()}>Swap More</a></label>
                                 </div>
                             </>
                         }
                     </div>
+
+                    <div
+                        className="offcanvas offcanvas-bottom custom-backgrop"
+                        id="offcanvasBottom"
+                        data-bs-backdrop="true"
+                        aria-labelledby="offcanvasBottomLabel"
+                        style={{ height: '50%' }}
+                    >
+                        <div className="offcanvas-header">
+                            <h5 className="offcanvas-title primary-text" id="offcanvasBottomLabel">Message</h5>
+
+                        </div>
+                        <div className="offcanvas-body small">
+
+                            {(AllowanceError?.length > 0 || SwapTransactionError?.length > 0 || TransactionStatusError?.length > 0) && (
+                                <div className="alert alert-danger">
+                                    <p>{AllowanceError}</p>
+                                    <p>{SwapTransactionError}</p>
+                                    <p>{TransactionStatusError}</p>
+                                </div>
+                            )}
+
+
+
+
+                        </div>
+
+                        <button className="btn primary-btn w-100 mt-3" onClick={() => tryAgain()}>
+                            Try again
+                        </button>
+                    </div>
+
+
                 </div>
             </div>
         </div>
+
     )
 }
 

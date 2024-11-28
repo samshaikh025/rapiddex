@@ -7,9 +7,9 @@ import { useAccount, useAccountEffect, useConnect, useDisconnect } from "wagmi";
 import headerLogoDesktop from '../../../assets/images/logo.png';
 import headerLogoMobile from '../../../assets/images/logoIocn.png';
 import { useDispatch, useSelector } from "react-redux";
-import { OpenWalletModalA, SetSelectedLanguageA, SetWalletDataA, } from "@/app/redux-store/action/action-redux";
+import { OpenWalletModalA, SetActiveTransactionA, SetSelectedLanguageA, SetWalletDataA, } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
-import { WalletConnectData } from "@/shared/Models/Common.model";
+import { TransactionRequestoDto, WalletConnectData } from "@/shared/Models/Common.model";
 import { UserService } from "@/shared/Services/UserService";
 import { error } from "console";
 import { SupportedLang } from "@/shared/Const/Common.const";
@@ -101,6 +101,7 @@ export default function Header() {
   function clearWalletData() {
     sharedService.removeData(Keys.WALLET_CONNECT_DATA);
     sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+    dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
     dispatch(SetWalletDataA(new WalletConnectData()));
     dispatch(OpenWalletModalA(false))
   }

@@ -18,7 +18,7 @@ import { LiFiTransactionResponse } from "@/shared/Models/Lifi";
 import { OwltoTransactionResponse } from "@/shared/Models/Owlto";
 import { OwltoSubStatus } from "@/shared/Const/Common.const";
 import { ActiveTransactionData } from "@/app/redux-store/reducer/reducer-redux";
-
+a
 type propsType = {
     closeBridgeView: () => void;
 }

@@ -47,7 +47,7 @@ export default function Exchangeui(props: propsType) {
     let dispatch = useDispatch();
     const { open } = useWeb3Modal();
     let account = useAccount();
-    let activeTransactionData = useSelector((state: any) => state.ActiveTransactionData);
+    let activeTransactionData : TransactionRequestoDto = useSelector((state: any) => state.ActiveTransactionData);
     const {
         switchChain,
         error,
@@ -104,6 +104,8 @@ export default function Exchangeui(props: propsType) {
                 setequAmountUSD(null);
                 setShowMinOneUSDAmountErr(false);
             }
+            setTotalAvailablePath(0);
+            setSelectedPath(new PathShowViewModel());
             setIsBridgeMessageVisible(false);
             setIsBridgeMessage("");
 
@@ -416,17 +418,19 @@ export default function Exchangeui(props: propsType) {
         let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
         activeTransactiondata ? setShowSubBridgeView(true) : setShowSubBridgeView(false);
     }
+
+    useEffect(()=>{
+        if(activeTransactionData && utilityService.isNullOrEmpty(activeTransactionData.transactionHash))
+        {
+            setShowSubBridgeView(false);
+        }
+    }, [activeTransactionData])
     return (
         <>
             {
                 !startBridging &&
                 <>
-                    {
-                        showSubBridgeView &&
-                        <>
-                            <SubBridgeView openBridgeView={() => setStartBridging(true)} closeSubBridgeView={() => openOrCloseSubBridBridgeView()}></SubBridgeView>
-                        </>
-                    }
+                    
                     <div className="row">
                         <div className="col-5">
 
@@ -435,7 +439,8 @@ export default function Exchangeui(props: propsType) {
                     <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
                         <div className="card">
                             <div className="p-24">
-                                <div className="d-flex justify-content-between align-items-center mb-2">
+                            
+                                <div className="d-flex justify-content-between align-items-center mb-3">
                                     <div className="card-title">
                                         Exchange
                                     </div>
@@ -443,6 +448,18 @@ export default function Exchangeui(props: propsType) {
                                         <i className="fas fa-cog cursor-pointer"></i>
                                     </div>
                                 </div>
+                                {
+                                    showSubBridgeView &&
+                                    <>
+                                        <div className="inner-card w-100 py-2 px-3 mt-3 mb-3">
+                                            <label className="mb-2 fw-600">Active Transaction</label>
+                                            <div className="d-flex align-items-center gap-3 pb-2">
+                                                <SubBridgeView openBridgeView={() => setStartBridging(true)} closeSubBridgeView={() => openOrCloseSubBridBridgeView()}></SubBridgeView>
+                                            </div>
+                                        </div>
+                                    </>
+                                }
+                                
                                 <div className="d-flex align-items-center gap-3 position-relative">
                                     <div className="inner-card w-100 py-2 px-3" id="select-coin" onClick={() =>
                                         props.openTokenUI(DataSource.From)}>
@@ -513,9 +530,11 @@ export default function Exchangeui(props: propsType) {
                                 </div>
 
                                 {
-                                    totalAvailablePath > 0 &&
+                                    (totalAvailablePath > 0 && sendAmount != null && sendAmount > 0) &&
                                     <>
-                                        <label className="d-block d-lg-none text-end mt-2 primary-text text-bold" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">View All {totalAvailablePath} Routes <i className="fa-solid fa-chevron-right"></i></label>
+                                        <label className="d-block d-lg-none text-end mt-2 primary-text text-bold" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">
+                                            View All {totalAvailablePath} Routes <i className="fa-solid fa-chevron-right"></i>
+                                        </label>
                                     </>
                                 }
                                 {

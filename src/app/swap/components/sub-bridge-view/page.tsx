@@ -5,7 +5,7 @@ import { TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import { SharedService } from "@/shared/Services/SharedService";
 import { UtilityService } from "@/shared/Services/UtilityService";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { parseEther } from "viem";
 type propsType = {
@@ -20,8 +20,14 @@ export default function SubBridgeView(props: propsType) {
     let dispatch = useDispatch();
     let cryptoService = new CryptoService();
     let sharedService = SharedService.getSharedServiceInstance();
+    let statusIntervalId = useRef<number>();
 
-
+    useEffect(() => {
+        //clean up function
+        return () => {
+            clearInterval(statusIntervalId.current);
+        }
+    }, [])
     useEffect(() => {
         const SPENDER_ADDRESS = activeTransactionData.approvalAddress;
         const amountToSend = parseEther(activeTransactionData.amount.toString());
@@ -50,9 +56,10 @@ export default function SubBridgeView(props: propsType) {
                             dispatch(SetActiveTransactionA(updateTransactionData));
                             let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
                             //addTransactionLog(requestPayload);
-                            clearInterval(intervalInit);
+                            clearInterval(statusIntervalId.current);
                         }
                     }, 10000)
+                    statusIntervalId.current = (intervalInit as unknown as number);
                 }
             }
         }
@@ -122,44 +129,44 @@ export default function SubBridgeView(props: propsType) {
     }
 
     return (
-        <div className="col-lg-5 col-md-12 col-sm-12 col-12 mb-2" id="swap-wrapper">
-            <div className="card">
-                <div className="p-24">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                        {/* <div className="card-action-wrapper cursor-pointer" id="back-to-swap">
+        <>
+            {/* <div className="card-action-wrapper cursor-pointer" id="back-to-swap">
                             <i className="fas fa-chevron-left"></i>
                         </div> */}
-                        <div className="card-title w-100">
-                            Previous Swap
-                            {
-                                (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE
-                                    || activeTransactionData.transactionStatus == TransactionStatus.PENDING) &&
-                                <><span className="alert alert-warning px-2 p-0 mx-1"><a role="button" onClick={() => props.openBridgeView()}>Incomplete</a></span></>
-                            }
-                            {
-                                (!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) &&
-                                <>
-                                    {
-                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE &&
-                                        <><span className="alert alert-success px-2 p-0 mx-1"><a href=""></a>Done</span> <button className="btn-primary" onClick={() => closeSubBridgeView()}>X</button></>
-                                    }
-                                    {
-                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING &&
-                                        <><span className="alert alert-warning px-2 p-0 mx-1"><a href="" onClick={() => props.openBridgeView()}>Pending</a></span></>
-                                    }
-                                    {
-                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED &&
-                                        <><span className="alert alert-danger px-2 p-0 mx-1"><a href=""></a>Failed</span> <button className="btn-primary" onClick={() => closeSubBridgeView()}>X</button></>
-                                    }
-                                </>
-                            }
-                        </div>
-                        <div className="card-action-wrapper ">
-                            <i className="fas fa-cog cursor-pointer"></i>
-                        </div>
-                    </div>
-                </div>
+            <div className="card-title w-100">
+                Previous Swap
+                {
+                    (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE
+                        || activeTransactionData.transactionStatus == TransactionStatus.PENDING) &&
+                    <><span className="alert alert-warning px-2 p-0 mx-1"><a role="button" onClick={() => props.openBridgeView()}>Incomplete</a></span></>
+                }
+                {
+                    (!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) &&
+                    <>
+                        {
+                            activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE &&
+                            <><span className="alert alert-success px-2 p-0 mx-1"><a href=""></a>Done</span></>
+                        }
+                        {
+                            activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING &&
+                            <><span className="alert alert-warning px-2 p-0 mx-1"><a href="" onClick={() => props.openBridgeView()}>Pending</a></span></>
+                        }
+                        {
+                            activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED &&
+                            <><span className="alert alert-danger px-2 p-0 mx-1"><a href=""></a>Failed</span></>
+                        }
+                    </>
+                }
             </div>
-        </div>
+            {
+                (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) &&
+                <>
+                    <div className="card-action-wrapper">
+                        <button className="btn-primary" onClick={() => closeSubBridgeView()}>X</button>
+                    </div>
+                </>
+            }
+            
+        </>
     )
 }

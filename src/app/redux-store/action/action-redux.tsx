@@ -56,3 +56,10 @@ export function UpdateTransactionStatusA(status: number){
         data: status
     }
 }
+
+export function SetWalletDisconnectedA(status: boolean){
+    return {
+        type: ActionType.WalletDisconnected,
+        data: status
+    }
+}

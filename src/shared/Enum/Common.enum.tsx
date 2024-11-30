@@ -33,6 +33,7 @@ export enum ActionType {
     ActiveTransaction = "ACTIVE_TRANSACTION",
     UpdateTransactionGuid = "UPDATE_TRANSACTION_GUID",
     UpdateTransactionStatus = "UPDATE_TRANSACTION_STATUS",
+    WalletDisconnected = "WALLET_DISCONNECTED",
 }
 
 export enum TransactionStatus {

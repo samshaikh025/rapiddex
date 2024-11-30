@@ -48,6 +48,7 @@ export default function Exchangeui(props: propsType) {
     const { open } = useWeb3Modal();
     let account = useAccount();
     let activeTransactionData : TransactionRequestoDto = useSelector((state: any) => state.ActiveTransactionData);
+    let walletDisconnected : boolean = useSelector((state: any) => state.WalletDisconnected);
     const {
         switchChain,
         error,
@@ -420,11 +421,12 @@ export default function Exchangeui(props: propsType) {
     }
 
     useEffect(()=>{
-        if(activeTransactionData && utilityService.isNullOrEmpty(activeTransactionData.transactionHash))
+        if(walletDisconnected)
         {
             setShowSubBridgeView(false);
         }
-    }, [activeTransactionData])
+    }, [walletDisconnected])
+
     return (
         <>
             {
@@ -453,7 +455,7 @@ export default function Exchangeui(props: propsType) {
                                     <>
                                         <div className="inner-card w-100 py-2 px-3 mt-3 mb-3">
                                             <label className="mb-2 fw-600">Active Transaction</label>
-                                            <div className="d-flex align-items-center gap-3 pb-2">
+                                            <div>
                                                 <SubBridgeView openBridgeView={() => setStartBridging(true)} closeSubBridgeView={() => openOrCloseSubBridBridgeView()}></SubBridgeView>
                                             </div>
                                         </div>

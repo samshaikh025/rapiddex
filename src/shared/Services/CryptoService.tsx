@@ -963,8 +963,6 @@ export class CryptoService {
 
     async createOwltoPathShowViewModel(responseOwltoPath: ResponseOwltoPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
         try {
-            debugger;
-
             let amountInWei = await this.utilityService.convertEtherToWei(amount.toString());
 
             console.log("Converted owlto ", amountInWei);

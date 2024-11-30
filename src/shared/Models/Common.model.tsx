@@ -162,6 +162,7 @@ export class TransactionRequestoDto {
   transactionGuid: string = '';
   walletAddress: string = '';
   amount: number = 0;
+  amountUsd: number = 0;
   approvalAddress: string = '';
   transactionHash: string = '';
   transactionStatus: number = 0;

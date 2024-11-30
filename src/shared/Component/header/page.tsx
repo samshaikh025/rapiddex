@@ -7,7 +7,7 @@ import { useAccount, useAccountEffect, useConnect, useDisconnect } from "wagmi";
 import headerLogoDesktop from '../../../assets/images/logo.png';
 import headerLogoMobile from '../../../assets/images/logoIocn.png';
 import { useDispatch, useSelector } from "react-redux";
-import { OpenWalletModalA, SetActiveTransactionA, SetSelectedLanguageA, SetWalletDataA, SetWalletDisconnectedA, } from "@/app/redux-store/action/action-redux";
+import { OpenWalletModalA, SetActiveTransactionA, SetSelectedLanguageA, SetSelectedThemeA, SetWalletDataA, SetWalletDisconnectedA, } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import { TransactionRequestoDto, WalletConnectData } from "@/shared/Models/Common.model";
 import { UserService } from "@/shared/Services/UserService";
@@ -34,6 +34,7 @@ export default function Header() {
     let mode = status == false ? 'light' : 'dark';
     document.getElementsByTagName('html')[0]?.setAttribute('data-theme', mode);
     sharedService.setData(Keys.THEME, mode);
+    dispatch(SetSelectedThemeA(mode));
   };
 
   useAccountEffect({

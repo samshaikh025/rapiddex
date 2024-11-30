@@ -30,3 +30,12 @@ export const OwltoSubStatus = {
     "901": 3, // Chain name not found
     "907": 3 //Tx hash not found on chain,
 }
+
+export const ProviderLogoUrl = {
+    "lifi_dark":"",
+    "lifi_light":"",
+    "rango_dark":"https://app.rango.exchange/imgs/logos/LogoWithText.svg",
+    "rango_light":"https://app.rango.exchange/imgs/logos/LogoWithText.svg",
+    "owlto_dark":"https://owlto.finance/assets/Owlto_Dark-fdcaab93.png",
+    "owlto_light":"https://owlto.finance/assets/Owlto_Light-27b3ec0a.png",
+}

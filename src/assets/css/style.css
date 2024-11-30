@@ -526,7 +526,18 @@ button.swap-btn{
 }
 
 .right-arrow i{
-    font-size: 18px;
+    min-width: 30px;
+    height: 30px;
+    color: var(--primary-color);
+    left: 50%;
+    top: 50%;
+}
+
+.active-txn-swap{
+    height: 30px;
+    color: var(--primary-color);
+    left: 50%;
+    top: 50%;
 }
 
 .offcanvas-close-btn i{

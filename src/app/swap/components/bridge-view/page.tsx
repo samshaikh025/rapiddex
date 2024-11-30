@@ -350,9 +350,9 @@ export default function BridgeView(props: propsType) {
                                 <div className="title">Token Allowance</div>
                                 <div className="caption">Allowance To Non Native Token</div>
                                 {
-                                    !utilityService.isNullOrEmpty(execptionErrorMessage) &&
+                                    ( activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
                                     <>
-                                        <span>{execptionErrorMessage}</span>
+                                        <span className="text-danger">{execptionErrorMessage}</span>
                                     </>
                                 }
                             </div>
@@ -384,9 +384,9 @@ export default function BridgeView(props: propsType) {
                                 <div className="title">Swap Transaction</div>
                                 <div className="caption">Transaction Swap Via Bridge</div>
                                 {
-                                    !utilityService.isNullOrEmpty(execptionErrorMessage) &&
+                                    ( activeTransactionData.transactionStatus == TransactionStatus.PENDING && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
                                     <>
-                                        <span>{execptionErrorMessage}</span>
+                                        <span className="text-danger">{execptionErrorMessage}</span>
                                     </>
                                 }
                             </div>
@@ -456,9 +456,9 @@ export default function BridgeView(props: propsType) {
                                     }
 
                                     {
-                                        !utilityService.isNullOrEmpty(execptionErrorMessage) &&
+                                        ( activeTransactionData.transactionStatus == TransactionStatus.COMPLETED && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
                                         <>
-                                            <span>{execptionErrorMessage}</span>
+                                            <span className="text-danger">{execptionErrorMessage}</span>
                                         </>
                                     }
                                 </div>
@@ -490,7 +490,7 @@ export default function BridgeView(props: propsType) {
                         style={{ height: '35%' }}
                     >
                         <div className="offcanvas-header offcanvas-close-btn justify-content-between">
-                            <h5 className="offcanvas-title card-title" id="offcanvasExampleLabel">Error Message</h5>
+                            <h5 className="offcanvas-title card-title" id="offcanvasExampleLabel">Transaction Error</h5>
                             <i className="fa-solid fa-xmark" onClick={() => closeExceptionModal()}></i>
                         </div>
                         <div className="offcanvas-body small py-0">
@@ -498,7 +498,12 @@ export default function BridgeView(props: propsType) {
                                 !utilityService.isNullOrEmpty(execptionErrorMessage) &&
                                 <>
                                 <div className="alert alert-danger">
-                                    <span>{execptionErrorMessage}</span>
+                                    <div className="d-inline">
+                                        <i className="fa-regular fa-circle-xmark"></i>
+                                    </div>
+                                    <div className="d-inline mx-1">
+                                        <span>{execptionErrorMessage}</span>
+                                    </div>
                                 </div>
                                 </>
                             }

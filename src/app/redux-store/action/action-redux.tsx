@@ -63,3 +63,10 @@ export function SetWalletDisconnectedA(status: boolean){
         data: status
     }
 }
+
+export function SetSelectedThemeA(theme: string){
+    return {
+        type: ActionType.SetSelectedTheme,
+        data: theme
+    }
+}

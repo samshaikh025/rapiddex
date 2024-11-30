@@ -47,7 +47,8 @@ export default function Exchangeui(props: propsType) {
     let dispatch = useDispatch();
     const { open } = useWeb3Modal();
     let account = useAccount();
-    let activeTransactionData : TransactionRequestoDto = useSelector((state: any) => state.ActiveTransactionData);
+    let activeTransactionData: TransactionRequestoDto = useSelector((state: any) => state.ActiveTransactionData);
+    let walletDisconnected: boolean = useSelector((state: any) => state.WalletDisconnected);
     const {
         switchChain,
         error,
@@ -419,18 +420,18 @@ export default function Exchangeui(props: propsType) {
         activeTransactiondata ? setShowSubBridgeView(true) : setShowSubBridgeView(false);
     }
 
-    useEffect(()=>{
-        if(activeTransactionData && utilityService.isNullOrEmpty(activeTransactionData.transactionHash))
-        {
+    useEffect(() => {
+        if (walletDisconnected) {
             setShowSubBridgeView(false);
         }
-    }, [activeTransactionData])
+    }, [walletDisconnected])
+
     return (
         <>
             {
                 !startBridging &&
                 <>
-                    
+
                     <div className="row">
                         <div className="col-5">
 
@@ -439,7 +440,7 @@ export default function Exchangeui(props: propsType) {
                     <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
                         <div className="card">
                             <div className="p-24">
-                            
+
                                 <div className="d-flex justify-content-between align-items-center mb-3">
                                     <div className="card-title">
                                         Exchange
@@ -453,13 +454,13 @@ export default function Exchangeui(props: propsType) {
                                     <>
                                         <div className="inner-card w-100 py-2 px-3 mt-3 mb-3">
                                             <label className="mb-2 fw-600">Active Transaction</label>
-                                            <div className="d-flex align-items-center gap-3 pb-2">
+                                            <div>
                                                 <SubBridgeView openBridgeView={() => setStartBridging(true)} closeSubBridgeView={() => openOrCloseSubBridBridgeView()}></SubBridgeView>
                                             </div>
                                         </div>
                                     </>
                                 }
-                                
+
                                 <div className="d-flex align-items-center gap-3 position-relative">
                                     <div className="inner-card w-100 py-2 px-3" id="select-coin" onClick={() =>
                                         props.openTokenUI(DataSource.From)}>
@@ -651,7 +652,7 @@ export default function Exchangeui(props: propsType) {
                                                                 </label>
                                                             </div>
                                                             <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                                                                 <img src="https://files.readme.io/bb20f210c4e395acdbec4f273221b35183d5b07a2aa16a8c0ef3044972c0d5f3-Rango-Logo-RGB.svg" alt="" />
+                                                                <img src="https://files.readme.io/bb20f210c4e395acdbec4f273221b35183d5b07a2aa16a8c0ef3044972c0d5f3-Rango-Logo-RGB.svg" alt="" />
                                                             </div>
                                                         </div>
                                                     </>
@@ -695,9 +696,9 @@ export default function Exchangeui(props: propsType) {
                             destToken={props.destToken}
                             sendInitData={(result: PathShowViewModel[]) => getInitData(result)}
                             sendSelectedPath={(result: PathShowViewModel) => getSelectedPath(result)}
-                            isPathLoadingParent={(status: boolean) => setIsPathLoading(status)} 
-                            amountInUsd = {equAmountUSD}
-                            />
+                            isPathLoadingParent={(status: boolean) => setIsPathLoading(status)}
+                            amountInUsd={equAmountUSD}
+                        />
                     }
                 </>
             }

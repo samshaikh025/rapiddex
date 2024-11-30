@@ -133,7 +133,9 @@ export default function SubBridgeView(props: propsType) {
             {/* <div className="card-action-wrapper cursor-pointer" id="back-to-swap">
                             <i className="fas fa-chevron-left"></i>
                         </div> */}
-            <div className="card-title w-100">
+            
+            {/* try two */}
+            {/* <div className="card-title w-100">
                 Previous Swap
                 {
                     (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE
@@ -165,8 +167,90 @@ export default function SubBridgeView(props: propsType) {
                         <button className="btn-primary" onClick={() => closeSubBridgeView()}>X</button>
                     </div>
                 </>
-            }
-            
+            } */}
+            {/* try three */}
+            <div className="d-flex gap-3">
+                <div className="selcet-coin coin-wrapper">
+                    <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
+                </div>
+                <div className="d-flex justify-content-between w-100">
+                    <label className="coin-name d-flex gap-3 justify-content-between align-items-end">
+                        <label className="coin-name d-block ">
+                            <span className="d-block fw-600"> {activeTransactionData.amount} {activeTransactionData.sourceTokenName} </span>
+                            {/* <span className="d-block coin-sub-name" >$ {activeTransactionData.amount}</span> */}
+                            <div className="base-coin-box d-flex mt-1 gap-2 align-items-center">
+                                <div className="base-coin">
+                                    <label className="coin-name d-block fw-600">Base</label>
+                                    <label className="coin-sub-name">USD coin</label>
+                                </div>
+                                <div className="base-icon">
+                                    <i className="fa-solid fa-right-long"></i>
+                                </div>
+                                <div className="base-coin">
+                                    <label className="coin-name d-block fw-600">Base</label>
+                                    <label className="coin-sub-name">USD coin</label>
+                                </div>
+                            </div>
+                        </label>
+                        <div className="txn-tag-box">
+                            <label className="coin-name d-block"><strong>txn:</strong> Incomplete</label>
+                            <label className="coin-name d-block"><strong>Status:</strong> Not Started</label>
+                        </div>
+                        {/* <p className="faster fw-600 px-2 py-1">
+                            {
+                                (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) &&
+                                <>
+                                    <div className="card-action-wrapper">
+                                        <button className="btn-primary" onClick={() => closeSubBridgeView()}>X</button>
+                                    </div>
+                                </>
+                            }
+                            {
+                                (activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING) &&
+                                <>
+                                    <div className="card-action-wrapper">
+                                        <button className="btn-primary" onClick={() => closeSubBridgeView()}>
+                                        <i className="fa-solid fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                </>
+                            }
+                        </p> */}
+                    </label>
+                        <div className="right-arrow" onClick={() => props.openBridgeView()}>
+                            <i className="fa-solid fa-circle-chevron-right"></i>
+                        </div>
+                </div>
+            </div>
+            {/* <div className=" py-1  py-1 d-flex align-item-center justify-content-between">
+                <div className="d-flex align-items-center gap-2">
+                    <label className="font-16 d-flex align-items-center gap-2">
+                        Status &nbsp;
+                    </label>
+                    {
+                            (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE
+                                || activeTransactionData.transactionStatus == TransactionStatus.PENDING) &&
+                            <><span className="alert alert-warning px-2 p-0 mx-1"><a role="button" onClick={() => props.openBridgeView()}>Incomplete</a></span></>
+                        }
+                        {
+                            (!utilityService.isNullOrEmpty(activeTransactionData.transactionHash) && activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) &&
+                            <>
+                                {
+                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE &&
+                                    <><span className="alert alert-success px-2 p-0 mx-1"><a href=""></a>Done</span></>
+                                }
+                                {
+                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING &&
+                                    <><span className="alert alert-warning px-2 p-0 mx-1"><a href="" onClick={() => props.openBridgeView()}>Pending</a></span></>
+                                }
+                                {
+                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED &&
+                                    <><span className="alert alert-danger px-2 p-0 mx-1"><a href=""></a>Failed</span></>
+                                }
+                            </>
+                        }
+                </div>
+            </div> */}
         </>
     )
 }

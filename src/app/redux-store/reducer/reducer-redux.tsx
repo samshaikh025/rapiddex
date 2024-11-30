@@ -7,6 +7,7 @@ const availableChainsInit = [];
 const defaultLanguage = 'en';
 const preDefineTokensData = [];
 const defaultTransactionData = new TransactionRequestoDto();
+const defaultWalletState = false;
 
 export function OpenWalletModalStatus(state = modalInitialState, action: any) {
     switch (action.type) {
@@ -69,6 +70,16 @@ export function ActiveTransactionData(state = defaultTransactionData, action: an
         case ActionType.UpdateTransactionStatus:
             state = {...state, transactionStatus: action.data};
             return state;    
+        default:
+            return state;
+    }
+}
+
+export function WalletDisconnected(state = defaultWalletState, action: any) {
+    switch (action.type) {
+        case ActionType.WalletDisconnected:
+            state = action.data;
+            return state;   
         default:
             return state;
     }

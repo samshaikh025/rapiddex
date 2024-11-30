@@ -46,13 +46,7 @@ export default function BridgeView(props: propsType) {
     // Type assertion to tuple
     const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
 
-    let [AllowanceError, setAllowanceError] = useState("");
-
-    let [SwapTransactionError, setSwapTransactionError] = useState("");
-
-    let [TransactionStatusError, setTransactionStatusError] = useState("");
-
-    let [TryAgain, setTryAgain] = useState<number>(0);
+    let [execptionErrorMessage, setExceptionErrorMessage] = useState<String>("");
 
 
     useEffect(() => {
@@ -62,12 +56,6 @@ export default function BridgeView(props: propsType) {
         }
     }, []);
 
-    useEffect(() => {
-        if ((AllowanceError && AllowanceError.length > 0) || (SwapTransactionError && SwapTransactionError.length > 0) || (TransactionStatusError && TransactionStatusError.length > 0)) {
-            // Show the offcanvas when there's an error
-            document.getElementById('offcanvasBottom').classList.add('show');
-        }
-    }, [AllowanceError, SwapTransactionError]);
     function getPayloadForTransaction(transactionData: TransactionRequestoDto, tx: string, transactionGuid: string, transactionStatus: number, transactionSubStatus: number) {
         let payLoad = {
             TransactionGuid: transactionGuid,
@@ -125,114 +113,101 @@ export default function BridgeView(props: propsType) {
         return status;
     }
     useEffect(() => {
+        transactionSteps();
+    }, [activeTransactionData.transactionStatus])
+
+    async function transactionSteps() {
         const SPENDER_ADDRESS = activeTransactionData.approvalAddress;
         const amountToSend = parseEther(activeTransactionData.amount.toString());
         let tx = '';
+        setExceptionErrorMessage("");
 
-        async function transactionSteps() {
+        if (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE) {
 
-            setAllowanceError("");
-            setSwapTransactionError("");
-            setTransactionStatusError("");
+            if (activeTransactionData.isNativeToken) {
+                dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
+            }
+            else {
 
-            if (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE) {
-
-                if (activeTransactionData.isNativeToken) {
+                let allowanceAmount = await checkAllowance();
+                if (allowanceAmount >= Number(amountToSend)) {
                     dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
-                }
-
-
-                else {
-
-                    let allowanceAmount = await checkAllowance();
-                    if (allowanceAmount >= Number(amountToSend)) {
-                        dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
-                    }
-                }
-
-            }
-            if (activeTransactionData.transactionStatus == TransactionStatus.PENDING) {
-                sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
-                let transactionStatus = '';
-                //Proceed with the main transaction
-                try {
-                    console.log(activeTransactionData);
-
-                    var transactionRequest = {
-                        to: SPENDER_ADDRESS,
-
-                        data: activeTransactionData.transactionAggregatorRequestData,
-                        gas: null,
-                        chainId: activeTransactionData.sourceChainId,
-                    }
-
-                    if (activeTransactionData.isNativeToken) {
-                        transactionRequest["value"] = amountToSend;
-                    }
-
-
-
-
-                    tx = await sendTransactionAsync(transactionRequest);
-                    let status = await GetTransactionStatus(tx);
-
-
-                    let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
-                    //addTransactionLog(requestPayload);
-                    let updateTransactionData = {
-                        ...activeTransactionData,
-                        transactionHash: tx ? tx : null,
-                        transactionGuid: utilityService.uuidv4(),
-                        transactionStatus: TransactionStatus.COMPLETED,
-                        transactionSubStatus: status
-                    }
-                    dispatch(SetActiveTransactionA(updateTransactionData));
-                }
-                catch (error) {
-
-                    setSwapTransactionError(error.shortMessage);
-
-                    console.log(error);
-
-                }
-            }
-            if (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) {
-                try {
-
-
-                    //set interval to check status in 10 sec
-                    //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
-                    //sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
-                    if (activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING) {
-                        // set time out for checking status
-                        // break if failed or done 
-                        // update status in API
-                        const intervalId = setInterval(async () => {
-                            let status = await GetTransactionStatus(activeTransactionData.transactionHash);
-                            if (status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED) {
-                                let updateTransactionData = {
-                                    ...activeTransactionData,
-                                    transactionSubStatus: status
-                                }
-                                dispatch(SetActiveTransactionA(updateTransactionData));
-                                let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
-                                //addTransactionLog(requestPayload);
-                                clearInterval(statusIntervalId.current);
-                            }
-                        }, 10000)
-                        statusIntervalId.current = (intervalId as unknown as number);
-                    }
-                }
-                catch (error) {
-                    setTransactionStatusError(error);
-
                 }
             }
         }
+        if (activeTransactionData.transactionStatus == TransactionStatus.PENDING) {
+            sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
+            let transactionStatus = '';
+            //Proceed with the main transaction
+            try {
+                console.log(activeTransactionData);
 
-        transactionSteps();
+                var transactionRequest = {
+                    to: SPENDER_ADDRESS,
 
-    }, [activeTransactionData.transactionStatus, TryAgain])
+                    data: activeTransactionData.transactionAggregatorRequestData,
+                    gas: null,
+                    chainId: activeTransactionData.sourceChainId,
+                }
+
+                if (activeTransactionData.isNativeToken) {
+                    transactionRequest["value"] = amountToSend;
+                }
+
+                tx = await sendTransactionAsync(transactionRequest);
+                let status = await GetTransactionStatus(tx);
+
+                let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
+                //addTransactionLog(requestPayload);
+                let updateTransactionData = {
+                    ...activeTransactionData,
+                    transactionHash: tx ? tx : null,
+                    transactionGuid: utilityService.uuidv4(),
+                    transactionStatus: TransactionStatus.COMPLETED,
+                    transactionSubStatus: status
+                }
+                dispatch(SetActiveTransactionA(updateTransactionData));
+            }
+            catch (error) {
+                setExceptionErrorMessage(error.shortMessage);
+                document.getElementById('exceptionOffCanvas').classList.add('show');
+                return;
+            }
+        }
+        if (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) {
+            try {
+
+
+                //set interval to check status in 10 sec
+                //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
+                //sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+                if (activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING) {
+                    // set time out for checking status
+                    // break if failed or done 
+                    // update status in API
+                    const intervalId = setInterval(async () => {
+                        let status = await GetTransactionStatus(activeTransactionData.transactionHash);
+                        if (status == TransactionSubStatus.DONE || status == TransactionSubStatus.FAILED) {
+                            let updateTransactionData = {
+                                ...activeTransactionData,
+                                transactionSubStatus: status
+                            }
+                            dispatch(SetActiveTransactionA(updateTransactionData));
+                            let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
+                            //addTransactionLog(requestPayload);
+                            clearInterval(statusIntervalId.current);
+                        }
+                    }, 10000)
+                    statusIntervalId.current = (intervalId as unknown as number);
+                }
+            }
+            catch (error) {
+                setExceptionErrorMessage(error);
+                document.getElementById('exceptionOffCanvas').classList.add('show');
+                return;
+            }
+        }
+    }
 
     function addTransactionLog(payLoad: TransactionRequestoDto) {
         transactionService.AddTransactionLog(payLoad).then((response) => {
@@ -286,8 +261,6 @@ export default function BridgeView(props: propsType) {
 
             // If allowance is insufficient, request approval
             if (Number(allowanceAmount) <= Number(amountToSend)) {
-                console.log("Requesting token approval...");
-
                 try {
                     const approvalAllowance = await writeContract(config, {
                         address: activeTransactionData.sourceTokenAddress as `0x${string}`,
@@ -299,18 +272,17 @@ export default function BridgeView(props: propsType) {
                         chainId: activeTransactionData.sourceChainId,
                     });
                     allowanceAmount = Number(approvalAllowance);
-                    console.log("Approval successful:", approvalAllowance);
                 }
                 catch (error) {
-                    setAllowanceError(error.shortMessage);
-                    console.log("aaaaaaaa" + AllowanceError);
-                    console.error('Transaction error:', error);
-
+                    setExceptionErrorMessage(error['shortMessage']);
+                    document.getElementById('exceptionOffCanvas').classList.add('show');
+                    return;
                 }
             }
         } catch (error) {
-            setAllowanceError(error.shortMessage);
-            console.error('Transaction error:', error);
+            setExceptionErrorMessage(error['shortMessage']);
+            document.getElementById('exceptionOffCanvas').classList.add('show');
+            return;
 
         }
 
@@ -318,6 +290,7 @@ export default function BridgeView(props: propsType) {
     }
 
     function closeBridgeView() {
+
         if (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) {
             sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
             dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
@@ -326,18 +299,19 @@ export default function BridgeView(props: propsType) {
     }
 
     async function tryAgain() {
-        document.getElementById('offcanvasBottom').classList.remove('show');
-        setTryAgain(TryAgain + 1);
+        await transactionSteps();
+    }
 
-
+    function closeExceptionModal() {
+        document.getElementById('exceptionOffCanvas').classList.remove('show');
     }
 
     return (
-        <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
+        <div className="col-lg-5 col-md-12 col-sm-12 col-12 position-relative overflow-hidden" id="swap-wrapper">
             <div className="card">
                 <div className="p-24">
                     <div className="d-block gap-3 align-items-center mb-2">
-                        <div className="card-action-wrapper cursor-pointer left-arrow" id="back-to-swap" onClick={() => closeBridgeView()}>
+                        <div className="card-action-wrapper cursor-pointer left-arrow" id="back-to-swap" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>
                             <i className="fas fa-chevron-left"></i>
                         </div>
                         <div className="card-title">
@@ -376,8 +350,10 @@ export default function BridgeView(props: propsType) {
                                 <div className="title">Token Allowance</div>
                                 <div className="caption">Allowance To Non Native Token</div>
                                 {
-                                    AllowanceError?.length > 0 &&
-                                    <div className="text-danger">{AllowanceError}</div>
+                                    !utilityService.isNullOrEmpty(execptionErrorMessage) &&
+                                    <>
+                                        <span>{execptionErrorMessage}</span>
+                                    </>
                                 }
                             </div>
                         </div>
@@ -408,8 +384,10 @@ export default function BridgeView(props: propsType) {
                                 <div className="title">Swap Transaction</div>
                                 <div className="caption">Transaction Swap Via Bridge</div>
                                 {
-                                    SwapTransactionError?.length > 0 &&
-                                    <div className="text-danger">{SwapTransactionError}</div>
+                                    !utilityService.isNullOrEmpty(execptionErrorMessage) &&
+                                    <>
+                                        <span>{execptionErrorMessage}</span>
+                                    </>
                                 }
                             </div>
                         </div>
@@ -478,8 +456,10 @@ export default function BridgeView(props: propsType) {
                                     }
 
                                     {
-                                        TransactionStatusError?.length > 0 &&
-                                        <div className="text-danger">{TransactionStatusError}</div>
+                                        !utilityService.isNullOrEmpty(execptionErrorMessage) &&
+                                        <>
+                                            <span>{execptionErrorMessage}</span>
+                                        </>
                                     }
                                 </div>
                             </div>
@@ -488,44 +468,42 @@ export default function BridgeView(props: propsType) {
                             (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) &&
                             <>
                                 <div className="inner-card swap-card-btn mt-2">
-                                    <label><a href="" role="button" onClick={() => closeBridgeView()}>Swap More</a></label>
+                                    <label><a href="" role="button" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>Swap More</a></label>
+                                </div>
+                            </>
+                        }
+                        {
+                            !utilityService.isNullOrEmpty(execptionErrorMessage) &&
+                            <>
+                                <div className="inner-card swap-card-btn mt-2">
+                                    <label><a href="" role="button" onClick={(event) => { event.preventDefault(); tryAgain() }}>Try Again</a></label>
                                 </div>
                             </>
                         }
                     </div>
 
                     <div
-                        className="offcanvas offcanvas-bottom custom-backgrop"
-                        id="offcanvasBottom"
+                        className="offcanvas offcanvas-bottom custom-backgrop position-absolute"
+                        id="exceptionOffCanvas"
                         data-bs-backdrop="true"
-                        aria-labelledby="offcanvasBottomLabel"
-                        style={{ height: '50%' }}
+                        aria-labelledby="exceptionOffCanvasLabel"
+                        style={{ height: '35%' }}
                     >
-                        <div className="offcanvas-header">
-                            <h5 className="offcanvas-title primary-text" id="offcanvasBottomLabel">Message</h5>
-
+                        <div className="offcanvas-header offcanvas-close-btn justify-content-between">
+                            <h5 className="offcanvas-title card-title" id="offcanvasExampleLabel">Error Message</h5>
+                            <i className="fa-solid fa-xmark" onClick={() => closeExceptionModal()}></i>
                         </div>
-                        <div className="offcanvas-body small">
-
-                            {(AllowanceError?.length > 0 || SwapTransactionError?.length > 0 || TransactionStatusError?.length > 0) && (
+                        <div className="offcanvas-body small py-0">
+                            {
+                                !utilityService.isNullOrEmpty(execptionErrorMessage) &&
+                                <>
                                 <div className="alert alert-danger">
-                                    <p>{AllowanceError}</p>
-                                    <p>{SwapTransactionError}</p>
-                                    <p>{TransactionStatusError}</p>
+                                    <span>{execptionErrorMessage}</span>
                                 </div>
-                            )}
-
-
-
-
+                                </>
+                            }
                         </div>
-
-                        <button className="btn primary-btn w-100 mt-3" onClick={() => tryAgain()}>
-                            Try again
-                        </button>
                     </div>
-
-
                 </div>
             </div>
         </div>

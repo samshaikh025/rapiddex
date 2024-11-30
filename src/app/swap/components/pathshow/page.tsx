@@ -5,6 +5,8 @@ import { CryptoService } from '@/shared/Services/CryptoService';
 import Skeleton from 'react-loading-skeleton';
 import { useSelector } from 'react-redux';
 import { UtilityService } from '@/shared/Services/UtilityService';
+import { Keys } from '@/shared/Enum/Common.enum';
+import { SharedService } from '@/shared/Services/SharedService';
 
 type PropsType = {
   Amountpathshow: number;
@@ -32,6 +34,8 @@ export default function Pathshow(props: PropsType) {
   let walletAddress = "";
   let utilityService = new UtilityService();
   const cryptoService = new CryptoService();
+  let sharedService = SharedService.getSharedServiceInstance();
+  let currentTheme = useSelector((state: any) => state.SelectedTheme);
 
   function fetchData(){
 
@@ -240,9 +244,15 @@ export default function Pathshow(props: PropsType) {
                                   {pathshow.gasafee}
                                 </label>
                               </div>
-                              <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                                  <img src="https://files.readme.io/bb20f210c4e395acdbec4f273221b35183d5b07a2aa16a8c0ef3044972c0d5f3-Rango-Logo-RGB.svg" alt="" />
-                              </div>
+                              {
+                                !utilityService.isNullOrEmpty(currentTheme) &&
+                                <>
+                                  <div className='d-flex align-item-center gap-2 aggrigator-box'>
+                                    <img src={'assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                                  </div>
+                                </>
+                              }
+                              
                             </div>
                           </div>
                         ))}

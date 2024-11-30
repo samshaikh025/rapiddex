@@ -128,6 +128,12 @@ export default function SubBridgeView(props: propsType) {
         props.closeSubBridgeView();
     }
 
+    function removeTransaction() {
+        sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+        dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
+        props.closeSubBridgeView();
+    }
+
     return (
         <>
             {/* <div className="card-action-wrapper cursor-pointer" id="back-to-swap">
@@ -174,27 +180,66 @@ export default function SubBridgeView(props: propsType) {
                     <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
                 </div>
                 <div className="d-flex justify-content-between w-100">
-                    <label className="coin-name d-flex gap-3 justify-content-between align-items-end">
-                        <label className="coin-name d-block ">
+                    <div className="coin-name d-flex gap-4 justify-content-between">
+                        <div className="d-block ">
                             <span className="d-block fw-600"> {activeTransactionData.amount} {activeTransactionData.sourceTokenName} </span>
-                            {/* <span className="d-block coin-sub-name" >$ {activeTransactionData.amount}</span> */}
-                            <div className="base-coin-box d-flex mt-1 gap-2 align-items-center">
+                            <span className="d-block coin-sub-name" >$ {activeTransactionData.amountUsd}</span>
+                            {/* <div className="base-coin-box d-flex mt-1 gap-2 align-items-center">
                                 <div className="base-coin">
-                                    <label className="coin-name d-block fw-600">Base</label>
-                                    <label className="coin-sub-name">USD coin</label>
+                                    <label className="coin-name d-block fw-600">{activeTransactionData.sourceChainName}</label>
+                                    <label className="coin-sub-name">{activeTransactionData.sourceTokenName}</label>
                                 </div>
-                                <div className="base-icon">
-                                    <i className="fa-solid fa-right-long"></i>
+                                <div className="active-txn-swap cursor-pointer d-flex justify-content-center">
+                                    <i className="fa-solid fa-arrows-left-right"></i>
                                 </div>
                                 <div className="base-coin">
-                                    <label className="coin-name d-block fw-600">Base</label>
-                                    <label className="coin-sub-name">USD coin</label>
+                                    <label className="coin-name d-block fw-600">{activeTransactionData.destinationChainName}</label>
+                                    <label className="coin-sub-name">{activeTransactionData.destinationTokenName}</label>
                                 </div>
-                            </div>
-                        </label>
+                            </div> */}
+                        </div>
                         <div className="txn-tag-box">
-                            <label className="coin-name d-block"><strong>txn:</strong> Incomplete</label>
-                            <label className="coin-name d-block"><strong>Status:</strong> Not Started</label>
+                            <label className="coin-name d-block"><span className="fw-600">Transaction:</span>&nbsp;
+                            {
+                                (activeTransactionData.transactionStatus == TransactionStatus.PENDING 
+                                    || activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE) &&
+                                    <>
+                                     Incomplete
+                                    </>
+                            }
+                            {
+                                (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) &&
+                                    <>
+                                     Completed
+                                    </>
+                            }
+                            </label>
+                            <label className="coin-name d-block"><span className="fw-600">Status:</span> &nbsp;
+                            {
+                                (activeTransactionData.transactionSubStatus == 0) &&
+                                <>
+                                Not Started
+                                </>
+                            }
+                            {
+                                (activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING) &&
+                                <>
+                                Pending
+                                </>
+                            }
+                            {
+                                (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE) &&
+                                <>
+                                Success
+                                </>
+                            }
+                            {
+                                (activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) &&
+                                <>
+                                Failed
+                                </>
+                            }
+                            </label>
                         </div>
                         {/* <p className="faster fw-600 px-2 py-1">
                             {
@@ -216,10 +261,32 @@ export default function SubBridgeView(props: propsType) {
                                 </>
                             }
                         </p> */}
-                    </label>
-                        <div className="right-arrow" onClick={() => props.openBridgeView()}>
-                            <i className="fa-solid fa-circle-chevron-right"></i>
-                        </div>
+                    </div>
+                    {
+                        (activeTransactionData.transactionStatus == TransactionStatus.PENDING 
+                            || activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE) && 
+                        <>
+                            <div className="d-block">
+                                <div className="right-arrow cursor-pointer d-flex justify-content-center"
+                                    onClick={() => props.openBridgeView()}>
+                                    <i className="fa-solid fa-circle-chevron-right"></i>
+                                </div>
+                                <div className="right-arrow cursor-pointer d-flex justify-content-center"
+                                    onClick={() => removeTransaction()}>
+                                    <i className="fa-regular fa-trash-can"></i>
+                                </div>
+                            </div>
+                        </>
+                    }
+                    {
+                        activeTransactionData.transactionStatus == TransactionStatus.COMPLETED && 
+                        <>
+                            <div className="right-arrow cursor-pointer d-flex justify-content-center"
+                                onClick={() => closeSubBridgeView()}>
+                               <i className="fa-regular fa-circle-xmark"></i>
+                            </div>
+                        </>
+                    }
                 </div>
             </div>
             {/* <div className=" py-1  py-1 d-flex align-item-center justify-content-between">

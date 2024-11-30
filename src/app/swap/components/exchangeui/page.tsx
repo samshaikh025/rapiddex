@@ -49,6 +49,8 @@ export default function Exchangeui(props: propsType) {
     let account = useAccount();
     let activeTransactionData: TransactionRequestoDto = useSelector((state: any) => state.ActiveTransactionData);
     let walletDisconnected: boolean = useSelector((state: any) => state.WalletDisconnected);
+    let currentTheme = useSelector((state: any) => state.SelectedTheme);
+
     const {
         switchChain,
         error,
@@ -299,6 +301,7 @@ export default function Exchangeui(props: propsType) {
         transactoinObj.transactionGuid = '';
         transactoinObj.walletAddress = walletData.address;
         transactoinObj.amount = requestTransaction.value;
+        transactoinObj.amountUsd = equAmountUSD;
         transactoinObj.approvalAddress = requestTransaction.to;
         transactoinObj.transactionHash = '';
         transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
@@ -651,9 +654,14 @@ export default function Exchangeui(props: propsType) {
                                                                     {selectedPath.gasafee}
                                                                 </label>
                                                             </div>
-                                                            <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                                                                <img src="https://files.readme.io/bb20f210c4e395acdbec4f273221b35183d5b07a2aa16a8c0ef3044972c0d5f3-Rango-Logo-RGB.svg" alt="" />
-                                                            </div>
+                                                            {
+                                                                !utilityService.isNullOrEmpty(currentTheme) &&
+                                                                <>
+                                                                    <div className='d-flex align-item-center gap-2 aggrigator-box'>
+                                                                        <img src={'assets/images/provider-logo/' + selectedPath.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                                                                    </div>
+                                                                </>
+                                                            }
                                                         </div>
                                                     </>
 

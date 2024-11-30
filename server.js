@@ -1,21 +1,38 @@
-const http = require('http');
-const { parse } = require('url');
-const next = require('next');
+const { createServer } = require("http");
+const { parse } = require("url");
+const next = require("next");
 
-const port = parseInt(process.env.PORT || '3000', 10);
-const dev = process.env.NODE_ENV !== 'production';
-const app = next({ dev });
+const dev = process.env.NODE_ENV !== "production";
+
+const port = process.env.PORT || 3000; // Change the port to the port that your IIS is running on. Default its 80 and 3000 if you are using it for developing.
+const hostname = "localhost";
+const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
-  http.createServer((req, res) => {
-    const parsedUrl = parse(req.url, true);
-    handle(req, res, parsedUrl);
-  }).listen(port);
+  createServer(async (req, res) => {
+    try {
+      const parsedUrl = parse(req.url, true);
+      const { pathname, query } = parsedUrl;
 
-  console.log(
-    `> Server listening at http://localhost:${port} as ${
-      dev ? 'development' : process.env.NODE_ENV
-    }`
-  );
+      if (pathname === "/a") {
+        await app.render(req, res, "/a", query);
+      } else if (pathname === "/b") {
+        await app.render(req, res, "/b", query);
+      } else {
+        await handle(req, res, parsedUrl);
+      }
+    } catch (err) {
+      console.error("Error occurred handling", req.url, err);
+      res.statusCode = 500;
+      res.end("internal server error");
+    }
+  })
+    .once("error", (err) => {
+      console.error(err);
+      process.exit(1);
+    })
+    .listen(port, async () => {
+      console.log(`> Ready on http://localhost:${port}`);
+    });
 });

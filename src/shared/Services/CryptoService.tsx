@@ -24,6 +24,8 @@ export class CryptoService {
     }
     utilityService = new UtilityService();
 
+    apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_ENV == 'production' ? process.env.NEXT_PUBLIC_NODE_API_URL_PRODUCTION : process.env.NEXT_PUBLIC_NODE_API_URL;
+    debugger;
     async GetAvailableTokens(selectedChain: Chains) {
         this.SetLifiCoins = [];
         //this.SetDlnCoins = [];
@@ -140,6 +142,7 @@ export class CryptoService {
     }
 
     async GetCoinsForLifi(chain: Chains) {
+        debugger;
         let lifiCoins = [];
         let payLoad = {
             apiType: 'GET',
@@ -148,7 +151,7 @@ export class CryptoService {
             apiProvider: SwapProvider.LIFI
         }
         try {
-            let LIFICoinResult = await fetch('http://localhost:3000/api/common', {
+            let LIFICoinResult = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -178,7 +181,7 @@ export class CryptoService {
                 apiUrl: `https://api.dln.trade/v1.0/token-list?chainId=${dlnId}`,
                 apiData: null
             }
-            let DlnCoinResult = await fetch('http://localhost:3000/api/common', {
+            let DlnCoinResult = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -208,7 +211,7 @@ export class CryptoService {
             apiProvider: SwapProvider.RANGO
         }
         try {
-            let RangoCoinResult = await fetch('http://localhost:3000/api/common', {
+            let RangoCoinResult = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -235,7 +238,7 @@ export class CryptoService {
             apiProvider: SwapProvider.OWLTO
         }
         try {
-            let LIFICoinResult = await fetch('http://localhost:3000/api/common', {
+            let LIFICoinResult = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -255,6 +258,7 @@ export class CryptoService {
 
 
     async GetAvailableChains() {
+        this.debugger;
         this.AvailableChains = [];
         // Fetch all chains concurrently
         const [lifiChains, rangoChains, owltoChains] = await Promise.all([
@@ -348,6 +352,7 @@ export class CryptoService {
     }
 
     async GetLifiChains() {
+        console.log('env' + this.apiUrlENV);
         let lifiChains = [];
         let payLoad = {
             apiType: 'GET',
@@ -356,7 +361,7 @@ export class CryptoService {
             apiProvider: SwapProvider.LIFI
         }
         try {
-            let LIFIChainResult = await fetch('http://localhost:3000/api/common', {
+            let LIFIChainResult = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -379,7 +384,7 @@ export class CryptoService {
             apiData: null
         }
         try {
-            let DlnChainResult = await fetch('http://localhost:3000/api/common', {
+            let DlnChainResult = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -405,7 +410,7 @@ export class CryptoService {
             apiProvider: SwapProvider.RANGO
         }
         try {
-            let RangoChainResult = await fetch('http://localhost:3000/api/common', {
+            let RangoChainResult = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -431,7 +436,7 @@ export class CryptoService {
             apiProvider: SwapProvider.OWLTO
         }
         try {
-            let OwltoChainResult = await fetch('http://localhost:3000/api/common', {
+            let OwltoChainResult = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -458,7 +463,7 @@ export class CryptoService {
             apiProvider: SwapProvider.MOBULA
         }
         try {
-            let tokenExec = await fetch('http://localhost:3000/api/common', {
+            let tokenExec = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -570,7 +575,7 @@ export class CryptoService {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-            const response = await fetch("http://localhost:3000/api/common", {
+            const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payLoad),
@@ -616,7 +621,7 @@ export class CryptoService {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-            const response = await fetch("http://localhost:3000/api/common", {
+            const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payLoad),
@@ -662,7 +667,7 @@ export class CryptoService {
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-                const response = await fetch("http://localhost:3000/api/common", {
+                const response = await fetch(this.apiUrlENV + '/api/common', {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payLoad),
@@ -707,7 +712,7 @@ export class CryptoService {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-            const response = await fetch("http://localhost:3000/api/common", {
+            const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payLoad),
@@ -1022,7 +1027,7 @@ export class CryptoService {
             apiProvider: SwapProvider.LIFI
         }
         try {
-            let apiResponse = await fetch('http://localhost:3000/api/common', {
+            let apiResponse = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1055,7 +1060,7 @@ export class CryptoService {
             apiProvider: SwapProvider.RANGO
         }
         try {
-            let apiResponse = await fetch('http://localhost:3000/api/common', {
+            let apiResponse = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1076,7 +1081,7 @@ export class CryptoService {
         let transactionStatus;
 
         let request = {
-            from_chain_hash:txhash
+            from_chain_hash: txhash
         }
 
         let payLoad = {
@@ -1086,7 +1091,7 @@ export class CryptoService {
             apiProvider: SwapProvider.OWLTO
         }
         try {
-            let apiResponse = await fetch('http://localhost:3000/api/common', {
+            let apiResponse = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

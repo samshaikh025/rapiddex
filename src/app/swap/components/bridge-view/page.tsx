@@ -290,7 +290,7 @@ export default function BridgeView(props: propsType) {
     }
 
     function closeBridgeView() {
-        
+
         if (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) {
             sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
             dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
@@ -307,11 +307,11 @@ export default function BridgeView(props: propsType) {
     }
 
     return (
-        <div className="col-lg-5 col-md-12 col-sm-12 col-12 position-relative" id="swap-wrapper">
+        <div className="col-lg-5 col-md-12 col-sm-12 col-12 position-relative overflow-hidden" id="swap-wrapper">
             <div className="card">
                 <div className="p-24">
                     <div className="d-block gap-3 align-items-center mb-2">
-                        <div className="card-action-wrapper cursor-pointer left-arrow" id="back-to-swap" onClick={(event) => { event.preventDefault(); closeBridgeView()}}>
+                        <div className="card-action-wrapper cursor-pointer left-arrow" id="back-to-swap" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>
                             <i className="fas fa-chevron-left"></i>
                         </div>
                         <div className="card-title">
@@ -468,7 +468,7 @@ export default function BridgeView(props: propsType) {
                             (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) &&
                             <>
                                 <div className="inner-card swap-card-btn mt-2">
-                                    <label><a href="" role="button" onClick={(event) => { event.preventDefault(); closeBridgeView()}}>Swap More</a></label>
+                                    <label><a href="" role="button" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>Swap More</a></label>
                                 </div>
                             </>
                         }
@@ -476,7 +476,7 @@ export default function BridgeView(props: propsType) {
                             !utilityService.isNullOrEmpty(execptionErrorMessage) &&
                             <>
                                 <div className="inner-card swap-card-btn mt-2">
-                                    <label><a href="" role="button" onClick={(event) => { event.preventDefault(); tryAgain()}}>Try Again</a></label>
+                                    <label><a href="" role="button" onClick={(event) => { event.preventDefault(); tryAgain() }}>Try Again</a></label>
                                 </div>
                             </>
                         }
@@ -487,17 +487,19 @@ export default function BridgeView(props: propsType) {
                         id="exceptionOffCanvas"
                         data-bs-backdrop="true"
                         aria-labelledby="exceptionOffCanvasLabel"
-                        style={{ height: '50%' }}
+                        style={{ height: '35%' }}
                     >
-                        <div className="offcanvas-header">
-                            <h5 className="offcanvas-title primary-text" id="exceptionOffCanvasLabel">Message</h5>
-                            <button onClick={()=> closeExceptionModal()}>x</button>
+                        <div className="offcanvas-header offcanvas-close-btn justify-content-between">
+                            <h5 className="offcanvas-title card-title" id="offcanvasExampleLabel">Error Message</h5>
+                            <i className="fa-solid fa-xmark" onClick={() => closeExceptionModal()}></i>
                         </div>
-                        <div className="offcanvas-body small">
+                        <div className="offcanvas-body small py-0">
                             {
                                 !utilityService.isNullOrEmpty(execptionErrorMessage) &&
                                 <>
+                                <div className="alert alert-danger">
                                     <span>{execptionErrorMessage}</span>
+                                </div>
                                 </>
                             }
                         </div>

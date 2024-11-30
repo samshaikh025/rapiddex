@@ -521,6 +521,19 @@ button.swap-btn{
     }
 }
 
+.base-coin label{
+    line-height: 15px;
+}
+
+.right-arrow i{
+    font-size: 18px;
+}
+
+.offcanvas-close-btn i{
+    color: var(--primary-icon-color);
+    font-size: 18px;
+}
+
 /*progress bar for realod path on every 60s*/
 #countdown {
     position: absolute;

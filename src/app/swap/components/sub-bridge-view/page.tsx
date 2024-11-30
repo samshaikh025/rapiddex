@@ -173,13 +173,30 @@ export default function SubBridgeView(props: propsType) {
                 <div className="selcet-coin coin-wrapper">
                     <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
                 </div>
-                <div className="d-flex flex-column w-100">
-                    <label className="coin-name d-flex gap-2 justify-content-between">
+                <div className="d-flex justify-content-between w-100">
+                    <label className="coin-name d-flex gap-3 justify-content-between align-items-end">
                         <label className="coin-name d-block ">
                             <span className="d-block fw-600"> {activeTransactionData.amount} {activeTransactionData.sourceTokenName} </span>
-                            <span className="d-block coin-sub-name" >$ {activeTransactionData.amount}</span>
+                            {/* <span className="d-block coin-sub-name" >$ {activeTransactionData.amount}</span> */}
+                            <div className="base-coin-box d-flex mt-1 gap-2 align-items-center">
+                                <div className="base-coin">
+                                    <label className="coin-name d-block fw-600">Base</label>
+                                    <label className="coin-sub-name">USD coin</label>
+                                </div>
+                                <div className="base-icon">
+                                    <i className="fa-solid fa-right-long"></i>
+                                </div>
+                                <div className="base-coin">
+                                    <label className="coin-name d-block fw-600">Base</label>
+                                    <label className="coin-sub-name">USD coin</label>
+                                </div>
+                            </div>
                         </label>
-                        <p className="faster fw-600 px-2 py-1">
+                        <div className="txn-tag-box">
+                            <label className="coin-name d-block"><strong>txn:</strong> Incomplete</label>
+                            <label className="coin-name d-block"><strong>Status:</strong> Not Started</label>
+                        </div>
+                        {/* <p className="faster fw-600 px-2 py-1">
                             {
                                 (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) &&
                                 <>
@@ -198,11 +215,14 @@ export default function SubBridgeView(props: propsType) {
                                     </div>
                                 </>
                             }
-                        </p>
+                        </p> */}
                     </label>
+                        <div className="right-arrow" onClick={() => props.openBridgeView()}>
+                            <i className="fa-solid fa-circle-chevron-right"></i>
+                        </div>
                 </div>
             </div>
-            <div className=" py-1  py-1 d-flex align-item-center justify-content-between">
+            {/* <div className=" py-1  py-1 d-flex align-item-center justify-content-between">
                 <div className="d-flex align-items-center gap-2">
                     <label className="font-16 d-flex align-items-center gap-2">
                         Status &nbsp;
@@ -230,7 +250,7 @@ export default function SubBridgeView(props: propsType) {
                             </>
                         }
                 </div>
-            </div>
+            </div> */}
         </>
     )
 }

@@ -26,10 +26,11 @@ export default function Pathshow(props: PropsType) {
   let [currentSelectedPath, setCurrentSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
   let bridgeMessage: BridgeMessage = new BridgeMessage();
   let [isShowPathShowTimer, setIsShowPathShowTimer] = useState<boolean>(false);
+  let [isPathShow, setIsPathShow] = useState<boolean>(false);
   let pathReloadIntervalId = useRef<number | null>(null);
   let pathShowInvokedForAmount = useRef<number | null>(null);
   let abc = useRef<number>(5);
- 
+
   let walletData = useSelector((state: any) => state.WalletData);
   let walletAddress = "";
   let utilityService = new UtilityService();
@@ -37,19 +38,25 @@ export default function Pathshow(props: PropsType) {
   let sharedService = SharedService.getSharedServiceInstance();
   let currentTheme = useSelector((state: any) => state.SelectedTheme);
 
-  function fetchData(){
+  function fetchData() {
 
     if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
+      setIsPathShow(true);
       props.isPathLoadingParent(true);
       setPathShowSpinner(true);
       setIsShowPathShowTimer(false);
-      if(pathReloadIntervalId.current != null){
+
+      if (pathReloadIntervalId.current != null) {
         clearInterval(pathReloadIntervalId.current);
         pathReloadIntervalId.current = null;
       }
       try {
         walletAddress = !utilityService.isNullOrEmpty(walletData.address) ? walletData.address : '';
         pathShowInvokedForAmount.current = props.Amountpathshow;
+
+        if ((props.amountInUsd < 0.95)) {
+          throw new Error();
+        }
         cryptoService.getBestPathFromChosenChains(
           props.sourceChain,
           props.destChain,
@@ -72,16 +79,19 @@ export default function Pathshow(props: PropsType) {
             abc.current = 10;
             setIsShowPathShowTimer(true);
             //call time out for realod path
-              invokeTimeOutForReloadPath();
+            invokeTimeOutForReloadPath();
+            setIsPathShow(true);
           }
         }).catch((error) => {
           setPathShowSpinner(false);
           bridgeMessage.message = "No path found";
           props.isPathLoadingParent(false);
+          setIsPathShow(false);
         })
       } catch (error) {
         setPathShowSpinner(false);
         props.isPathLoadingParent(false);
+        setIsPathShow(false);
         console.error('Error fetching path data:', error);
       }
     }
@@ -92,26 +102,26 @@ export default function Pathshow(props: PropsType) {
   }, [props.Amountpathshow]);
 
   useEffect(() => {
-    if(walletData.isReconnected == false){
+    if (walletData.isReconnected == false) {
       fetchData();
     }
   }, [walletData.isReconnected]);
-  
+
   function sendSelectedPathToParent(path: PathShowViewModel) {
     setCurrentSelectedPath(path);
     props.sendSelectedPath(path);
     //close offcanvas
     //document.getElementById('offcanvasBottom').classList.remove('show')
   }
-  
-  function invokeTimeOutForReloadPath(){
+
+  function invokeTimeOutForReloadPath() {
     let reloadPathShow = setTimeout(() => {
-      fetchData();    
+      fetchData();
     }, 60000);
     pathReloadIntervalId.current = (reloadPathShow as unknown as number);
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     // Cleanup function to clear the interval
     return () => {
       clearInterval(pathReloadIntervalId.current);
@@ -119,15 +129,15 @@ export default function Pathshow(props: PropsType) {
   }, [])
   return (
     <>
-        <>
-          <div className="col-lg-5 col-md-12 col-sm-12 col-12 d-none d-lg-block">
-            <div className="card">
-              <div className="p-24">
-                <div className="d-flex justify-content-between align-items-center mb-2 gap-3">
-                  <div className="card-title">
-                    Well Get At Chain Name
-                  </div>
-                  {/* <div className="bar">
+      {isPathShow && <>
+        <div className="col-lg-5 col-md-12 col-sm-12 col-12 d-none d-lg-block">
+          <div className="card">
+            <div className="p-24">
+              <div className="d-flex justify-content-between align-items-center mb-2 gap-3">
+                <div className="card-title">
+                  Will get at <span className=''>{currentSelectedPath.toChain}</span>
+                </div>
+                {/* <div className="bar">
                     <div className="in"></div>
                   </div> */}
                 <div id="countdown" className={isShowPathShowTimer ? 'd-block' : 'd-none'}>
@@ -136,8 +146,8 @@ export default function Pathshow(props: PropsType) {
                     <circle r="18" cx="20" cy="20" className="animated-circle"></circle>
                   </svg>
                 </div>
-                  <div className="card-action-wrapper d-flex align-items-center gap-2">
-                    {/* <div className="dropdown">
+                <div className="card-action-wrapper d-flex align-items-center gap-2">
+                  {/* <div className="dropdown">
                       <button
                         className="btn primary-btn dropdown-toggle"
                         type="button"
@@ -151,11 +161,11 @@ export default function Pathshow(props: PropsType) {
                                     </ul>
                     </div>
                     <i className="fas fa-redo-alt"></i> */}
-                  </div>
                 </div>
-                {
-                  pathShowSpinner == true &&
-                  <>
+              </div>
+              {
+                pathShowSpinner == true &&
+                <>
                   <div className="d-flex flex-column gap-3 add-scroll-bar mt-4">
                     {Array.from({ length: 2 }, (_, i) => (
                       <div key={i} className="inner-card w-100 py-2">
@@ -181,7 +191,7 @@ export default function Pathshow(props: PropsType) {
 
                         </div>
                         <div className="px-3 py-1 d-flex align-item-center justify-content-between">
-                            <div className="d-flex align-items-center gap-2">
+                          <div className="d-flex align-items-center gap-2">
                             <label className="font-16 d-flex align-items-center gap-2">
                               <Skeleton width={10} height={10} circle={true} />
                               <Skeleton width={90} height={10} />
@@ -192,77 +202,77 @@ export default function Pathshow(props: PropsType) {
                             </label>
                           </div>
                           <div className='d-block align-items-end gap-2'>
-                              <Skeleton width={90} height={20} />
+                            <Skeleton width={90} height={20} />
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                  </>
-                }
-                {pathShowSpinner == false && (
-                  <>
-                    <div className="d-flex flex-column gap-3 add-scroll-bar mt-4">
-                      {
-                        availablePaths.length > 0 &&
-                        availablePaths.map((pathshow, index) => (
-                          <div key={index} className={`inner-card w-100 py-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} onClick={() => sendSelectedPathToParent(pathshow)}>
-                            <div className="px-3 d-block justify-content-between py-2 middle-align-card">
-                              <div className='d-flex justify-content-between'>
-                                <div className="d-flex align-items-center gap-3">
-                                  <div className="selcet-coin coin-wrapper">
-                                    <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
-                                  </div>
-                                  <div className="d-flex flex-column">
-                                    <label className="coin-name price-name d-block fw-600">
-                                      {pathshow.fromAmount} {pathshow.fromToken}
-                                    </label>
-                                    <label className="coin-sub-name">
-                                      $ {pathshow.fromAmountUsd}
-                                    </label>
-                                  </div>
+                </>
+              }
+              {pathShowSpinner == false && (
+                <>
+                  <div className="d-flex flex-column gap-3 add-scroll-bar mt-4">
+                    {
+                      availablePaths.length > 0 &&
+                      availablePaths.map((pathshow, index) => (
+                        <div key={index} className={`inner-card w-100 py-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} onClick={() => sendSelectedPathToParent(pathshow)}>
+                          <div className="px-3 d-block justify-content-between py-2 middle-align-card">
+                            <div className='d-flex justify-content-between'>
+                              <div className="d-flex align-items-center gap-3">
+                                <div className="selcet-coin coin-wrapper">
+                                  <img src={props.destChain.logoURI} className="coin" alt="" />
                                 </div>
-                                <div className="d-block align-items-center gap-2 flex-wrap">
-                                  <label className="best-return fw-600 px-2 py-1">
-                                    Best Return
+                                <div className="d-flex flex-column">
+                                  <label className="coin-name price-name d-block fw-600">
+                                    {pathshow.toAmount} {pathshow.toToken}
                                   </label>
-                                  {/* <label className="faster fw-600 px-2 py-1">
+                                  <label className="coin-sub-name">
+                                    $ {pathshow.toAmountUsd}
+                                  </label>
+                                </div>
+                              </div>
+                              <div className="d-block align-items-center gap-2 flex-wrap">
+                                <label className="best-return fw-600 px-2 py-1">
+                                  Best Return
+                                </label>
+                                {/* <label className="faster fw-600 px-2 py-1">
                                   {pathshow.aggregatorOrderType}
                                 </label> */}
-                                </div>
                               </div>
+                            </div>
 
-                            </div>
-                            <div className="px-3 py-1 d-flex align-item-center justify-content-between">
-                              <div className="d-flex align-items-center gap-2">
-                                <label className="font-16 d-flex align-items-center gap-2">
-                                  <i className="fa-regular fa-clock "></i>
-                                  {pathshow.estTime}
-                                </label>
-                                <label className="font-16 d-flex align-items-center gap-2">
-                                  <i className="fa-solid fa-gas-pump"></i>
-                                  {pathshow.gasafee}
-                                </label>
-                              </div>
-                              {
-                                !utilityService.isNullOrEmpty(currentTheme) &&
-                                <>
-                                  <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                                    <img src={'assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
-                                  </div>
-                                </>
-                              }
-                              
-                            </div>
                           </div>
-                        ))}
-                    </div>
-                  </>
-                )}
-              </div>
+                          <div className="px-3 py-1 d-flex align-item-center justify-content-between">
+                            <div className="d-flex align-items-center gap-2">
+                              <label className="font-16 d-flex align-items-center gap-2">
+                                <i className="fa-regular fa-clock "></i>
+                                {pathshow.estTime}
+                              </label>
+                              <label className="font-16 d-flex align-items-center gap-2">
+                                <i className="fa-solid fa-gas-pump"></i>
+                                {pathshow.gasafee}
+                              </label>
+                            </div>
+                            {
+                              !utilityService.isNullOrEmpty(currentTheme) &&
+                              <>
+                                <div className='d-flex align-item-center gap-2 aggrigator-box'>
+                                  <img src={'assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                                </div>
+                              </>
+                            }
+
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        </>
+        </div>
+      </>}
       <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasBottom" data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{ height: '50%' }}>
         <div className="offcanvas-header">
           <h5 className="offcanvas-title primary-text" id="offcanvasBottomLabel">Showing {availablePaths.length} Routes</h5>
@@ -278,13 +288,13 @@ export default function Pathshow(props: PropsType) {
                 <div className={`inner-card w-100 py-3 px-3 mt-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} data-bs-dismiss="offcanvas" aria-label="Close" onClick={() => sendSelectedPathToParent(pathshow)} key={index}>
                   <div className="d-flex gap-3">
                     <div className="selcet-coin coin-wrapper">
-                      <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
+                      <img src={props.destChain.logoURI} className="coin" alt="" />
                     </div>
                     <div className="d-flex flex-column w-100">
                       <label className="coin-name d-flex gap-2 justify-content-between">
                         <label className="coin-name d-block ">
-                          <span className="d-block fw-600"> {pathshow.fromAmount} {pathshow.fromToken} </span>
-                          <span className="d-block coin-sub-name" >$ {pathshow.fromAmountUsd}</span>
+                          <span className="d-block fw-600"> {pathshow.toAmount} {pathshow.toToken} </span>
+                          <span className="d-block coin-sub-name" >$ {pathshow.toAmountUsd}</span>
                         </label>
                         <p className="faster fw-600 px-2 py-1">
                           Faster
@@ -304,7 +314,7 @@ export default function Pathshow(props: PropsType) {
                       </label>
                     </div>
                     <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                      <img src="https://files.readme.io/bb20f210c4e395acdbec4f273221b35183d5b07a2aa16a8c0ef3044972c0d5f3-Rango-Logo-RGB.svg" alt="" />
+                      <img src={'assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
                     </div>
                   </div>
                 </div>

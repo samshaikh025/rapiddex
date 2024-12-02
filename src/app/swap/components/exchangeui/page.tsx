@@ -98,9 +98,9 @@ export default function Exchangeui(props: propsType) {
                 setequAmountUSD(null);
                 if (props.sourceTokenAmount > 0 && Number(amount) > 0) {
                     let eq = (amount * props.sourceTokenAmount);
-                    setequAmountUSD(eq);
+                    setequAmountUSD(Number(eq.toFixed(2)));
                     //shwo validation message if balance is less than 1 USD
-                    eq < 1 ? setShowMinOneUSDAmountErr(true) : setShowMinOneUSDAmountErr(false);
+                    eq < 0.95 ? setShowMinOneUSDAmountErr(true) : setShowMinOneUSDAmountErr(false);
                 }
             } else {
                 setSendAmount(null);
@@ -560,7 +560,17 @@ export default function Exchangeui(props: propsType) {
                                 {
                                     showMinOneUSDAmountErr &&
                                     <>
-                                        <span>Minimum Amount is 1 USD</span>
+                                        <div className="inner-card w-100 py-2 px-3 mt-2">
+                                            <div className="d-flex align-items-center gap-3">
+
+
+
+                                                <span>Please enter an amount of at least $1 to proceed.</span>
+
+
+                                            </div>
+                                        </div>
+
                                     </>
                                 }
                                 {
@@ -629,13 +639,13 @@ export default function Exchangeui(props: propsType) {
 
                                                         <div className="d-flex gap-3">
                                                             <div className="selcet-coin coin-wrapper">
-                                                                <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
+                                                                <img src={props.destChain.logoURI} className="coin" alt="" />
                                                             </div>
                                                             <div className="d-flex flex-column w-100">
                                                                 <label className="coin-name d-flex gap-2 justify-content-between">
                                                                     <label className="coin-name d-block ">
-                                                                        <span className="d-block fw-600"> {selectedPath.fromAmount} {selectedPath.fromToken} </span>
-                                                                        <span className="d-block coin-sub-name" >$ {selectedPath.fromAmountUsd}</span>
+                                                                        <span className="d-block fw-600"> {selectedPath.toAmount} {selectedPath.toToken} </span>
+                                                                        <span className="d-block coin-sub-name" >$ {selectedPath.toAmountUsd}</span>
                                                                     </label>
                                                                     <p className="faster fw-600 px-2 py-1">
                                                                         Faster

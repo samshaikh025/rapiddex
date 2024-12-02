@@ -47,6 +47,7 @@ export class PathShowViewModel {
   toChain: string;
   toToken: string;
   toAmount: string;
+  toAmountUsd: string;
   receivedAmount: string;
   aggregator: string;
   aggregatorOrderType: string;

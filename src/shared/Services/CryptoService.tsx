@@ -532,6 +532,7 @@ export class CryptoService {
                 owltoPath ? this.createOwltoPathShowViewModel(owltoPath, sourceChain, destChain, sourceToken, destToken, amount, "Owlto") : null
             ]);
 
+
             // Filter non-null paths
             const bestpath = [subfastestPath, subcheapestPath, subrangoPath, subowltoPath].filter(path => path != null);
 
@@ -897,8 +898,9 @@ export class CryptoService {
             pathShowViewModel.fromAmount = amount.toString();
             pathShowViewModel.toChain = destChain.chainName;
             pathShowViewModel.toToken = destToken.symbol;
-            pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmount, lifiPath.action.toToken.decimals)).toString();
+            pathShowViewModel.toAmount = ((await this.utilityService.convertToNumber(lifiPath.estimate.toAmount, lifiPath.action.toToken.decimals)).toFixed(5)).toString();
             pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(lifiPath.estimate.toAmountMin, lifiPath.action.toToken.decimals)).toString();
+            pathShowViewModel.toAmountUsd = Number(lifiPath.estimate.toAmountUSD).toFixed(2);
             pathShowViewModel.aggregator = "lifi";
             pathShowViewModel.aggregatorOrderType = orderType;
             pathShowViewModel.approvalAddress = lifiPath.estimate.approvalAddress;
@@ -937,8 +939,9 @@ export class CryptoService {
             pathShowViewModel.fromAmount = amount.toString();
             pathShowViewModel.toChain = destChain.chainName;
             pathShowViewModel.toToken = destToken.symbol;
-            pathShowViewModel.toAmount = (await this.utilityService.convertToNumber(responseRangoPath.route.outputAmount.toString(), destToken.decimal)).toString();
+            pathShowViewModel.toAmount = ((await this.utilityService.convertToNumber(responseRangoPath.route.outputAmount.toString(), destToken.decimal)).toFixed(5)).toString();
             pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(responseRangoPath.route.outputAmountMin.toString(), destToken.decimal)).toString();;
+            pathShowViewModel.toAmountUsd = Number(responseRangoPath.route.outputAmountUsd).toFixed(2);
             pathShowViewModel.aggregator = "rango";
             pathShowViewModel.aggregatorOrderType = orderType;
             pathShowViewModel.approvalAddress = responseRangoPath.tx?.txTo;
@@ -1002,6 +1005,7 @@ export class CryptoService {
             pathShowViewModel.toToken = destToken.symbol;
             pathShowViewModel.toAmount = (amount).toString();
             pathShowViewModel.receivedAmount = (amount).toString();;
+            pathShowViewModel.toAmountUsd = Number((price * amount)).toFixed(2);
             pathShowViewModel.aggregator = "Owlto";
             pathShowViewModel.aggregatorOrderType = orderType;
             pathShowViewModel.approvalAddress = responseOwltoPath.msg.maker_address;

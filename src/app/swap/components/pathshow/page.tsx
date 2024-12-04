@@ -26,7 +26,6 @@ export default function Pathshow(props: PropsType) {
   let [currentSelectedPath, setCurrentSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
   let bridgeMessage: BridgeMessage = new BridgeMessage();
   let [isShowPathShowTimer, setIsShowPathShowTimer] = useState<boolean>(false);
-  let [isPathShow, setIsPathShow] = useState<boolean>(false);
   let pathReloadIntervalId = useRef<number | null>(null);
   let pathShowInvokedForAmount = useRef<number | null>(null);
   let abc = useRef<number>(5);
@@ -41,7 +40,6 @@ export default function Pathshow(props: PropsType) {
   function fetchData() {
 
     if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
-      setIsPathShow(true);
       props.isPathLoadingParent(true);
       setPathShowSpinner(true);
       setIsShowPathShowTimer(false);
@@ -76,22 +74,27 @@ export default function Pathshow(props: PropsType) {
             setAvailablePaths(result);
             setPathShowSpinner(false);
             props.isPathLoadingParent(false);
-            abc.current = 10;
             setIsShowPathShowTimer(true);
             //call time out for realod path
             invokeTimeOutForReloadPath();
-            setIsPathShow(true);
+          }else if(result && result.length == 0 && props.Amountpathshow == pathShowInvokedForAmount.current){
+            props.sendInitData([]);
+            //setCurrentSelectedPath(new PathShowViewModel());
+            //setAvailablePaths([]);
+            setPathShowSpinner(false);
+            props.isPathLoadingParent(false);
+            //setIsShowPathShowTimer(true);
           }
         }).catch((error) => {
+          props.sendInitData([]);
           setPathShowSpinner(false);
           bridgeMessage.message = "No path found";
           props.isPathLoadingParent(false);
-          setIsPathShow(false);
         })
       } catch (error) {
+        props.sendInitData([]);
         setPathShowSpinner(false);
         props.isPathLoadingParent(false);
-        setIsPathShow(false);
         console.error('Error fetching path data:', error);
       }
     }
@@ -129,7 +132,6 @@ export default function Pathshow(props: PropsType) {
   }, [])
   return (
     <>
-      {isPathShow && <>
         <div className="col-lg-5 col-md-12 col-sm-12 col-12 d-none d-lg-block">
           <div className="card">
             <div className="p-24">
@@ -258,7 +260,7 @@ export default function Pathshow(props: PropsType) {
                               !utilityService.isNullOrEmpty(currentTheme) &&
                               <>
                                 <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                                  <img src={'assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                                  <img src={ process.env.NEXT_PUBLIC_NODE_API_URL.toString() + '/assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
                                 </div>
                               </>
                             }
@@ -272,7 +274,6 @@ export default function Pathshow(props: PropsType) {
             </div>
           </div>
         </div>
-      </>}
       <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasBottom" data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{ height: '50%' }}>
         <div className="offcanvas-header">
           <h5 className="offcanvas-title primary-text" id="offcanvasBottomLabel">Showing {availablePaths.length} Routes</h5>
@@ -314,7 +315,7 @@ export default function Pathshow(props: PropsType) {
                       </label>
                     </div>
                     <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                      <img src={'assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                      <img src={process.env.NEXT_PUBLIC_NODE_API_URL.toString() + '/assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
                     </div>
                   </div>
                 </div>

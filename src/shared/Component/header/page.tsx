@@ -29,6 +29,7 @@ export default function Header() {
   let userService = new UserService();
   let SupportedLanguage = SupportedLang;
   const selectedLang = useSelector((state: any) => state.SelectedLanguage);
+  let currentTheme = useSelector((state: any) => state.SelectedTheme);
 
   function toggleTheme(status: boolean) {
     let mode = status == false ? 'light' : 'dark';
@@ -72,7 +73,8 @@ export default function Header() {
     console.log(walletData);
     //getWalletAddressFromStorageAndSet();
     let theme = sharedService.getData(Keys.THEME);
-    if (theme && theme == 'DARK') {
+    if (theme && theme == 'dark') {
+      toggleTheme(true);
     }
     let lang = sharedService.getData(Keys.SELECTED_LANG);
     if (lang) {
@@ -135,7 +137,7 @@ export default function Header() {
 
           <div className="btn-wrapper d-flex align-items-center gap-2">
             <div className="theme-mode position-relative">
-              <input type="checkbox" className="checkbox" id="checkbox" onChange={(e) => toggleTheme(e.currentTarget.checked)} />
+              <input type="checkbox" className="checkbox" id="checkbox" checked={currentTheme == 'light' ? false : true} onChange={(e) => toggleTheme(e.currentTarget.checked)} />
               <label htmlFor="checkbox" className="checkbox-label">
                 <i className="fas fa-sun"></i>
                 <i className="fas fa-moon"></i>

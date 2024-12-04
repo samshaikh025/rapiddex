@@ -537,7 +537,7 @@ export class CryptoService {
             const bestpath = [subfastestPath, subcheapestPath, subrangoPath, subowltoPath].filter(path => path != null);
 
             // Return bestpath if any valid paths, otherwise return null
-            return bestpath.length > 0 ? bestpath : null;
+            return bestpath.length > 0 ? bestpath : [];
 
         } catch (error) {
             console.error("Error in getBestPathFromChosenChains:", error);

@@ -42,6 +42,7 @@ export default function Exchangeui(props: propsType) {
     let utilityService = new UtilityService();
     let [totalAvailablePath, setTotalAvailablePath] = useState<number>(0);
     let [isPathShow, setIsPathShow] = useState<boolean>(false);
+    let [isShowPathComponent, setIsShowPathComponent] = useState<boolean>(false);
     let [selectedPath, setSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
     let amountTextBoxRef = useRef<HTMLInputElement>(null);
     let dispatch = useDispatch();
@@ -99,6 +100,7 @@ export default function Exchangeui(props: propsType) {
                 if (props.sourceTokenAmount > 0 && Number(amount) > 0) {
                     let eq = (amount * props.sourceTokenAmount);
                     setequAmountUSD(Number(eq.toFixed(2)));
+                    setIsShowPathComponent(true);
                     //shwo validation message if balance is less than 1 USD
                     eq < 0.95 ? setShowMinOneUSDAmountErr(true) : setShowMinOneUSDAmountErr(false);
                 }
@@ -106,6 +108,7 @@ export default function Exchangeui(props: propsType) {
                 setSendAmount(null);
                 setequAmountUSD(null);
                 setShowMinOneUSDAmountErr(false);
+                setIsShowPathComponent(false);
             }
             setTotalAvailablePath(0);
             setSelectedPath(new PathShowViewModel());
@@ -126,9 +129,12 @@ export default function Exchangeui(props: propsType) {
 
     function getInitData(data: PathShowViewModel[]) {
         setTotalAvailablePath(data.length);
-        if (data.length > 0) {
-            setSelectedPath(data[0]);
-        }
+        if(data.length > 0){
+            setSelectedPath(data[0])
+        }else{
+            setIsShowPathComponent(false);
+            setSelectedPath(new PathShowViewModel());
+        } 
     }
 
     function getSelectedPath(data: PathShowViewModel) {
@@ -446,7 +452,7 @@ export default function Exchangeui(props: propsType) {
 
                                 <div className="d-flex justify-content-between align-items-center mb-3">
                                     <div className="card-title">
-                                        Exchange
+                                        Exchange - {totalAvailablePath}
                                     </div>
                                     <div className="card-action-wrapper">
                                         <i className="fas fa-cog cursor-pointer"></i>
@@ -668,7 +674,7 @@ export default function Exchangeui(props: propsType) {
                                                                 !utilityService.isNullOrEmpty(currentTheme) &&
                                                                 <>
                                                                     <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                                                                        <img src={'assets/images/provider-logo/' + selectedPath.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                                                                        <img src={process.env.NEXT_PUBLIC_NODE_API_URL.toString() + '/assets/images/provider-logo/' + selectedPath.aggregator + '_' + currentTheme + '.svg'} alt="" />
                                                                     </div>
                                                                 </>
                                                             }
@@ -706,7 +712,7 @@ export default function Exchangeui(props: propsType) {
                         </div>
                     </div>
 
-                    {(sendAmount != null && sendAmount > 0) &&
+                    { isShowPathComponent &&
                         <Pathshow Amountpathshow={sendAmount}
                             destChain={props.destChain}
                             sourceChain={props.sourceChain}

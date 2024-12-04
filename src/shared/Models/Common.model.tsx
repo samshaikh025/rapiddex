@@ -193,3 +193,42 @@ export class TransactionRequestoDto {
   transactionAggregatorGasLimit: string;
 }
 
+export class InsertTransactionRequestoDto {
+  transactionGuid: string = '';
+  walletAddress: string = '';
+  amount: number = 0;
+  amountUsd: number = 0;
+  approvalAddress: string = '';
+  transactionHash: string = '';
+  transactionStatus: number = 0;
+  transactionSubStatus: number = 0;
+  quoteDetail: string = '';
+  sourceChainId: number = 0;
+  sourceChainName: string = '';
+  sourceChainLogoUri: string = '';
+  destinationChainId: number = 0;
+  destinationChainName: string = '';
+  destinationChainLogoUri: string = '';
+  sourceTokenName: string = '';
+  sourceTokenAddress: string = '';
+  sourceTokenSymbol: string = '';
+  sourceTokenLogoUri: string = '';
+  destinationTokenName: string = '';
+  destinationTokenAddress: string = '';
+  destinationTokenSymbol: string = '';
+  destinationTokenLogoUri: string = '';
+  // sourceChain: Chains;
+  // destinationChain: Chains;
+  // isNativeToken: boolean = false;
+  // transactiionAggregator: string;
+  // transactionAggregatorRequestId: string;
+  // transactionAggregatorRequestData: string;
+  // transactionAggregatorGasPrice: string;
+  // transactionAggregatorGasLimit: string;
+}
+
+export class UpdateTransactionRequestoDto {
+  transactionGuid: string = '';
+  transactionSubStatus: number = 0;
+}
+

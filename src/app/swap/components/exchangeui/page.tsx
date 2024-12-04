@@ -421,6 +421,7 @@ export default function Exchangeui(props: propsType) {
         setStartBridging(false);
         setSendAmount(null);
         setequAmountUSD(null);
+        setIsShowPathComponent(false);
         openOrCloseSubBridBridgeView();
     }
 
@@ -452,7 +453,7 @@ export default function Exchangeui(props: propsType) {
 
                                 <div className="d-flex justify-content-between align-items-center mb-3">
                                     <div className="card-title">
-                                        Exchange - {totalAvailablePath}
+                                        Exchange
                                     </div>
                                     <div className="card-action-wrapper">
                                         <i className="fas fa-cog cursor-pointer"></i>

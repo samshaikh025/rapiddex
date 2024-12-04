@@ -1,7 +1,10 @@
 "use client"
 import { SetActiveTransactionA } from "@/app/redux-store/action/action-redux";
-import { Keys, TransactionStatus, TransactionSubStatus } from "@/shared/Enum/Common.enum";
+import { OwltoSubStatus } from "@/shared/Const/Common.const";
+import { Keys, TransactionStatus, TransactionSubStatus, TransactionSubStatusLIFI, TransactionSubStatusRango } from "@/shared/Enum/Common.enum";
 import { TransactionRequestoDto } from "@/shared/Models/Common.model";
+import { LiFiTransactionResponse } from "@/shared/Models/Lifi";
+import { OwltoTransactionResponse } from "@/shared/Models/Owlto";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import { SharedService } from "@/shared/Services/SharedService";
 import { UtilityService } from "@/shared/Services/UtilityService";
@@ -73,20 +76,25 @@ export default function SubBridgeView(props: propsType) {
         if (!utilityService.isNullOrEmpty(tx)) {
             if (activeTransactionData.transactiionAggregator == 'lifi') {
                 // check lifi transaction status
-                let response = await cryptoService.TransactionStatusLIFI(tx, activeTransactionData.sourceChainId, activeTransactionData.destinationChainId)
-                console.log(activeTransactionData);
+                let response: LiFiTransactionResponse = await cryptoService.TransactionStatusLIFI(tx, activeTransactionData.sourceChainId, activeTransactionData.destinationChainId)
+                if (response && response.status) {
+                    status = TransactionSubStatusLIFI[response.status];
+                }
             }
             else if (activeTransactionData.transactiionAggregator == 'rango') {
                 // chack rango
-                let response = await cryptoService.TransactionStatusRango(activeTransactionData.transactionAggregatorRequestId, tx, 1);
-                console.log(activeTransactionData);
+                let response: LiFiTransactionResponse = await cryptoService.TransactionStatusRango(activeTransactionData.transactionAggregatorRequestId, tx, 1);
+                if (response && response.status) {
+                    status = TransactionSubStatusRango[response.status];
+                }
             }
             else if (activeTransactionData.transactiionAggregator == 'owlto') {
                 // cheack owlto
-                let response = await cryptoService.TransactionStatusOwlto(activeTransactionData.sourceChainId, tx);
-                console.log(activeTransactionData);
+                let response: OwltoTransactionResponse = await cryptoService.TransactionStatusOwlto(activeTransactionData.sourceChainId, tx);
+                if (response && response.status) {
+                    status = OwltoSubStatus[String(response.status.code)];
+                }
             }
-
         }
 
         return status;
@@ -121,7 +129,7 @@ export default function SubBridgeView(props: propsType) {
     }
 
     function closeSubBridgeView() {
-        if (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) {
+        if (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED || activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) {
             sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
             dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
         }

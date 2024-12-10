@@ -2,11 +2,12 @@
 import { SetActiveTransactionA } from "@/app/redux-store/action/action-redux";
 import { OwltoSubStatus } from "@/shared/Const/Common.const";
 import { Keys, TransactionStatus, TransactionSubStatus, TransactionSubStatusLIFI, TransactionSubStatusRango } from "@/shared/Enum/Common.enum";
-import { TransactionRequestoDto } from "@/shared/Models/Common.model";
+import { TransactionRequestoDto, UpdateTransactionRequestoDto } from "@/shared/Models/Common.model";
 import { LiFiTransactionResponse } from "@/shared/Models/Lifi";
 import { OwltoTransactionResponse } from "@/shared/Models/Owlto";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import { SharedService } from "@/shared/Services/SharedService";
+import { TransactionService } from "@/shared/Services/TransactionService";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -24,6 +25,7 @@ export default function SubBridgeView(props: propsType) {
     let cryptoService = new CryptoService();
     let sharedService = SharedService.getSharedServiceInstance();
     let statusIntervalId = useRef<number>();
+    let transactionService = new TransactionService();
 
     useEffect(() => {
         //clean up function
@@ -57,8 +59,11 @@ export default function SubBridgeView(props: propsType) {
                                 transactionSubStatus: status
                             }
                             dispatch(SetActiveTransactionA(updateTransactionData));
-                            let requestPayload = getPayloadForTransaction(activeTransactionData, tx, utilityService.uuidv4(), TransactionStatus.COMPLETED, TransactionSubStatus.DONE);
-                            //addTransactionLog(requestPayload);
+                            let requestPayload : UpdateTransactionRequestoDto = {
+                                transactionGuid: activeTransactionData.transactionGuid,
+                                transactionSubStatus: status
+                            };
+                            UpdateTransactionLog(requestPayload);
                             clearInterval(statusIntervalId.current);
                         }
                     }, 10000)
@@ -70,6 +75,18 @@ export default function SubBridgeView(props: propsType) {
         transactionSteps();
 
     }, [activeTransactionData.transactionStatus]);
+
+    function UpdateTransactionLog(payLoad: UpdateTransactionRequestoDto) {
+        transactionService.UpdateTransactionLog(payLoad).then((response) => {
+            if (response?.data && response.data == 1) {
+                //dispatch(SetActiveTransactionA(response.data));
+                //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, response.data);
+                console.log('transaction updated successfully');
+            }
+        }).catch((error) => {
+            console.log(error);
+        });;
+    }
 
     async function GetTransactionStatus(tx: string) {
         let status = 0;

@@ -51,6 +51,7 @@ export default function Exchangeui(props: propsType) {
     let activeTransactionData: TransactionRequestoDto = useSelector((state: any) => state.ActiveTransactionData);
     let walletDisconnected: boolean = useSelector((state: any) => state.WalletDisconnected);
     let currentTheme = useSelector((state: any) => state.SelectedTheme);
+    let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_ENV == 'production' ? process.env.NEXT_PUBLIC_NODE_API_URL_PRODUCTION : process.env.NEXT_PUBLIC_NODE_API_URL;
 
     const {
         switchChain,
@@ -102,7 +103,16 @@ export default function Exchangeui(props: propsType) {
                     setequAmountUSD(Number(eq.toFixed(2)));
                     setIsShowPathComponent(true);
                     //shwo validation message if balance is less than 1 USD
-                    eq < 0.95 ? setShowMinOneUSDAmountErr(true) : setShowMinOneUSDAmountErr(false);
+
+                    if (eq < 0.95) {
+                        setShowMinOneUSDAmountErr(true);
+                        setIsShowPathComponent(false);
+                    }
+                    else {
+                        setShowMinOneUSDAmountErr(false);
+                        setIsShowPathComponent(true);
+                    }
+
                 }
             } else {
                 setSendAmount(null);
@@ -129,12 +139,12 @@ export default function Exchangeui(props: propsType) {
 
     function getInitData(data: PathShowViewModel[]) {
         setTotalAvailablePath(data.length);
-        if(data.length > 0){
+        if (data.length > 0) {
             setSelectedPath(data[0])
-        }else{
+        } else {
             setIsShowPathComponent(false);
             setSelectedPath(new PathShowViewModel());
-        } 
+        }
     }
 
     function getSelectedPath(data: PathShowViewModel) {
@@ -675,7 +685,7 @@ export default function Exchangeui(props: propsType) {
                                                                 !utilityService.isNullOrEmpty(currentTheme) &&
                                                                 <>
                                                                     <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                                                                        <img src={process.env.NEXT_PUBLIC_NODE_API_URL.toString() + '/assets/images/provider-logo/' + selectedPath.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                                                                        <img src={apiUrlENV + '/assets/images/provider-logo/' + selectedPath.aggregator + '_' + currentTheme + '.svg'} alt="" />
                                                                     </div>
                                                                 </>
                                                             }
@@ -713,7 +723,7 @@ export default function Exchangeui(props: propsType) {
                         </div>
                     </div>
 
-                    { isShowPathComponent &&
+                    {isShowPathComponent &&
                         <Pathshow Amountpathshow={sendAmount}
                             destChain={props.destChain}
                             sourceChain={props.sourceChain}

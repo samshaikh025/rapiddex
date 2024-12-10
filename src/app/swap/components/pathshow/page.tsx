@@ -36,6 +36,7 @@ export default function Pathshow(props: PropsType) {
   const cryptoService = new CryptoService();
   let sharedService = SharedService.getSharedServiceInstance();
   let currentTheme = useSelector((state: any) => state.SelectedTheme);
+  let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_ENV == 'production' ? process.env.NEXT_PUBLIC_NODE_API_URL_PRODUCTION : process.env.NEXT_PUBLIC_NODE_API_URL;
 
   function fetchData() {
 
@@ -77,7 +78,7 @@ export default function Pathshow(props: PropsType) {
             setIsShowPathShowTimer(true);
             //call time out for realod path
             invokeTimeOutForReloadPath();
-          }else if(result && result.length == 0 && props.Amountpathshow == pathShowInvokedForAmount.current){
+          } else if (result && result.length == 0 && props.Amountpathshow == pathShowInvokedForAmount.current) {
             props.sendInitData([]);
             //setCurrentSelectedPath(new PathShowViewModel());
             //setAvailablePaths([]);
@@ -132,24 +133,24 @@ export default function Pathshow(props: PropsType) {
   }, [])
   return (
     <>
-        <div className="col-lg-5 col-md-12 col-sm-12 col-12 d-none d-lg-block">
-          <div className="card">
-            <div className="p-24">
-              <div className="d-flex justify-content-between align-items-center mb-2 gap-3">
-                <div className="card-title">
-                  Will get at <span className=''>{currentSelectedPath.toChain}</span>
-                </div>
-                {/* <div className="bar">
+      <div className="col-lg-5 col-md-12 col-sm-12 col-12 d-none d-lg-block">
+        <div className="card">
+          <div className="p-24">
+            <div className="d-flex justify-content-between align-items-center mb-2 gap-3">
+              <div className="card-title">
+                Will get at <span className=''>{currentSelectedPath.toChain}</span>
+              </div>
+              {/* <div className="bar">
                     <div className="in"></div>
                   </div> */}
-                <div id="countdown" className={isShowPathShowTimer ? 'd-block' : 'd-none'}>
-                  <svg>
-                    <circle r="18" cx="20" cy="20" className="background-circle"></circle>
-                    <circle r="18" cx="20" cy="20" className="animated-circle"></circle>
-                  </svg>
-                </div>
-                <div className="card-action-wrapper d-flex align-items-center gap-2">
-                  {/* <div className="dropdown">
+              <div id="countdown" className={isShowPathShowTimer ? 'd-block' : 'd-none'}>
+                <svg>
+                  <circle r="18" cx="20" cy="20" className="background-circle"></circle>
+                  <circle r="18" cx="20" cy="20" className="animated-circle"></circle>
+                </svg>
+              </div>
+              <div className="card-action-wrapper d-flex align-items-center gap-2">
+                {/* <div className="dropdown">
                       <button
                         className="btn primary-btn dropdown-toggle"
                         type="button"
@@ -163,31 +164,84 @@ export default function Pathshow(props: PropsType) {
                                     </ul>
                     </div>
                     <i className="fas fa-redo-alt"></i> */}
-                </div>
               </div>
-              {
-                pathShowSpinner == true &&
-                <>
-                  <div className="d-flex flex-column gap-3 add-scroll-bar mt-4">
-                    {Array.from({ length: 2 }, (_, i) => (
-                      <div key={i} className="inner-card w-100 py-2">
+            </div>
+            {
+              pathShowSpinner == true &&
+              <>
+                <div className="d-flex flex-column gap-3 add-scroll-bar mt-4">
+                  {Array.from({ length: 2 }, (_, i) => (
+                    <div key={i} className="inner-card w-100 py-2">
+                      <div className="px-3 d-block justify-content-between py-2 middle-align-card">
+                        <div className='d-flex justify-content-between'>
+                          <div className="d-flex align-items-center gap-3">
+                            <div className="selcet-coin coin-wrapper">
+                              <Skeleton width={50} height={50} circle={true} />
+                            </div>
+                            <div className="d-flex flex-column">
+                              <label className="coin-name d-block fw-600">
+                                <Skeleton width={90} height={15} />
+                              </label>
+                              <label className="coin-sub-name">
+                                <Skeleton width={50} height={10} />
+                              </label>
+                            </div>
+                          </div>
+                          <div className="d-block align-items-center gap-2 flex-wrap">
+                            <Skeleton width={90} height={20} />
+                          </div>
+                        </div>
+
+                      </div>
+                      <div className="px-3 py-1 d-flex align-item-center justify-content-between">
+                        <div className="d-flex align-items-center gap-2">
+                          <label className="font-16 d-flex align-items-center gap-2">
+                            <Skeleton width={10} height={10} circle={true} />
+                            <Skeleton width={90} height={10} />
+                          </label>
+                          <label className="font-16 d-flex align-items-center gap-2">
+                            <Skeleton width={10} height={10} circle={true} />
+                            <Skeleton width={90} height={10} />
+                          </label>
+                        </div>
+                        <div className='d-block align-items-end gap-2'>
+                          <Skeleton width={90} height={20} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            }
+            {pathShowSpinner == false && (
+              <>
+                <div className="d-flex flex-column gap-3 add-scroll-bar mt-4">
+                  {
+                    availablePaths.length > 0 &&
+                    availablePaths.map((pathshow, index) => (
+                      <div key={index} className={`inner-card w-100 py-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} onClick={() => sendSelectedPathToParent(pathshow)}>
                         <div className="px-3 d-block justify-content-between py-2 middle-align-card">
                           <div className='d-flex justify-content-between'>
                             <div className="d-flex align-items-center gap-3">
                               <div className="selcet-coin coin-wrapper">
-                                <Skeleton width={50} height={50} circle={true} />
+                                <img src={props.destChain.logoURI} className="coin" alt="" />
                               </div>
                               <div className="d-flex flex-column">
-                                <label className="coin-name d-block fw-600">
-                                  <Skeleton width={90} height={15} />
+                                <label className="coin-name price-name d-block fw-600">
+                                  {pathshow.toAmount} {pathshow.toToken}
                                 </label>
                                 <label className="coin-sub-name">
-                                  <Skeleton width={50} height={10} />
+                                  $ {pathshow.toAmountUsd}
                                 </label>
                               </div>
                             </div>
                             <div className="d-block align-items-center gap-2 flex-wrap">
-                              <Skeleton width={90} height={20} />
+                              <label className="best-return fw-600 px-2 py-1">
+                                Best Return
+                              </label>
+                              {/* <label className="faster fw-600 px-2 py-1">
+                                  {pathshow.aggregatorOrderType}
+                                </label> */}
                             </div>
                           </div>
 
@@ -195,85 +249,32 @@ export default function Pathshow(props: PropsType) {
                         <div className="px-3 py-1 d-flex align-item-center justify-content-between">
                           <div className="d-flex align-items-center gap-2">
                             <label className="font-16 d-flex align-items-center gap-2">
-                              <Skeleton width={10} height={10} circle={true} />
-                              <Skeleton width={90} height={10} />
+                              <i className="fa-regular fa-clock "></i>
+                              {pathshow.estTime}
                             </label>
                             <label className="font-16 d-flex align-items-center gap-2">
-                              <Skeleton width={10} height={10} circle={true} />
-                              <Skeleton width={90} height={10} />
+                              <i className="fa-solid fa-gas-pump"></i>
+                              {pathshow.gasafee}
                             </label>
                           </div>
-                          <div className='d-block align-items-end gap-2'>
-                            <Skeleton width={90} height={20} />
-                          </div>
+                          {
+                            !utilityService.isNullOrEmpty(currentTheme) &&
+                            <>
+                              <div className='d-flex align-item-center gap-2 aggrigator-box'>
+                                <img src={apiUrlENV + '/assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                              </div>
+                            </>
+                          }
+
                         </div>
                       </div>
                     ))}
-                  </div>
-                </>
-              }
-              {pathShowSpinner == false && (
-                <>
-                  <div className="d-flex flex-column gap-3 add-scroll-bar mt-4">
-                    {
-                      availablePaths.length > 0 &&
-                      availablePaths.map((pathshow, index) => (
-                        <div key={index} className={`inner-card w-100 py-2 ${pathshow.pathId == currentSelectedPath.pathId ? 'active-card' : ''}`} onClick={() => sendSelectedPathToParent(pathshow)}>
-                          <div className="px-3 d-block justify-content-between py-2 middle-align-card">
-                            <div className='d-flex justify-content-between'>
-                              <div className="d-flex align-items-center gap-3">
-                                <div className="selcet-coin coin-wrapper">
-                                  <img src={props.destChain.logoURI} className="coin" alt="" />
-                                </div>
-                                <div className="d-flex flex-column">
-                                  <label className="coin-name price-name d-block fw-600">
-                                    {pathshow.toAmount} {pathshow.toToken}
-                                  </label>
-                                  <label className="coin-sub-name">
-                                    $ {pathshow.toAmountUsd}
-                                  </label>
-                                </div>
-                              </div>
-                              <div className="d-block align-items-center gap-2 flex-wrap">
-                                <label className="best-return fw-600 px-2 py-1">
-                                  Best Return
-                                </label>
-                                {/* <label className="faster fw-600 px-2 py-1">
-                                  {pathshow.aggregatorOrderType}
-                                </label> */}
-                              </div>
-                            </div>
-
-                          </div>
-                          <div className="px-3 py-1 d-flex align-item-center justify-content-between">
-                            <div className="d-flex align-items-center gap-2">
-                              <label className="font-16 d-flex align-items-center gap-2">
-                                <i className="fa-regular fa-clock "></i>
-                                {pathshow.estTime}
-                              </label>
-                              <label className="font-16 d-flex align-items-center gap-2">
-                                <i className="fa-solid fa-gas-pump"></i>
-                                {pathshow.gasafee}
-                              </label>
-                            </div>
-                            {
-                              !utilityService.isNullOrEmpty(currentTheme) &&
-                              <>
-                                <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                                  <img src={ process.env.NEXT_PUBLIC_NODE_API_URL.toString() + '/assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
-                                </div>
-                              </>
-                            }
-
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
+      </div>
       <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasBottom" data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{ height: '50%' }}>
         <div className="offcanvas-header">
           <h5 className="offcanvas-title primary-text" id="offcanvasBottomLabel">Showing {availablePaths.length} Routes</h5>
@@ -315,7 +316,7 @@ export default function Pathshow(props: PropsType) {
                       </label>
                     </div>
                     <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                      <img src={process.env.NEXT_PUBLIC_NODE_API_URL.toString() + '/assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                      <img src={apiUrlENV + '/assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
                     </div>
                   </div>
                 </div>

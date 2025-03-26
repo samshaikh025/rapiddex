@@ -7,6 +7,7 @@ import { RequestOwltoDTC, RequestOwltoPath, ResponseOwltoDTC, ResponseOwltoPath 
 import { RequestRangoPath, ResponseRangoPath } from "../Models/Rango";
 import { SharedService } from "./SharedService";
 import { UtilityService } from "./UtilityService";
+import { RequestRapidXPath, ResponseRapidXPath } from "../Models/RapidX";
 export class CryptoService {
 
     AvailableChains: Chains[] = [];
@@ -512,7 +513,8 @@ export class CryptoService {
             };
 
             // Fetch paths concurrently with timeout
-            const [fastestPath, cheapestPath, rangoPath, owltoPath] = await Promise.all([
+            const [rapidXPath, fastestPath, cheapestPath, rangoPath, owltoPath] = await Promise.all([
+                withTimeout(this.getRapidXPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'RapidX'),
                 withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "FASTEST"), apiTimeout, 'Lifi (Fastest)'),
                 withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Lifi (Cheapest)'),
                 withTimeout(this.getRangoPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Rango'),
@@ -525,7 +527,8 @@ export class CryptoService {
             }
 
             // Create PathShowViewModel concurrently with timeout
-            const [subfastestPath, subcheapestPath, subrangoPath, subowltoPath] = await Promise.all([
+            const [subrapidXPath, subfastestPath, subcheapestPath, subrangoPath, subowltoPath] = await Promise.all([
+                rapidXPath ? this.createRapidXPathShowViewModel(rapidXPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST") : null,
                 fastestPath ? this.createPathShowViewModel(fastestPath, sourceChain, destChain, sourceToken, destToken, amount, "FASTEST") : null,
                 cheapestPath ? this.createPathShowViewModel(cheapestPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST") : null,
                 rangoPath ? this.createRangoPathShowViewModel(rangoPath, sourceChain, destChain, sourceToken, destToken, amount, "Rango") : null,
@@ -534,7 +537,7 @@ export class CryptoService {
 
 
             // Filter non-null paths
-            const bestpath = [subfastestPath, subcheapestPath, subrangoPath, subowltoPath].filter(path => path != null);
+            const bestpath = [subrapidXPath, subfastestPath, subcheapestPath, subrangoPath, subowltoPath].filter(path => path != null);
 
             // Return bestpath if any valid paths, otherwise return null
             return bestpath.length > 0 ? bestpath : [];
@@ -542,6 +545,65 @@ export class CryptoService {
         } catch (error) {
             console.error("Error in getBestPathFromChosenChains:", error);
             throw error;
+        }
+    }
+
+    async getRapidXPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseRapidXPath> {
+        try {
+            const requestRapidXPath = await this.createRapidXPathRequest(
+                sourceChain,
+                destChain,
+                sourceToken,
+                destToken,
+                amount,
+                walletAddress,
+                order
+            );
+
+            console.log("aaaaaaaaa");
+            console.log(requestRapidXPath);
+            const params = this.createRapidXUrlParams(requestRapidXPath);
+            const url = ``;
+
+            const payLoad = {
+                apiType: "POST",
+                apiUrl: url,
+                apiData: requestRapidXPath,
+                apiProvider: SwapProvider.RAPIDDEX,
+            };
+
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+            const response = await fetch(this.apiUrlENV + '/api/common', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payLoad),
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeout);
+
+            if (!response.ok) {
+                throw new Error(
+                    `LiFi API error: ${response.status} ${response.statusText}`
+                );
+            }
+
+            const jsonResponse = await response.json();
+            if (!jsonResponse?.Data) {
+                throw new Error("Invalid response structure from LiFi API");
+            }
+
+            debugger
+
+            return jsonResponse.Data.Data;
+        } catch (error) {
+
+            console.error('Error in getLifiPath:', error);
+            return null;
+
+
         }
     }
 
@@ -738,9 +800,23 @@ export class CryptoService {
         }
     }
 
+    async createRapidXPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<RequestRapidXPath> {
+
+        debugger;
+        const requestRapidXPath = new RequestRapidXPath();
+        requestRapidXPath.chainIdFrom = sourceChain.chainId;
+        requestRapidXPath.chainIdTo = destChain.chainId;
+        requestRapidXPath.fromToken = sourceToken.address;
+        requestRapidXPath.toToken = destToken.address;
+        requestRapidXPath.walletAddress = walletAddress;
+        requestRapidXPath.amountIn = (await this.utilityService.convertToDecimals(amount, sourceToken.decimal)).toString();
+
+        return requestRapidXPath;
+    }
+
     async createLifiPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<RequestLifiPath> {
 
-
+        debugger;
 
 
         const requestLifiPath = new RequestLifiPath();
@@ -837,6 +913,19 @@ export class CryptoService {
         return requestOwltoDTC;
     }
 
+    createRapidXUrlParams(requestRapidXPath: RequestRapidXPath): URLSearchParams {
+        return new URLSearchParams({
+            chainIdFrom: requestRapidXPath.chainIdFrom.toString(),
+            chainIdTo: requestRapidXPath.chainIdTo.toString(),
+            fromToken: requestRapidXPath.fromToken,
+            toToken: requestRapidXPath.toToken,
+            walletAddress: requestRapidXPath.walletAddress,
+            amountIn: requestRapidXPath.amountIn
+
+
+        });
+    }
+
     createLifiUrlParams(requestLifiPath: RequestLifiPath): URLSearchParams {
         return new URLSearchParams({
             fromChain: requestLifiPath.fromChain,
@@ -881,6 +970,49 @@ export class CryptoService {
         });
     }
 
+    async createRapidXPathShowViewModel(RapidXPath: ResponseRapidXPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
+        try {
+
+
+
+            const pathShowViewModel = new PathShowViewModel();
+            pathShowViewModel.estTime = "5s";
+
+
+
+            pathShowViewModel.relayerfeeusd = RapidXPath.data.route.sourceTransaction.feeCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0) + (RapidXPath.data.route.destinationTransaction?.feeCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0) ?? 0);
+            pathShowViewModel.networkcostusd = RapidXPath.data.route.sourceTransaction.gasCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0) + (RapidXPath.data.route.destinationTransaction?.gasCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0) ?? 0);
+            pathShowViewModel.gasafee = (pathShowViewModel.relayerfeeusd + pathShowViewModel.networkcostusd).toFixed(2) + "USD";
+            pathShowViewModel.fromChain = sourceChain.chainName;
+            pathShowViewModel.fromToken = sourceToken.symbol;
+            pathShowViewModel.fromAmount = amount.toString();
+            pathShowViewModel.toChain = destChain.chainName;
+            pathShowViewModel.toToken = destToken.symbol;
+            pathShowViewModel.toAmount = ((await this.utilityService.convertToNumber(RapidXPath.data.quote.toAmount, RapidXPath.data.quote.recevableAmoutAtDestination.token.decimal)).toFixed(5)).toString();
+            pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(RapidXPath.data.quote.toAmount, RapidXPath.data.quote.recevableAmoutAtDestination.token.decimal)).toString();
+            pathShowViewModel.toAmountUsd = Number(RapidXPath.data.quote.recevableAmoutAtDestination.amountInUSD).toFixed(2);
+            pathShowViewModel.aggregator = "RapidX";
+            pathShowViewModel.aggregatorOrderType = orderType;
+            pathShowViewModel.approvalAddress = RapidXPath.data.transactionData.to;
+            pathShowViewModel.aggergatorRequestId = RapidXPath.data.id;
+
+
+            const gasPrice = BigInt(RapidXPath.data.transactionData.gasPrice);
+            const gasLimit = BigInt(RapidXPath.data.transactionData.gasLimit);
+
+
+            pathShowViewModel.gasafeeRequiredTransaction = (gasPrice * gasLimit).toString();
+            pathShowViewModel.gasPrice = RapidXPath.data.transactionData.gasPrice;
+            pathShowViewModel.gasLimit = RapidXPath.data.transactionData.gasLimit;
+            pathShowViewModel.data = RapidXPath.data.transactionData.data;
+            pathShowViewModel.entire = RapidXPath;
+            return pathShowViewModel;
+        }
+        catch (error) {
+            return null;
+        }
+    }
+
     async createPathShowViewModel(lifiPath: ResponseLifiPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
         try {
 
@@ -907,8 +1039,8 @@ export class CryptoService {
             pathShowViewModel.aggergatorRequestId = lifiPath.id;
 
 
-            const gasPrice = BigInt(lifiPath.transactionRequest.gasLimit);
-            const gasLimit = BigInt(lifiPath.transactionRequest.gasPrice);
+            const gasPrice = BigInt(lifiPath.transactionRequest.gasPrice);
+            const gasLimit = BigInt(lifiPath.transactionRequest.gasLimit);
 
 
             pathShowViewModel.gasafeeRequiredTransaction = (gasPrice * gasLimit).toString();

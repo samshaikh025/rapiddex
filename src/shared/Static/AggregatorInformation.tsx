@@ -6,6 +6,11 @@ export interface Aggregator {
 }
 
 export const aggregators: Record<string, Aggregator> = {
+    rapidX: {
+        name: "RapidX",
+        logoUrl: "/path/to/rapidX-logo.png",
+        description: "RapidX aggregator for blockchain asset swaps.",
+    },
     lifi: {
         name: "LI.FI",
         logoUrl: "/path/to/lifi-logo.png",

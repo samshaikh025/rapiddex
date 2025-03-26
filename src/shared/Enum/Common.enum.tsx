@@ -13,7 +13,7 @@ export enum Keys {
     THEME = 'Theme',
     SELECTED_LANG = 'Selected_Lang',
     IS_LOGGED_IN = 'Is_Logged_In',
-    ACTIVE_TRANASCTION_DATA = 'Active_Transaction_Data' 
+    ACTIVE_TRANASCTION_DATA = 'Active_Transaction_Data'
 }
 
 export enum SwapProvider {
@@ -21,7 +21,8 @@ export enum SwapProvider {
     RANGO = 1,
     OWLTO = 2,
     MOBULA = 3,
-    DOTNET = 4
+    DOTNET = 4,
+    RAPIDDEX = 5,
 }
 
 export enum ActionType {
@@ -64,5 +65,12 @@ export enum TransactionSubStatusRango {
     running = 1,
     failed = 3,
     success = 2
+}
+
+export enum AggregatorProvider {
+    LIFI = "lifi",
+    RANGO = "rango",
+    OWLTO = "owlto",
+    RAPID_DEX = "rapid_dex"
 }
 

@@ -1,5 +1,5 @@
 import { SwapProvider } from "../Enum/Common.enum";
-import { InsertTransactionRequestoDto, OperationResult, TransactionRequestoDto, UpdateTransactionRequestoDto } from "../Models/Common.model";
+import { GetSignPayload, InsertTransactionRequestoDto, OperationResult, RapidQuoteTransactionDto, SignatureResponseRapid, TransactionRequestoDto, UpdateTransactionRequestoDto } from "../Models/Common.model";
 
 
 
@@ -58,6 +58,90 @@ export class TransactionService {
         }
         
         return loggedResult; 
+    }
+
+    async GetTransactionStatusRapidDex(input: GetSignPayload){
+        let status = null;
+        let payLoad = {
+            apiType : 'POST',
+            apiUrl : 'rapidtxnstatus',
+            apiData : input,
+            apiProvider: SwapProvider.RAPIDDEX
+        }
+        try{
+            let apiResult = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+    
+            });
+            if(apiResult.status == 200){
+                let data = await apiResult.json();
+                status = data?.Data;
+            }
+        }catch(error){
+            console.log(error);
+        }
+        
+        return status; 
+    }
+
+    async GetSignatureForTransaction(input: GetSignPayload){
+        let status = new SignatureResponseRapid();
+        let payLoad = {
+            apiType : 'POST',
+            apiUrl : 'rapidsign',
+            apiData : input,
+            apiProvider: SwapProvider.RAPIDDEX
+        }
+        try{
+            let apiResult = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+    
+            });
+            if(apiResult.status == 200){
+                let data = await apiResult.json();
+                status = data?.Data;
+            }
+        }catch(error){
+            console.log(error);
+        }
+        
+        return status; 
+    }
+
+    async ExecuteDestinationTransaction(input: RapidQuoteTransactionDto){
+        let txnHash;
+        let payLoad = {
+            apiType : 'POST',
+            apiUrl : 'rapidexecutetxn',
+            apiData : input,
+            apiProvider: SwapProvider.RAPIDDEX
+        }
+        try{
+            let apiResult = await fetch('http://localhost:3000/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+    
+            });
+            if(apiResult.status == 200){
+                let data = await apiResult.json();
+                txnHash = data?.Data;
+            }
+        }catch(error){
+            console.log(error);
+        }
+        
+        return txnHash; 
     }
 }
 

@@ -32,8 +32,11 @@ export class Tokens {
   logoURI: string = '';
   name: string = '';
   decimal: number = 0;
-  price: number = 0;
+  price?: number = 0;
   chainId: number = 0;
+  tokenIsNative?: boolean = false;
+  tokenIsStable?: boolean = false;
+  amount?: string = '';
 }
 
 export class PathShowViewModel {
@@ -43,7 +46,8 @@ export class PathShowViewModel {
   fromChain: string;
   fromToken: string;
   fromAmount: string;
-  fromAmountUsd: string;
+  fromAmountUsd: number;
+  fromAmountWei: string;
   toChain: string;
   toToken: string;
   toAmount: string;
@@ -60,6 +64,18 @@ export class PathShowViewModel {
   gasPrice: string;
   gasLimit: string;
   data: string;
+  isMultiChain: boolean;
+  sourceTransactionData: RapidQuoteTransactionDto;
+  destinationTransactionData: RapidQuoteTransactionDto;
+}
+
+export class RapidQuoteTransactionDto {
+  isNativeToken: boolean;
+  amountinWei: string;
+  approvalAddress: string;
+  callData: string;
+  rpcUrl: string;
+  tokenAddress: string;
 }
 
 export class ResponseMobulaPricing {
@@ -144,7 +160,7 @@ export class LoggedParams {
 export class RequestTransaction {
 
   to: string;
-  value?: string | number;
+  value?: string;
 
 
 }
@@ -162,7 +178,7 @@ export class TransactionRequestoDto {
   transactionId: number = 0;
   transactionGuid: string = '';
   walletAddress: string = '';
-  amount: number = 0;
+  amount: string;
   amountUsd: number = 0;
   approvalAddress: string = '';
   transactionHash: string = '';
@@ -191,12 +207,18 @@ export class TransactionRequestoDto {
   transactionAggregatorRequestData: string;
   transactionAggregatorGasPrice: string;
   transactionAggregatorGasLimit: string;
+  isMultiChain: boolean;
+  sourceTransactionData: RapidQuoteTransactionDto;
+  destinationTransactionData: RapidQuoteTransactionDto;
+  transactionSourceHash: string = '';
+  transactionSourceStatus: number = 0;
+  transactionSourceSubStatus: number = 0;
 }
 
 export class InsertTransactionRequestoDto {
   transactionGuid: string = '';
   walletAddress: string = '';
-  amount: number = 0;
+  amount: string;
   amountUsd: number = 0;
   approvalAddress: string = '';
   transactionHash: string = '';
@@ -232,3 +254,26 @@ export class UpdateTransactionRequestoDto {
   transactionSubStatus: number = 0;
 }
 
+export class GetSignPayload  {
+  txnHash: string;
+  rpcUrl: string;
+}
+
+export class SignatureResponseRapid{
+  txnHash: string;
+  signValid: boolean;
+  validators: ValidatorSign[] = [];
+  validatedBy: number;
+  validSignatureCount: number
+}
+
+export class ValidatorSign{
+  name: string;
+  data: SignatureResponseAws;
+}
+
+export class SignatureResponseAws{
+  txnHash: string;
+  sign: string = '';
+  message: string;
+}

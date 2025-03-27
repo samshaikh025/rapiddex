@@ -68,7 +68,7 @@ export default function Pathshow(props: PropsType) {
             //result = result.slice(0,2);
             result.forEach((item, index) => {
               item.pathId = index + 1;
-              item.fromAmountUsd = String(props.amountInUsd);
+              item.fromAmountUsd = props.amountInUsd;
             });
             props.sendInitData(result);
             setCurrentSelectedPath(result[0]);

@@ -1,7 +1,7 @@
 
 import { useSelector } from "react-redux";
-import { Keys, SwapProvider } from "../Enum/Common.enum";
-import { Chains, Tokens, DLNChainResponse, ResponseMobulaPricing, PathShowViewModel } from '../Models/Common.model';
+import { AggregatorProvider, Keys, SwapProvider } from "../Enum/Common.enum";
+import { Chains, Tokens, DLNChainResponse, ResponseMobulaPricing, PathShowViewModel, RapidQuoteTransactionDto } from '../Models/Common.model';
 import { RequestLifiPath, ResponseLifiPath } from "../Models/Lifi";
 import { RequestOwltoDTC, RequestOwltoPath, ResponseOwltoDTC, ResponseOwltoPath } from "../Models/Owlto";
 import { RequestRangoPath, ResponseRangoPath } from "../Models/Rango";
@@ -26,7 +26,6 @@ export class CryptoService {
     utilityService = new UtilityService();
 
     apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_ENV == 'production' ? process.env.NEXT_PUBLIC_NODE_API_URL_PRODUCTION : process.env.NEXT_PUBLIC_NODE_API_URL;
-    debugger;
     async GetAvailableTokens(selectedChain: Chains) {
         this.SetLifiCoins = [];
         //this.SetDlnCoins = [];
@@ -143,7 +142,6 @@ export class CryptoService {
     }
 
     async GetCoinsForLifi(chain: Chains) {
-        debugger;
         let lifiCoins = [];
         let payLoad = {
             apiType: 'GET',
@@ -259,7 +257,6 @@ export class CryptoService {
 
 
     async GetAvailableChains() {
-        this.debugger;
         this.AvailableChains = [];
         // Fetch all chains concurrently
         const [lifiChains, rangoChains, owltoChains] = await Promise.all([
@@ -563,7 +560,7 @@ export class CryptoService {
             console.log("aaaaaaaaa");
             console.log(requestRapidXPath);
             const params = this.createRapidXUrlParams(requestRapidXPath);
-            const url = ``;
+            const url = 'rapidquote';
 
             const payLoad = {
                 apiType: "POST",
@@ -594,8 +591,6 @@ export class CryptoService {
             if (!jsonResponse?.Data) {
                 throw new Error("Invalid response structure from LiFi API");
             }
-
-            debugger
 
             return jsonResponse.Data.Data;
         } catch (error) {
@@ -802,7 +797,6 @@ export class CryptoService {
 
     async createRapidXPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<RequestRapidXPath> {
 
-        debugger;
         const requestRapidXPath = new RequestRapidXPath();
         requestRapidXPath.chainIdFrom = sourceChain.chainId;
         requestRapidXPath.chainIdTo = destChain.chainId;
@@ -815,9 +809,6 @@ export class CryptoService {
     }
 
     async createLifiPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<RequestLifiPath> {
-
-        debugger;
-
 
         const requestLifiPath = new RequestLifiPath();
         requestLifiPath.fromChain = sourceChain.chainId.toString();
@@ -972,14 +963,8 @@ export class CryptoService {
 
     async createRapidXPathShowViewModel(RapidXPath: ResponseRapidXPath, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, orderType: string): Promise<PathShowViewModel> {
         try {
-
-
-
             const pathShowViewModel = new PathShowViewModel();
             pathShowViewModel.estTime = "5s";
-
-
-
             pathShowViewModel.relayerfeeusd = RapidXPath.data.route.sourceTransaction.feeCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0) + (RapidXPath.data.route.destinationTransaction?.feeCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0) ?? 0);
             pathShowViewModel.networkcostusd = RapidXPath.data.route.sourceTransaction.gasCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0) + (RapidXPath.data.route.destinationTransaction?.gasCosts.reduce((total, fee) => total + Number(fee.amountUSD), 0) ?? 0);
             pathShowViewModel.gasafee = (pathShowViewModel.relayerfeeusd + pathShowViewModel.networkcostusd).toFixed(2) + "USD";
@@ -991,21 +976,43 @@ export class CryptoService {
             pathShowViewModel.toAmount = ((await this.utilityService.convertToNumber(RapidXPath.data.quote.toAmount, RapidXPath.data.quote.recevableAmoutAtDestination.token.decimal)).toFixed(5)).toString();
             pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(RapidXPath.data.quote.toAmount, RapidXPath.data.quote.recevableAmoutAtDestination.token.decimal)).toString();
             pathShowViewModel.toAmountUsd = Number(RapidXPath.data.quote.recevableAmoutAtDestination.amountInUSD).toFixed(2);
-            pathShowViewModel.aggregator = "RapidX";
+            pathShowViewModel.aggregator = AggregatorProvider.RAPID_DEX;
             pathShowViewModel.aggregatorOrderType = orderType;
             pathShowViewModel.approvalAddress = RapidXPath.data.transactionData.to;
             pathShowViewModel.aggergatorRequestId = RapidXPath.data.id;
 
-
             const gasPrice = BigInt(RapidXPath.data.transactionData.gasPrice);
             const gasLimit = BigInt(RapidXPath.data.transactionData.gasLimit);
-
 
             pathShowViewModel.gasafeeRequiredTransaction = (gasPrice * gasLimit).toString();
             pathShowViewModel.gasPrice = RapidXPath.data.transactionData.gasPrice;
             pathShowViewModel.gasLimit = RapidXPath.data.transactionData.gasLimit;
             pathShowViewModel.data = RapidXPath.data.transactionData.data;
             pathShowViewModel.entire = RapidXPath;
+            pathShowViewModel.fromAmountWei = RapidXPath.data.quote.fromAmount;
+            pathShowViewModel.isMultiChain = RapidXPath.data.isMultiChain;
+            
+            let sourceTxnData = new RapidQuoteTransactionDto();
+            let destinationTxnData = new RapidQuoteTransactionDto();
+
+            if(RapidXPath.data.isMultiChain){
+                sourceTxnData.tokenAddress = sourceToken.address;
+                sourceTxnData.amountinWei = RapidXPath.data.route.sourceTransaction.fromToken.amount;
+                sourceTxnData.approvalAddress = RapidXPath.data.transactionData.to;
+                sourceTxnData.callData = RapidXPath.data.transactionData.data;
+                sourceTxnData.isNativeToken = RapidXPath.data.route.sourceTransaction.fromToken.tokenIsNative;
+                sourceTxnData.rpcUrl = sourceChain.rpcUrl[0];
+
+                destinationTxnData.tokenAddress = destToken.address;
+                destinationTxnData.amountinWei = RapidXPath.data.route.destinationTransaction.fromToken.amount;
+                destinationTxnData.approvalAddress = RapidXPath.data.executorTransactionData.to;
+                destinationTxnData.callData = RapidXPath.data.executorTransactionData.data;
+                destinationTxnData.isNativeToken = RapidXPath.data.route.destinationTransaction.fromToken.tokenIsNative;
+                destinationTxnData.rpcUrl = destChain.rpcUrl[0];
+            }
+
+            pathShowViewModel.sourceTransactionData = sourceTxnData;
+            pathShowViewModel.destinationTransactionData = destinationTxnData;
             return pathShowViewModel;
         }
         catch (error) {

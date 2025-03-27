@@ -6,10 +6,10 @@ import { config } from '../../../wagmi/config';// Go up a level if needed
 import { readContract, writeContract } from '@wagmi/core';
 import * as definedChains from "wagmi/chains";
 import { useSendTransaction } from "wagmi";
-import { Keys, TransactionStatus, TransactionSubStatus, TransactionSubStatusLIFI, TransactionSubStatusRango } from "@/shared/Enum/Common.enum";
+import { AggregatorProvider, Keys, TransactionStatus, TransactionSubStatus, TransactionSubStatusLIFI, TransactionSubStatusRango } from "@/shared/Enum/Common.enum";
 import { SetActiveTransactionA, UpdateTransactionStatusA } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
-import { Chains, InsertTransactionRequestoDto, TransactionRequestoDto, UpdateTransactionRequestoDto } from "@/shared/Models/Common.model";
+import { Chains, GetSignPayload, InsertTransactionRequestoDto, TransactionRequestoDto, UpdateTransactionRequestoDto } from "@/shared/Models/Common.model";
 import { TransactionService } from "@/shared/Services/TransactionService";
 import { SharedService } from "@/shared/Services/SharedService";
 import { CryptoService } from "@/shared/Services/CryptoService";
@@ -18,6 +18,7 @@ import { LiFiTransactionResponse } from "@/shared/Models/Lifi";
 import { OwltoTransactionResponse } from "@/shared/Models/Owlto";
 import { OwltoSubStatus } from "@/shared/Const/Common.const";
 import { ActiveTransactionData } from "@/app/redux-store/reducer/reducer-redux";
+import { SupportedChains } from "@/shared/Static/SupportedChains";
 
 type propsType = {
     closeBridgeView: () => void;
@@ -88,38 +89,53 @@ export default function BridgeView(props: propsType) {
     async function GetTransactionStatus(tx: string) {
         let status = 0;
         if (!utilityService.isNullOrEmpty(tx)) {
-            if (activeTransactionData.transactiionAggregator == 'lifi') {
+            if (activeTransactionData.transactiionAggregator == AggregatorProvider.LIFI) {
                 // check lifi transaction status
                 let response: LiFiTransactionResponse = await cryptoService.TransactionStatusLIFI(tx, activeTransactionData.sourceChainId, activeTransactionData.destinationChainId)
                 if (response && response.status) {
                     status = TransactionSubStatusLIFI[response.status];
                 }
             }
-            else if (activeTransactionData.transactiionAggregator == 'rango') {
+            else if (activeTransactionData.transactiionAggregator == AggregatorProvider.RANGO) {
                 // chack rango
                 let response: LiFiTransactionResponse = await cryptoService.TransactionStatusRango(activeTransactionData.transactionAggregatorRequestId, tx, 1);
                 if (response && response.status) {
                     status = TransactionSubStatusRango[response.status];
                 }
             }
-            else if (activeTransactionData.transactiionAggregator == 'owlto') {
+            else if (activeTransactionData.transactiionAggregator == AggregatorProvider.OWLTO) {
                 // cheack owlto
                 let response: OwltoTransactionResponse = await cryptoService.TransactionStatusOwlto(activeTransactionData.sourceChainId, tx);
                 if (response && response.status) {
                     status = OwltoSubStatus[String(response.status.code)];
                 }
             }
+            else if (activeTransactionData.transactiionAggregator == AggregatorProvider.RAPID_DEX) {
+                // cheack Rapid Dex
+                let payLoad = new GetSignPayload();
+                payLoad.txnHash = activeTransactionData.transactionHash;
+                let chainId = activeTransactionData.isMultiChain ? activeTransactionData.destinationChain.chainId : activeTransactionData.sourceChain.chainId;
+                payLoad.rpcUrl = SupportedChains.find(x => x.chainId == chainId)?.supportedRPC[0];
+                
+                status = await GetTransactionStatusRapidDex(payLoad);
+            }
         }
 
         return status;
     }
+
+    async function GetTransactionStatusRapidDex(input: GetSignPayload) {
+        let status;
+        status = await transactionService.GetTransactionStatusRapidDex(input);
+        return status;
+    }
+
     useEffect(() => {
         transactionSteps();
     }, [activeTransactionData.transactionStatus])
 
     async function transactionSteps() {
-        const SPENDER_ADDRESS = activeTransactionData.approvalAddress;
-        const amountToSend = parseEther(activeTransactionData.amount.toString());
+        debugger
         let tx = '';
         setExceptionErrorMessage("");
 
@@ -131,12 +147,12 @@ export default function BridgeView(props: propsType) {
             else {
 
                 let allowanceAmount = await checkAllowance();
-                if (allowanceAmount >= Number(amountToSend)) {
+                if (allowanceAmount >= Number(activeTransactionData.amount)) {
                     dispatch(UpdateTransactionStatusA(TransactionStatus.PENDING));
                 }
             }
         }
-        if (activeTransactionData.transactionStatus == TransactionStatus.PENDING) {
+        if(activeTransactionData.isMultiChain == false && activeTransactionData.transactionStatus == TransactionStatus.PENDING) {
             sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
             let transactionStatus = '';
             //Proceed with the main transaction
@@ -144,7 +160,7 @@ export default function BridgeView(props: propsType) {
                 console.log(activeTransactionData);
 
                 var transactionRequest = {
-                    to: SPENDER_ADDRESS,
+                    to: activeTransactionData.approvalAddress,
 
                     data: activeTransactionData.transactionAggregatorRequestData,
                     gas: null,
@@ -152,7 +168,7 @@ export default function BridgeView(props: propsType) {
                 }
 
                 if (activeTransactionData.isNativeToken) {
-                    transactionRequest["value"] = amountToSend;
+                    transactionRequest["value"] = activeTransactionData.amount;
                 }
 
                 tx = await sendTransactionAsync(transactionRequest);
@@ -175,10 +191,71 @@ export default function BridgeView(props: propsType) {
                 return;
             }
         }
+        if(activeTransactionData.isMultiChain == true && activeTransactionData.transactionStatus == TransactionStatus.PENDING) {
+            sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
+            let transactionStatus = '';
+            //Proceed with the main transaction
+            try {
+                console.log(activeTransactionData);
+
+                var transactionRequest = {
+                    to: activeTransactionData.sourceTransactionData.approvalAddress,
+
+                    data: activeTransactionData.sourceTransactionData.callData,
+                    gas: null,
+                    chainId: activeTransactionData.sourceChainId,
+                }
+
+                if (activeTransactionData.sourceTransactionData.isNativeToken) {
+                    transactionRequest["value"] = activeTransactionData.sourceTransactionData.amountinWei;
+                }
+
+                tx = await sendTransactionAsync(transactionRequest);
+                
+                let payLoad = new GetSignPayload();
+                payLoad.txnHash = tx;
+                payLoad.rpcUrl = activeTransactionData.sourceTransactionData.rpcUrl;
+
+                let signData = await transactionService.GetSignatureForTransaction(payLoad);
+                
+                if(signData && signData.signValid){
+                    let status = 1;
+                    let updateTransactionData = {
+                        ...activeTransactionData,
+                        transactionSourceHash: tx ? tx : null,
+                        transactionGuid: utilityService.uuidv4(),
+                        transactionSourceStatus: TransactionStatus.COMPLETED,
+                        transactionSourceSubStatus: status
+                    };
+
+                    dispatch(SetActiveTransactionA(updateTransactionData));
+
+                    let destinationTxn = await transactionService.ExecuteDestinationTransaction(activeTransactionData.destinationTransactionData);
+
+                    let payLoad = new GetSignPayload();
+                    payLoad.txnHash = destinationTxn;
+                    payLoad.rpcUrl = activeTransactionData.destinationTransactionData.rpcUrl;
+
+                    let destinationStatus = await GetTransactionStatusRapidDex(payLoad);
+                    
+                    let updateDestTransactionData = {
+                        ...activeTransactionData,
+                        transactionHash: destinationTxn ? destinationTxn : null,
+                        transactionGuid: utilityService.uuidv4(),
+                        transactionStatus: TransactionStatus.COMPLETED,
+                        transactionSubStatus: destinationStatus
+                    };
+                    dispatch(SetActiveTransactionA(updateDestTransactionData));
+                }
+            }
+            catch (error) {
+                setExceptionErrorMessage(error.shortMessage);
+                document.getElementById('exceptionOffCanvas').classList.add('show');
+                return;
+            }
+        }
         if (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) {
             try {
-
-
                 //set interval to check status in 10 sec
                 //sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
                 //sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);

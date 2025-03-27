@@ -1,5 +1,5 @@
 "use client"
-import { DataSource, Keys, TransactionStatus } from "@/shared/Enum/Common.enum";
+import { AggregatorProvider, DataSource, Keys, TransactionStatus } from "@/shared/Enum/Common.enum";
 import { BridgeMessage, Chains, PathShowViewModel, RequestTransaction, Tokens, TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
@@ -305,20 +305,23 @@ export default function Exchangeui(props: propsType) {
 
     async function prepareTransactionRequest() {
 
-        let requestTransaction = new RequestTransaction();
+        debugger
+        let sendAmount = '';
 
-        requestTransaction.to = selectedPath.approvalAddress;
-
-        requestTransaction.value = sendAmount;
-
+        if(selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain){
+            sendAmount = selectedPath.fromAmountWei;
+        }else if(selectedPath.aggregator != AggregatorProvider.RAPID_DEX){
+            let wei = parseEther(sendAmount.toString());
+            sendAmount = String(wei);
+        }
 
         let transactoinObj = new TransactionRequestoDto();
         transactoinObj.transactionId = 0;
         transactoinObj.transactionGuid = '';
         transactoinObj.walletAddress = walletData.address;
-        transactoinObj.amount = requestTransaction.value;
-        transactoinObj.amountUsd = equAmountUSD;
-        transactoinObj.approvalAddress = requestTransaction.to;
+        transactoinObj.amount = sendAmount;
+        transactoinObj.amountUsd = selectedPath.aggregator == AggregatorProvider.RAPID_DEX && selectedPath.isMultiChain == false ? selectedPath.fromAmountUsd : (selectedPath.aggregator != AggregatorProvider.RAPID_DEX ? equAmountUSD : 0);
+        transactoinObj.approvalAddress = selectedPath.aggregator == AggregatorProvider.RAPID_DEX && selectedPath.isMultiChain == true ? '' : selectedPath.approvalAddress;
         transactoinObj.transactionHash = '';
         transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
         transactoinObj.transactionSubStatus = 0;
@@ -343,7 +346,12 @@ export default function Exchangeui(props: propsType) {
         transactoinObj.transactionAggregatorGasLimit = selectedPath.gasLimit;
         transactoinObj.transactionAggregatorGasPrice = selectedPath.gasPrice;
         transactoinObj.transactionAggregatorRequestData = selectedPath.data;
-
+        transactoinObj.isMultiChain = selectedPath.isMultiChain;
+        transactoinObj.sourceTransactionData = selectedPath.sourceTransactionData;
+        transactoinObj.destinationTransactionData  = selectedPath.destinationTransactionData;
+        transactoinObj.transactionSourceHash = '';
+        transactoinObj.transactionSourceStatus = TransactionStatus.ALLOWANCSTATE;
+        transactoinObj.transactionSourceSubStatus = 0;
 
         //store active transaction in local storage and use when realod page
         sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, transactoinObj);

@@ -62,7 +62,8 @@ function getAPIUrl(request: any) {
     if (request.apiProvider == SwapProvider.LIFI
         || request.apiProvider == SwapProvider.OWLTO
         || request.apiProvider == SwapProvider.MOBULA
-        || request.apiProvider == SwapProvider.DOTNET || request.apiProvider == SwapProvider.RAPIDDEX) {
+        || request.apiProvider == SwapProvider.DOTNET 
+        || request.apiProvider == SwapProvider.RAPIDDEX) {
         let apiConfig = CommonConfig[request.apiProvider];
         returnUrl = apiConfig.apiUrl + request.apiUrl;
     }

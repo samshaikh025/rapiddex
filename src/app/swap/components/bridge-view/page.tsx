@@ -58,7 +58,7 @@ export default function BridgeView(props: propsType) {
     }, []);
 
     function getPayloadForTransaction(transactionData: TransactionRequestoDto) {
-        let payLoad : InsertTransactionRequestoDto = {
+        let payLoad: InsertTransactionRequestoDto = {
             transactionGuid: transactionData.transactionGuid,
             walletAddress: transactionData.walletAddress,
             amount: transactionData.amount,
@@ -114,9 +114,9 @@ export default function BridgeView(props: propsType) {
                 // cheack Rapid Dex
                 let payLoad = new GetSignPayload();
                 payLoad.txnHash = activeTransactionData.transactionHash;
-                let chainId = activeTransactionData.isMultiChain ? activeTransactionData.destinationChain.chainId : activeTransactionData.sourceChain.chainId;
+                let chainId = activeTransactionData.isMultiChain ? activeTransactionData.destinationChainId : activeTransactionData.sourceChainId;
                 payLoad.rpcUrl = SupportedChains.find(x => x.chainId == chainId)?.supportedRPC[0];
-                
+
                 status = await GetTransactionStatusRapidDex(payLoad);
             }
         }
@@ -152,7 +152,7 @@ export default function BridgeView(props: propsType) {
                 }
             }
         }
-        if(activeTransactionData.isMultiChain == false && activeTransactionData.transactionStatus == TransactionStatus.PENDING) {
+        if (activeTransactionData.isMultiChain == false && activeTransactionData.transactionStatus == TransactionStatus.PENDING) {
             sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
             let transactionStatus = '';
             //Proceed with the main transaction
@@ -191,7 +191,7 @@ export default function BridgeView(props: propsType) {
                 return;
             }
         }
-        if(activeTransactionData.isMultiChain == true && activeTransactionData.transactionStatus == TransactionStatus.PENDING) {
+        if (activeTransactionData.isMultiChain == true && activeTransactionData.transactionStatus == TransactionStatus.PENDING) {
             sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
             let transactionStatus = '';
             //Proceed with the main transaction
@@ -211,14 +211,14 @@ export default function BridgeView(props: propsType) {
                 }
 
                 tx = await sendTransactionAsync(transactionRequest);
-                
+
                 let payLoad = new GetSignPayload();
                 payLoad.txnHash = tx;
                 payLoad.rpcUrl = activeTransactionData.sourceTransactionData.rpcUrl;
 
                 let signData = await transactionService.GetSignatureForTransaction(payLoad);
-                
-                if(signData && signData.signValid){
+
+                if (signData && signData.signValid) {
                     let status = 1;
                     let updateTransactionData = {
                         ...activeTransactionData,
@@ -237,7 +237,7 @@ export default function BridgeView(props: propsType) {
                     payLoad.rpcUrl = activeTransactionData.destinationTransactionData.rpcUrl;
 
                     let destinationStatus = await GetTransactionStatusRapidDex(payLoad);
-                    
+
                     let updateDestTransactionData = {
                         ...activeTransactionData,
                         transactionHash: destinationTxn ? destinationTxn : null,
@@ -271,7 +271,7 @@ export default function BridgeView(props: propsType) {
                                 transactionSubStatus: status
                             }
                             dispatch(SetActiveTransactionA(updateTransactionData));
-                            let requestPayload : UpdateTransactionRequestoDto = {
+                            let requestPayload: UpdateTransactionRequestoDto = {
                                 transactionGuid: activeTransactionData.transactionGuid,
                                 transactionSubStatus: status
                             };
@@ -443,7 +443,7 @@ export default function BridgeView(props: propsType) {
                                 <div className="title">Token Allowance</div>
                                 <div className="caption">Allowance To Non Native Token</div>
                                 {
-                                    ( activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
+                                    (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
                                     <>
                                         <span className="text-danger">{execptionErrorMessage}</span>
                                     </>
@@ -477,7 +477,7 @@ export default function BridgeView(props: propsType) {
                                 <div className="title">Swap Transaction</div>
                                 <div className="caption">Transaction Swap Via Bridge</div>
                                 {
-                                    ( activeTransactionData.transactionStatus == TransactionStatus.PENDING && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
+                                    (activeTransactionData.transactionStatus == TransactionStatus.PENDING && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
                                     <>
                                         <span className="text-danger">{execptionErrorMessage}</span>
                                     </>
@@ -549,7 +549,7 @@ export default function BridgeView(props: propsType) {
                                     }
 
                                     {
-                                        ( activeTransactionData.transactionStatus == TransactionStatus.COMPLETED && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
+                                        (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
                                         <>
                                             <span className="text-danger">{execptionErrorMessage}</span>
                                         </>
@@ -590,14 +590,14 @@ export default function BridgeView(props: propsType) {
                             {
                                 !utilityService.isNullOrEmpty(execptionErrorMessage) &&
                                 <>
-                                <div className="alert alert-danger">
-                                    <div className="d-inline">
-                                        <i className="fa-regular fa-circle-xmark"></i>
+                                    <div className="alert alert-danger">
+                                        <div className="d-inline">
+                                            <i className="fa-regular fa-circle-xmark"></i>
+                                        </div>
+                                        <div className="d-inline mx-1">
+                                            <span>{execptionErrorMessage}</span>
+                                        </div>
                                     </div>
-                                    <div className="d-inline mx-1">
-                                        <span>{execptionErrorMessage}</span>
-                                    </div>
-                                </div>
                                 </>
                             }
                         </div>

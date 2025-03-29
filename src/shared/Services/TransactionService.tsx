@@ -1,4 +1,4 @@
-import { SwapProvider } from "../Enum/Common.enum";
+import { SwapProvider, TransactionSubStatus } from "../Enum/Common.enum";
 import { GetSignPayload, InsertTransactionRequestoDto, OperationResult, RapidQuoteTransactionDto, SignatureResponseRapid, TransactionRequestoDto, UpdateTransactionRequestoDto } from "../Models/Common.model";
 
 
@@ -79,13 +79,13 @@ export class TransactionService {
             });
             if(apiResult.status == 200){
                 let data = await apiResult.json();
-                status = data?.Data;
+                status = data?.Data?.Data;
             }
         }catch(error){
             console.log(error);
         }
         
-        return status; 
+        return status == null ? TransactionSubStatus.PENDING : (status == 1 ? TransactionSubStatus.DONE : TransactionSubStatus.FAILED); 
     }
 
     async GetSignatureForTransaction(input: GetSignPayload){

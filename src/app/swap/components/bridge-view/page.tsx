@@ -134,8 +134,15 @@ export default function BridgeView(props: propsType) {
         transactionSteps();
     }, [activeTransactionData.transactionStatus])
 
+    // async function checkData(){
+    //     let payLoad = new GetSignPayload();
+    //     payLoad.txnHash = "0x1555049ae043dadd9255f1879230ce02eb883ba38a1748f13d968d96fbea9084";
+    //     payLoad.rpcUrl = "https://1rpc.io/arb";
+    //     let signData = await transactionService.GetSignatureForTransaction(payLoad);
+    //     console.log(signData);
+    // }
+
     async function transactionSteps() {
-        debugger
         let tx = '';
         setExceptionErrorMessage("");
 
@@ -220,18 +227,7 @@ export default function BridgeView(props: propsType) {
 
                 if (signData && signData.signValid) {
                     let status = 1;
-                    let updateTransactionData = {
-                        ...activeTransactionData,
-                        transactionSourceHash: tx ? tx : null,
-                        transactionGuid: utilityService.uuidv4(),
-                        transactionSourceStatus: TransactionStatus.COMPLETED,
-                        transactionSourceSubStatus: status
-                    };
-
-                    dispatch(SetActiveTransactionA(updateTransactionData));
-
                     let destinationTxn = await transactionService.ExecuteDestinationTransaction(activeTransactionData.destinationTransactionData);
-
                     let payLoad = new GetSignPayload();
                     payLoad.txnHash = destinationTxn;
                     payLoad.rpcUrl = activeTransactionData.destinationTransactionData.rpcUrl;
@@ -240,7 +236,10 @@ export default function BridgeView(props: propsType) {
 
                     let updateDestTransactionData = {
                         ...activeTransactionData,
-                        transactionHash: destinationTxn ? destinationTxn : null,
+                        transactionSourceHash: tx ? tx : null,// update source transaction state
+                        transactionSourceStatus: TransactionStatus.COMPLETED,
+                        transactionSourceSubStatus: status,
+                        transactionHash: destinationTxn ? destinationTxn : null,// update destination txn state
                         transactionGuid: utilityService.uuidv4(),
                         transactionStatus: TransactionStatus.COMPLETED,
                         transactionSubStatus: destinationStatus
@@ -315,8 +314,8 @@ export default function BridgeView(props: propsType) {
     }
 
     async function checkAllowance() {
-        const SPENDER_ADDRESS = activeTransactionData.approvalAddress;
-        const amountToSend = parseEther(activeTransactionData.amount.toString());
+        const SPENDER_ADDRESS = (activeTransactionData.transactiionAggregator == AggregatorProvider.RAPID_DEX && activeTransactionData.isMultiChain) ? activeTransactionData.sourceTransactionData.approvalAddress : activeTransactionData.approvalAddress;
+        const amountToSend = (activeTransactionData.transactiionAggregator == AggregatorProvider.RAPID_DEX && activeTransactionData.isMultiChain) ? activeTransactionData.sourceTransactionData.amountinWei : activeTransactionData.amount;
         let allowanceAmount = 0;
         // Token approval logic
         const tokenAbi = [

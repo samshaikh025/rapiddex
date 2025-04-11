@@ -305,22 +305,24 @@ export default function Exchangeui(props: propsType) {
 
     async function prepareTransactionRequest() {
 
-        debugger
-        let sendAmount = '';
+        let sendAmt = '';
+        let sendAmtUsdc = '0';
 
         if(selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain){
-            sendAmount = selectedPath.fromAmountWei;
+            sendAmt = selectedPath.fromAmountWei;
+            sendAmtUsdc = selectedPath.fromAmountUsd;
         }else if(selectedPath.aggregator != AggregatorProvider.RAPID_DEX){
             let wei = parseEther(sendAmount.toString());
-            sendAmount = String(wei);
+            sendAmt = String(wei);
+            sendAmtUsdc = String(equAmountUSD);
         }
 
         let transactoinObj = new TransactionRequestoDto();
         transactoinObj.transactionId = 0;
         transactoinObj.transactionGuid = '';
         transactoinObj.walletAddress = walletData.address;
-        transactoinObj.amount = sendAmount;
-        transactoinObj.amountUsd = selectedPath.aggregator == AggregatorProvider.RAPID_DEX && selectedPath.isMultiChain == false ? selectedPath.fromAmountUsd : (selectedPath.aggregator != AggregatorProvider.RAPID_DEX ? equAmountUSD : 0);
+        transactoinObj.amount = sendAmt;
+        transactoinObj.amountUsd = sendAmtUsdc;
         transactoinObj.approvalAddress = selectedPath.aggregator == AggregatorProvider.RAPID_DEX && selectedPath.isMultiChain == true ? '' : selectedPath.approvalAddress;
         transactoinObj.transactionHash = '';
         transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
@@ -366,71 +368,45 @@ export default function Exchangeui(props: propsType) {
 
     async function exchange() {
         //setStartBridging(true);
-
         if (!utilityService.isNullOrEmpty(walletData.address)) {
+            
             let workingRpc = await utilityService.setupProviderForChain(props.sourceChain.chainId, props.sourceChain.rpcUrl);
 
-
             if (workingRpc != undefined && workingRpc != null) {
-
                 console.log(error);
-
-
                 if (walletData.chainId != props.sourceChain.chainId) {
                     console.log("Need switch chain");
-
                     try {
                         await switchChain({ chainId: props.sourceChain.chainId }) // Call switchChain with only chainId
                         console.log("Chain Switched")
                     }
                     catch (error) {
-
                         console.log("rejected switch chain");
-
                     }
-
-
-
                 }
                 else {
                     console.log("No Need to switch chain")
                 }
 
                 let checkNativeCoin = await utilityService.checkCoinNative(props.sourceChain, props.sourceToken);
-
                 // check balance
-
                 let balance = await utilityService.getBalance(checkNativeCoin, props.sourceToken, walletData.address, workingRpc);
 
                 if (Number(balance) < Number(sendAmount)) {
-
                     bridgeMessage.message = "You don't have enough " + props.sourceToken.symbol + " to complete the transaction.";
                     setIsBridgeMessageVisible(true);
                     setIsBridgeMessage(bridgeMessage.message);
                     return false;
-
                 }
                 else {
-
                     if (await isGasEnough(balance)) {
-
                         await prepareTransactionRequest();
-
                     }
                     else {
-
                         return false;
-
                     }
-
-
-
-
-
                 }
-
             }
-
         }
     }
 
@@ -459,7 +435,6 @@ export default function Exchangeui(props: propsType) {
             {
                 !startBridging &&
                 <>
-
                     <div className="row">
                         <div className="col-5">
 

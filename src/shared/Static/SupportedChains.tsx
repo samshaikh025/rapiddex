@@ -21,7 +21,7 @@ export const SupportedChains = [
         "name": "Arbitrum One Mainnet",
         "chainId": 42161,
         "supportedRPC": [
-            "https://arbitrum.llamarpc.com"
+            "https://1rpc.io/arb"
         ],
         "deployementAddress": "0x5401aE022578Df008b7962D956202A12aF72a602",
         "executorAddress": "0x4D9C1Ae0d1983Ce041358e6Db1aAf678C78CfA7d"

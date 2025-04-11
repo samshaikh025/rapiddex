@@ -107,7 +107,7 @@ export class TransactionService {
             });
             if(apiResult.status == 200){
                 let data = await apiResult.json();
-                status = data?.Data;
+                status = data?.Data?.Data;
             }
         }catch(error){
             console.log(error);
@@ -135,7 +135,7 @@ export class TransactionService {
             });
             if(apiResult.status == 200){
                 let data = await apiResult.json();
-                txnHash = data?.Data;
+                txnHash = data?.Data?.Data;
             }
         }catch(error){
             console.log(error);

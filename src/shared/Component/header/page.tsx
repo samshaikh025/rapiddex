@@ -13,6 +13,7 @@ import { TransactionRequestoDto, WalletConnectData } from "@/shared/Models/Commo
 import { UserService } from "@/shared/Services/UserService";
 import { error } from "console";
 import { SupportedLang } from "@/shared/Const/Common.const";
+import Link from 'next/link';
 
 export default function Header() {
 
@@ -129,7 +130,8 @@ export default function Header() {
             </a>
           </div>
           <div className="menu-wrapper d-flex align-items-center">
-            <a href="#" className="active">Swap</a>
+            <Link href="/swap" className="active"> Swap </Link>
+            <Link href="/send"> Send </Link>
             <a href="#">Loans</a>
             <a href="#">Liquidity</a>
             <a href="#">Stak</a>
@@ -216,8 +218,12 @@ export default function Header() {
                     </a>
                   </div>
                 </div>
-                <li className="mobile-menu"><a href="#" className="dropdown-item active">Swap</a></li>
-                <li className="mobile-menu"><a href="#" className="dropdown-item">Loans</a></li>
+                <li className="mobile-menu">
+                  <Link href="/swap" className="dropdown-item active">Swap</Link>
+                </li>
+                <li className="mobile-menu">
+                  <Link href="/send" className="dropdown-item">Send</Link>
+                </li>
                 <li className="mobile-menu"><a href="#" className="dropdown-item">Liquidity</a></li>
                 <li className="mobile-menu"><a href="#" className="dropdown-item">Stak</a></li>
                 <li><a href="#" className="dropdown-item">Action</a></li>

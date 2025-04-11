@@ -545,6 +545,40 @@ export class CryptoService {
         }
     }
 
+    async getBestPathFromChosenChainsRapidX(
+        sourceChain: Chains,
+        destChain: Chains,
+        sourceToken: Tokens,
+        destToken: Tokens,
+        amount: number,
+        walletAddress: string
+    ) {
+        try {
+            // Assign default wallet address if not provided
+            if (this.utilityService.isNullOrEmpty(walletAddress)) {
+                walletAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
+            }
+
+            // Fetch paths concurrently with timeout
+            const rapidXPath = await this.getRapidXPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST")
+
+            // Log message if the default wallet address is used
+            if (walletAddress === "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0") {
+                //console.log("Wallet is not connected");
+            }
+
+            // Create PathShowViewModel concurrently with timeout
+            const subrapidXPath = await this.createRapidXPathShowViewModel(rapidXPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST");
+
+            // Return bestpath if any valid paths, otherwise return null
+            return subrapidXPath;
+
+        } catch (error) {
+            console.error("Error in getBestPathFromChosenChains:", error);
+            throw error;
+        }
+    }
+
     async getRapidXPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseRapidXPath> {
         try {
             const requestRapidXPath = await this.createRapidXPathRequest(
@@ -975,6 +1009,7 @@ export class CryptoService {
             pathShowViewModel.toToken = destToken.symbol;
             pathShowViewModel.toAmount = ((await this.utilityService.convertToNumber(RapidXPath.data.quote.toAmount, RapidXPath.data.quote.recevableAmoutAtDestination.token.decimal)).toFixed(5)).toString();
             pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(RapidXPath.data.quote.toAmount, RapidXPath.data.quote.recevableAmoutAtDestination.token.decimal)).toString();
+            pathShowViewModel.fromAmountUsd = (Number(RapidXPath.data.route.sourceTransaction.fromToken.amount) * RapidXPath.data.route.sourceTransaction.fromToken.price).toFixed(2);
             pathShowViewModel.toAmountUsd = Number(RapidXPath.data.quote.recevableAmoutAtDestination.amountInUSD).toFixed(2);
             pathShowViewModel.aggregator = AggregatorProvider.RAPID_DEX;
             pathShowViewModel.aggregatorOrderType = orderType;
@@ -1005,7 +1040,7 @@ export class CryptoService {
 
                 destinationTxnData.tokenAddress = destToken.address;
                 destinationTxnData.amountinWei = RapidXPath.data.route.destinationTransaction.fromToken.amount;
-                destinationTxnData.approvalAddress = RapidXPath.data.executorTransactionData.to;
+                destinationTxnData.approvalAddress = RapidXPath.data.executorTransactionData.from;
                 destinationTxnData.callData = RapidXPath.data.executorTransactionData.data;
                 destinationTxnData.isNativeToken = RapidXPath.data.route.destinationTransaction.fromToken.tokenIsNative;
                 destinationTxnData.rpcUrl = destChain.rpcUrl[0];

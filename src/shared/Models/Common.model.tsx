@@ -46,7 +46,7 @@ export class PathShowViewModel {
   fromChain: string;
   fromToken: string;
   fromAmount: string;
-  fromAmountUsd: number;
+  fromAmountUsd: string;
   fromAmountWei: string;
   toChain: string;
   toToken: string;
@@ -179,7 +179,7 @@ export class TransactionRequestoDto {
   transactionGuid: string = '';
   walletAddress: string = '';
   amount: string;
-  amountUsd: number = 0;
+  amountUsd: string = '';
   approvalAddress: string = '';
   transactionHash: string = '';
   transactionStatus: number = 0;
@@ -219,7 +219,7 @@ export class InsertTransactionRequestoDto {
   transactionGuid: string = '';
   walletAddress: string = '';
   amount: string;
-  amountUsd: number = 0;
+  amountUsd: string = '';
   approvalAddress: string = '';
   transactionHash: string = '';
   transactionStatus: number = 0;
@@ -276,4 +276,15 @@ export class SignatureResponseAws{
   txnHash: string;
   sign: string = '';
   message: string;
+}
+
+export class GetPaymentRequest {
+  chainIdFrom: number;
+  chainIdTo: number;
+  fromToken: string;
+  toToken: string;
+  walletAddress: string;
+  amountIn: number;
+  toChainJSon: string;
+  toTokenJSon: string;
 }

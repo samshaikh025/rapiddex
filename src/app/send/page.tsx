@@ -1,6 +1,7 @@
 import SendUI from "@/shared/Component/send-ui/page";
 import { GetPaymentRequest } from "@/shared/Models/Common.model";
 import { CryptoService } from "@/shared/Services/CryptoService";
+import 'react-loading-skeleton/dist/skeleton.css';
 
 export default async function Send() {
   

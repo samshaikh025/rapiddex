@@ -283,7 +283,8 @@ export class GetPaymentRequest {
   chainIdTo: number;
   fromToken: string;
   toToken: string;
-  walletAddress: string;
+  fromWalletAddress: string;
+  toWalletAddress: string;
   amountIn: number;
   toChainJSon: string;
   toTokenJSon: string;

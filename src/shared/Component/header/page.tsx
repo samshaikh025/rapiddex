@@ -14,6 +14,7 @@ import { UserService } from "@/shared/Services/UserService";
 import { error } from "console";
 import { SupportedLang } from "@/shared/Const/Common.const";
 import Link from 'next/link';
+import { useSearchParams } from "next/navigation";
 
 export default function Header() {
 
@@ -31,6 +32,9 @@ export default function Header() {
   let SupportedLanguage = SupportedLang;
   const selectedLang = useSelector((state: any) => state.SelectedLanguage);
   let currentTheme = useSelector((state: any) => state.SelectedTheme);
+  let [showMenu, setShowMenu] = useState<boolean>(true);
+
+  const searchParams = useSearchParams();
 
   function toggleTheme(status: boolean) {
     let mode = status == false ? 'light' : 'dark';
@@ -38,6 +42,10 @@ export default function Header() {
     sharedService.setData(Keys.THEME, mode);
     dispatch(SetSelectedThemeA(mode));
   };
+
+  function showMenuItem(){
+    searchParams.has('quoteId') ? setShowMenu(false) : null;
+  }
 
   useAccountEffect({
     onConnect(data) {
@@ -72,6 +80,7 @@ export default function Header() {
 
   useEffect(() => {
     console.log(walletData);
+    showMenuItem();
     //getWalletAddressFromStorageAndSet();
     let theme = sharedService.getData(Keys.THEME);
     if (theme && theme == 'dark') {
@@ -129,23 +138,33 @@ export default function Header() {
               <img src={headerLogoMobile.src} className="mobile-logo" alt="site-logo" />
             </a>
           </div>
-          <div className="menu-wrapper d-flex align-items-center">
-            <Link href="/swap" className="active"> Swap </Link>
-            <Link href="/send"> Send </Link>
-            <a href="#">Loans</a>
-            <a href="#">Liquidity</a>
-            <a href="#">Stak</a>
-          </div>
-
+          {
+            showMenu &&
+            <>
+              <div className="menu-wrapper d-flex align-items-center">
+                <Link href="/swap" className="active"> Swap </Link>
+                <Link href="/send"> Send </Link>
+                <a href="#">Loans</a>
+                <a href="#">Liquidity</a>
+                <a href="#">Stak</a>
+              </div>
+            </>
+          }
           <div className="btn-wrapper d-flex align-items-center gap-2">
-            <div className="theme-mode position-relative">
-              <input type="checkbox" className="checkbox" id="checkbox" checked={currentTheme == 'light' ? false : true} onChange={(e) => toggleTheme(e.currentTarget.checked)} />
-              <label htmlFor="checkbox" className="checkbox-label">
-                <i className="fas fa-sun"></i>
-                <i className="fas fa-moon"></i>
-                <span className="ball"></span>
-              </label>
-            </div>
+            {
+              showMenu &&
+              <>
+                <div className="theme-mode position-relative">
+                  <input type="checkbox" className="checkbox" id="checkbox" checked={currentTheme == 'light' ? false : true} onChange={(e) => toggleTheme(e.currentTarget.checked)} />
+                  <label htmlFor="checkbox" className="checkbox-label">
+                    <i className="fas fa-sun"></i>
+                    <i className="fas fa-moon"></i>
+                    <span className="ball"></span>
+                  </label>
+                </div>
+              </>
+            }
+
             <div className="dropdown">
               {
                 utilityService.isNullOrEmpty(walletData.address) &&
@@ -204,43 +223,49 @@ export default function Header() {
               }
 
             </div>
-            <div className="dropdown">
-              <button className="btn primary-btn dropdown-toggle w-48" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i className="fas fa-bars"></i>
-              </button>
-              <ul className="dropdown-menu dropdown-menu-right">
-                <div className="d-flex align-items-center user-profile">
-                  <img src="assets/images/avatar.svg" alt="avatar" />
-                  <div className="d-flex flex-column">
-                    <label>John Carter</label>
-                    <a href="#">
-                      <span>View Profile</span>
-                    </a>
-                  </div>
-                </div>
-                <li className="mobile-menu">
-                  <Link href="/swap" className="dropdown-item active">Swap</Link>
-                </li>
-                <li className="mobile-menu">
-                  <Link href="/send" className="dropdown-item">Send</Link>
-                </li>
-                <li className="mobile-menu"><a href="#" className="dropdown-item">Liquidity</a></li>
-                <li className="mobile-menu"><a href="#" className="dropdown-item">Stak</a></li>
-                <li><a href="#" className="dropdown-item">Action</a></li>
-                <li><a href="#" className="dropdown-item">Another action</a></li>
-                <li><a href="#" className="dropdown-item">Something else here</a></li>
-                {
-                  (SupportedLanguage && SupportedLanguage.length > 0) &&
-                  <>
+            {
+              showMenu &&
+              <>
+                <div className="dropdown">
+                  <button className="btn primary-btn dropdown-toggle w-48" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i className="fas fa-bars"></i>
+                  </button>
+                  <ul className="dropdown-menu dropdown-menu-right">
+                    <div className="d-flex align-items-center user-profile">
+                      <img src="assets/images/avatar.svg" alt="avatar" />
+                      <div className="d-flex flex-column">
+                        <label>John Carter</label>
+                        <a href="#">
+                          <span>View Profile</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    <li className="mobile-menu">
+                      <Link href="/swap" className="dropdown-item active">Swap</Link>
+                    </li>
+                    <li className="mobile-menu">
+                      <Link href="/send" className="dropdown-item">Send</Link>
+                    </li>
+                    <li className="mobile-menu"><a href="#" className="dropdown-item">Liquidity</a></li>
+                    <li className="mobile-menu"><a href="#" className="dropdown-item">Stak</a></li>
+                    <li><a href="#" className="dropdown-item">Action</a></li>
+                    <li><a href="#" className="dropdown-item">Another action</a></li>
+                    <li><a href="#" className="dropdown-item">Something else here</a></li>
                     {
-                      SupportedLanguage.map((item, index) => (
-                        <li key={index}><a className="dropdown-item" onClick={() => changeLanguage(item)}>{item}</a></li>
-                      ))
+                      (SupportedLanguage && SupportedLanguage.length > 0) &&
+                      <>
+                        {
+                          SupportedLanguage.map((item, index) => (
+                            <li key={index}><a className="dropdown-item" onClick={() => changeLanguage(item)}>{item}</a></li>
+                          ))
+                        }
+                      </>
                     }
-                  </>
-                }
-              </ul>
-            </div>
+                  </ul>
+                </div>
+              </>
+            }
           </div>
         </div>
       </div>

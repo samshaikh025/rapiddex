@@ -510,8 +510,9 @@ export class CryptoService {
             };
 
             // Fetch paths concurrently with timeout
+            // same param for wallet address because this method called from swap within same account so from and to are same
             const [rapidXPath, fastestPath, cheapestPath, rangoPath, owltoPath] = await Promise.all([
-                withTimeout(this.getRapidXPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'RapidX'),
+                withTimeout(this.getRapidXPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress,walletAddress, "CHEAPEST"), apiTimeout, 'RapidX'),
                 withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "FASTEST"), apiTimeout, 'Lifi (Fastest)'),
                 withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Lifi (Cheapest)'),
                 withTimeout(this.getRangoPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Rango'),
@@ -551,19 +552,20 @@ export class CryptoService {
         sourceToken: Tokens,
         destToken: Tokens,
         amount: number,
-        walletAddress: string
+        fromWalletAddress: string,
+        toWalletAddress: string
     ) {
         try {
             // Assign default wallet address if not provided
-            if (this.utilityService.isNullOrEmpty(walletAddress)) {
-                walletAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
+            if (this.utilityService.isNullOrEmpty(fromWalletAddress)) {
+                fromWalletAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
             }
 
             // Fetch paths concurrently with timeout
-            const rapidXPath = await this.getRapidXPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST")
+            const rapidXPath = await this.getRapidXPath(sourceChain, destChain, sourceToken, destToken, amount, fromWalletAddress, toWalletAddress, "CHEAPEST")
 
             // Log message if the default wallet address is used
-            if (walletAddress === "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0") {
+            if (fromWalletAddress === "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0") {
                 //console.log("Wallet is not connected");
             }
 
@@ -579,7 +581,7 @@ export class CryptoService {
         }
     }
 
-    async getRapidXPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseRapidXPath> {
+    async getRapidXPath(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, fromWalletAddress: string, toWalletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<ResponseRapidXPath> {
         try {
             const requestRapidXPath = await this.createRapidXPathRequest(
                 sourceChain,
@@ -587,13 +589,14 @@ export class CryptoService {
                 sourceToken,
                 destToken,
                 amount,
-                walletAddress,
+                fromWalletAddress,
+                toWalletAddress,
                 order
             );
 
             console.log("aaaaaaaaa");
             console.log(requestRapidXPath);
-            const params = this.createRapidXUrlParams(requestRapidXPath);
+            //const params = this.createRapidXUrlParams(requestRapidXPath);
             const url = 'rapidquote';
 
             const payLoad = {
@@ -829,14 +832,15 @@ export class CryptoService {
         }
     }
 
-    async createRapidXPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<RequestRapidXPath> {
+    async createRapidXPathRequest(sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, fromWalletAddress: string, toWalletAddress: string, order: "FASTEST" | "CHEAPEST"): Promise<RequestRapidXPath> {
 
         const requestRapidXPath = new RequestRapidXPath();
         requestRapidXPath.chainIdFrom = sourceChain.chainId;
         requestRapidXPath.chainIdTo = destChain.chainId;
         requestRapidXPath.fromToken = sourceToken.address;
         requestRapidXPath.toToken = destToken.address;
-        requestRapidXPath.walletAddress = walletAddress;
+        requestRapidXPath.fromWalletAddress = fromWalletAddress;
+        requestRapidXPath.toWalletAddress = toWalletAddress;
         requestRapidXPath.amountIn = (await this.utilityService.convertToDecimals(amount, sourceToken.decimal)).toString();
 
         return requestRapidXPath;
@@ -944,10 +948,9 @@ export class CryptoService {
             chainIdTo: requestRapidXPath.chainIdTo.toString(),
             fromToken: requestRapidXPath.fromToken,
             toToken: requestRapidXPath.toToken,
-            walletAddress: requestRapidXPath.walletAddress,
+            fromWalletAddress: requestRapidXPath.fromWalletAddress,
+            toWalletAddress: requestRapidXPath.toWalletAddress,
             amountIn: requestRapidXPath.amountIn
-
-
         });
     }
 

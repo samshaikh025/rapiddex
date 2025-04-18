@@ -5,7 +5,8 @@ export class RequestRapidXPath {
     chainIdTo: number;
     fromToken: string;
     toToken: string;
-    walletAddress: string;
+    fromWalletAddress: string;
+    toWalletAddress: string;
     amountIn: string;
 }
 

@@ -18,7 +18,7 @@ import * as definedChains from "wagmi/chains";
 
 type propsType = {
   chains: Chains[],
-  transactionRequest:GetPaymentRequest
+  transactionRequest: GetPaymentRequest
 }
 
 let DestinationChain = {
@@ -29,11 +29,11 @@ let DestinationChain = {
   "owltoName": "ArbitrumOneMainnet",
   "logoURI": "https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/arbitrum.svg",
   "rpcUrl": [
-      "https://arbitrum-mainnet.infura.io/v3/187e3c93df364840824e3274e58e402c",
-      "https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}",
-      "https://arb1.arbitrum.io/rpc",
-      "https://arbitrum-one-rpc.publicnode.com",
-      "wss://arbitrum-one-rpc.publicnode.com"
+    "https://arbitrum-mainnet.infura.io/v3/187e3c93df364840824e3274e58e402c",
+    "https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}",
+    "https://arb1.arbitrum.io/rpc",
+    "https://arbitrum-one-rpc.publicnode.com",
+    "wss://arbitrum-one-rpc.publicnode.com"
   ]
 }
 
@@ -50,11 +50,11 @@ let DestinationToken = {
   "amount": ""
 };
 export default function SendUI(props: propsType) {
-  
+
   let utilityService = new UtilityService();
   let cryptoService = new CryptoService();
   let sharedService = SharedService.getSharedServiceInstance();
-  
+
   let dataSource = DataSource.From;
   let [isShowChainUi, setIsShowChainUi] = useState<boolean>(false);
   let [isShowTokenUi, setIsShowTokenUi] = useState<boolean>(false);
@@ -72,18 +72,17 @@ export default function SendUI(props: propsType) {
 
   let walletData = useSelector((state: any) => state.WalletData);
   let walletDisconnected: boolean = useSelector((state: any) => state.WalletDisconnected);
-  
+
   let [selectedPath, setSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
   let [startBridging, setStartBridging] = useState<boolean>(false);
-  
+
   let dispatch = useDispatch();
-  
+
   let [isBridgeMessage, setIsBridgeMessage] = useState<string>('');
   let bridgeMessage: BridgeMessage = new BridgeMessage();
-  
-  const searchParams = useSearchParams();
-  const search = searchParams.get('quoteId');
-  console.log('param from sendui : ',search);
+
+
+
 
   const {
     switchChain,
@@ -111,28 +110,28 @@ export default function SendUI(props: propsType) {
   // Type assertion to tuple
   const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
 
-  function openChainUi(){
+  function openChainUi() {
     setIsShowChainUi(true);
   }
 
-  function openTokenUi(){
+  function openTokenUi() {
     setIsShowTokenUi(true);
   }
 
-  function closeChainUi(chain: Chains){
+  function closeChainUi(chain: Chains) {
     (sourceChain && chain && sourceChain.chainId != chain.chainId) ? setSourceToken(new Tokens()) : null;
     setSourceChain(chain);
     setIsShowChainUi(false);
   }
 
-  async function closeTokenUi(sourceTokenData: Tokens){
-    if(sourceChain && sourceToken.address != sourceTokenData.address){
+  async function closeTokenUi(sourceTokenData: Tokens) {
+    if (sourceChain && sourceToken.address != sourceTokenData.address) {
       setSourceToken(sourceTokenData);
       fetchPriceOfTokens(sourceTokenData, destiationToken);
     }
     setIsShowTokenUi(false);
-    
-    console.log('chauin, ',sourceChain, 'token,',sourceTokenData)
+
+    console.log('chauin, ', sourceChain, 'token,', sourceTokenData)
   }
 
   async function initPayment() {
@@ -273,31 +272,31 @@ export default function SendUI(props: propsType) {
 
   useEffect(() => {
     if (walletDisconnected) {
-      
+
     }
   }, [walletDisconnected])
 
   useEffect(() => {
-      if (walletData.isReconnected == false && sourceChain && sourceToken.address) {
-        fetchQuoteFromRapidx(sourceToken, sendAmount, sendAmountUSDC);
-      }
-    }, [walletData.isReconnected]);
+    if (walletData.isReconnected == false && sourceChain && sourceToken.address) {
+      fetchQuoteFromRapidx(sourceToken, sendAmount, sendAmountUSDC);
+    }
+  }, [walletData.isReconnected]);
 
-  useEffect(()=>{
+  useEffect(() => {
     setDestinationChain(JSON.parse(props.transactionRequest.toChainJSon));
     setDestinationToken(JSON.parse(props.transactionRequest.toTokenJSon));
     setSendAmount(props.transactionRequest.amountIn);
-  },[]);
+  }, []);
 
-  async function setDestinationData(){
-        
+  async function setDestinationData() {
+
   }
 
-  function fetchQuoteFromRapidx(sourceToken: Tokens, sendAmount: number ,sendAmountUSDC: number) {
+  function fetchQuoteFromRapidx(sourceToken: Tokens, sendAmount: number, sendAmountUSDC: number) {
 
     if (!isNaN(sendAmount) && sendAmount > 0) {
       // props.isPathLoadingParent(true);
-        setPathShowSpinner(true);
+      setPathShowSpinner(true);
       // setIsShowPathShowTimer(false);
 
       // if (pathReloadIntervalId.current != null) {
@@ -325,7 +324,7 @@ export default function SendUI(props: propsType) {
             setSelectedPath(result);
             setPathShowSpinner(false);
             //result = result.slice(0,2);
-            
+
             // props.sendInitData(result);
             // setCurrentSelectedPath(result[0]);
             // setAvailablePaths(result);
@@ -334,9 +333,9 @@ export default function SendUI(props: propsType) {
             // setIsShowPathShowTimer(true);
             // //call time out for realod path
             // invokeTimeOutForReloadPath();
-          }else{
+          } else {
             setPathShowSpinner(false);
-          } 
+          }
           // else if (result && result.length == 0 && props.Amountpathshow == pathShowInvokedForAmount.current) {
           //   props.sendInitData([]);
           //   //setCurrentSelectedPath(new PathShowViewModel());
@@ -347,13 +346,13 @@ export default function SendUI(props: propsType) {
           // }
         }).catch((error) => {
           // props.sendInitData([]);
-           setPathShowSpinner(false);
+          setPathShowSpinner(false);
           // bridgeMessage.message = "No path found";
           // props.isPathLoadingParent(false);
         })
       } catch (error) {
         // props.sendInitData([]);
-         setPathShowSpinner(false);
+        setPathShowSpinner(false);
         // props.isPathLoadingParent(false);
         // console.error('Error fetching path data:', error);
       }
@@ -371,17 +370,18 @@ export default function SendUI(props: propsType) {
   //   setSendAmount(sendAmountUSDC/price);
   // }
 
-  async function fetchPriceOfTokens(sourceToken: Tokens, destinationToken: Tokens){
+  async function fetchPriceOfTokens(sourceToken: Tokens, destinationToken: Tokens) {
     let sourceTokenPriceUsdc = (await cryptoService.GetTokenData(sourceToken))?.data?.price;
     let destinationTokenPriceUsdc = (await cryptoService.GetTokenData(destinationToken))?.data?.price;
-    
-    if(sourceTokenPriceUsdc && destinationTokenPriceUsdc){
+
+    if (sourceTokenPriceUsdc && destinationTokenPriceUsdc) {
       let totalSendAmountUsdc = props.transactionRequest.amountIn * destinationTokenPriceUsdc; // no of token * price with usdc
-      let sendActuallyAmount = (totalSendAmountUsdc/sourceTokenPriceUsdc);
-      setSendAmount(sendActuallyAmount);//no of token in decimal
+      let sendActuallyAmount = (totalSendAmountUsdc / sourceTokenPriceUsdc);
+      let truncatedValue = Number(sendActuallyAmount.toFixed(sourceToken.decimal));
+      setSendAmount(truncatedValue);//no of token in decimal
       setSendAmountUSDC(Number(totalSendAmountUsdc?.toFixed(2)));// actual amount in usdc
 
-      fetchQuoteFromRapidx(sourceToken, sendActuallyAmount,totalSendAmountUsdc);
+      fetchQuoteFromRapidx(sourceToken, truncatedValue, totalSendAmountUsdc);
     }
   }
 
@@ -420,107 +420,107 @@ export default function SendUI(props: propsType) {
                 </div>
               </div>
             </div>
-            
-              {
-                !startBridging &&
-                <>
-                  {/* <div className="row">
+
+            {
+              !startBridging &&
+              <>
+                {/* <div className="row">
                     <div className="col-5">
 
                     </div>
                   </div> */}
-                  {
-                    (!isShowChainUi && !isShowTokenUi) &&
-                    <>
-                      <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
-                        <div className="card">
-                          <div className="p-24">
-                            <>
-                              <div className="d-flex justify-content-between align-items-center mb-3">
-                                <div className="card-title">
-                                  Send
-                                </div>
-                                {/* <div className="card-action-wrapper">
+                {
+                  (!isShowChainUi && !isShowTokenUi) &&
+                  <>
+                    <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
+                      <div className="card">
+                        <div className="p-24">
+                          <>
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                              <div className="card-title">
+                                Send
+                              </div>
+                              {/* <div className="card-action-wrapper">
                                   <i className="fas fa-cog cursor-pointer"></i>
                                 </div> */}
-                              </div>
-                              <div className="d-flex align-items-center gap-3 position-relative">
-                                <div className="inner-card w-100 py-2 px-3" id="select-coin" onClick={() =>
-                                  openChainUi()}>
-                                  <label className="mb-2 fw-600">Network</label>
-                                  <div className="d-flex align-items-center gap-3">
-                                    <div className="selcet-coin coin-wrapper">
-                                      {utilityService.isNullOrEmpty(sourceChain.logoURI) && <div className="coin"></div>}
-
-                                      {!utilityService.isNullOrEmpty(sourceChain.logoURI) && <img src={sourceChain.logoURI}
-                                        className="coin" alt="coin" />}
-
-                                    </div>
-                                    <div className="d-flex flex-column">
-                                      <label className="coin-name d-block fw-600">{sourceChain.chainId > 0 ?
-                                        sourceChain.chainName : 'Select Network'}</label>
-                                      {/* <label className="coin-sub-name">{props.sourceToken.name != '' ? props.sourceToken.name :
-                              'Token'}</label> */}
-                                    </div>
-                                  </div>
-                                </div>
-                                {/* <div className="change-btn position-absolute cursor-pointer inner-card d-flex align-items-center justify-content-center">
-                        <i className="fas fa-exchange-alt"></i>
-                      </div> */}
-                                <div className="inner-card w-100 py-2 px-3" onClick={() => openTokenUi()}>
-                                  <label className="mb-2 fw-600">Coin</label>
-                                  <div className="d-flex align-items-center gap-3">
-                                    <div className="selcet-coin coin-wrapper">
-
-                                      {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin"></div>}
-
-                                      {!utilityService.isNullOrEmpty(sourceToken.logoURI) && <img src={sourceToken.logoURI}
-                                        className="coin" alt="coin" />}
-
-                                    </div>
-                                    <div className="d-flex flex-column">
-                                      <label className="coin-name d-block fw-600">{sourceToken.name != '' ? sourceToken.name :
-                                        'Select Coin'}</label>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="inner-card w-100 py-2 px-3 mt-3">
-                                <label className="mb-2 fw-600">Send</label>
-                                <div className="d-flex align-items-center gap-3 pb-2">
-                                  <div className="position-relative coin-wrapper">
+                            </div>
+                            <div className="d-flex align-items-center gap-3 position-relative">
+                              <div className="inner-card w-100 py-2 px-3" id="select-coin" onClick={() =>
+                                openChainUi()}>
+                                <label className="mb-2 fw-600">Network</label>
+                                <div className="d-flex align-items-center gap-3">
+                                  <div className="selcet-coin coin-wrapper">
                                     {utilityService.isNullOrEmpty(sourceChain.logoURI) && <div className="coin"></div>}
-                                    {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin-small"></div>}
 
                                     {!utilityService.isNullOrEmpty(sourceChain.logoURI) && <img src={sourceChain.logoURI}
                                       className="coin" alt="coin" />}
-                                    {!utilityService.isNullOrEmpty(sourceToken.logoURI) && <img src={sourceToken.logoURI}
-                                      className="coin-small" alt="coin" />}
+
                                   </div>
                                   <div className="d-flex flex-column">
-                                    <input type="text" className="transparent-input" value={sendAmount} onChange={() => null} readOnly />
-                                    {(sendAmountUSDC != null && sendAmountUSDC > 0) && <label className="coin-sub-name">$ {sendAmountUSDC}</label>}
-                                    {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
+                                    <label className="coin-name d-block fw-600">{sourceChain.chainId > 0 ?
+                                      sourceChain.chainName : 'Select Network'}</label>
+                                    {/* <label className="coin-sub-name">{props.sourceToken.name != '' ? props.sourceToken.name :
+                              'Token'}</label> */}
                                   </div>
                                 </div>
                               </div>
-                              {
-                                (bridgeMessage) && (isBridgeMessage != '') &&
+                              {/* <div className="change-btn position-absolute cursor-pointer inner-card d-flex align-items-center justify-content-center">
+                        <i className="fas fa-exchange-alt"></i>
+                      </div> */}
+                              <div className="inner-card w-100 py-2 px-3" onClick={() => openTokenUi()}>
+                                <label className="mb-2 fw-600">Coin</label>
+                                <div className="d-flex align-items-center gap-3">
+                                  <div className="selcet-coin coin-wrapper">
 
-                                <>
-                                  <div className="inner-card w-100 py-2 px-3 mt-2">
-                                    <div className="d-flex align-items-center gap-3">
+                                    {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin"></div>}
 
+                                    {!utilityService.isNullOrEmpty(sourceToken.logoURI) && <img src={sourceToken.logoURI}
+                                      className="coin" alt="coin" />}
 
-
-                                      <><span>{isBridgeMessage}</span></>
-
-
-                                    </div>
                                   </div>
-                                </>
-                              }
-                              {/* {
+                                  <div className="d-flex flex-column">
+                                    <label className="coin-name d-block fw-600">{sourceToken.name != '' ? sourceToken.name :
+                                      'Select Coin'}</label>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="inner-card w-100 py-2 px-3 mt-3">
+                              <label className="mb-2 fw-600">Send</label>
+                              <div className="d-flex align-items-center gap-3 pb-2">
+                                <div className="position-relative coin-wrapper">
+                                  {utilityService.isNullOrEmpty(sourceChain.logoURI) && <div className="coin"></div>}
+                                  {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin-small"></div>}
+
+                                  {!utilityService.isNullOrEmpty(sourceChain.logoURI) && <img src={sourceChain.logoURI}
+                                    className="coin" alt="coin" />}
+                                  {!utilityService.isNullOrEmpty(sourceToken.logoURI) && <img src={sourceToken.logoURI}
+                                    className="coin-small" alt="coin" />}
+                                </div>
+                                <div className="d-flex flex-column">
+                                  <input type="text" className="transparent-input" value={sendAmount} onChange={() => null} readOnly />
+                                  {(sendAmountUSDC != null && sendAmountUSDC > 0) && <label className="coin-sub-name">$ {sendAmountUSDC}</label>}
+                                  {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
+                                </div>
+                              </div>
+                            </div>
+                            {
+                              (bridgeMessage) && (isBridgeMessage != '') &&
+
+                              <>
+                                <div className="inner-card w-100 py-2 px-3 mt-2">
+                                  <div className="d-flex align-items-center gap-3">
+
+
+
+                                    <><span>{isBridgeMessage}</span></>
+
+
+                                  </div>
+                                </div>
+                              </>
+                            }
+                            {/* {
                             showMinOneUSDAmountErr &&
                             <>
                               <div className="inner-card w-100 py-2 px-3 mt-2">
@@ -537,83 +537,83 @@ export default function SendUI(props: propsType) {
                             </>
                           }  */}
 
-                              {
-                                !utilityService.isNullOrEmpty(walletData.address) &&
-                                <>
-                                  <button className="btn primary-btn w-100 mt-3" onClick={() => initPayment()} disabled={sendAmount == null}>
-                                    {
-                                      pathShowSpinner &&
-                                      <>
-                                        <i className="fa-solid fa-spinner fa-spin mx-2"></i>
-                                        Fetching Quote
-                                      </>
-                                    }
-                                    {
-                                      !pathShowSpinner &&
-                                      <>
-                                        Exchange
-                                      </>
-                                    }
-                                  </button>
-                                </>
-                              }
-                              {
-                                utilityService.isNullOrEmpty(walletData.address) &&
-                                <>
-                                  <button className="btn primary-btn w-100 mt-3" onClick={() => dispatch(OpenWalletModalA(true))}>
-                                    {
-                                      pathShowSpinner &&
-                                      <>
-                                        <i className="fa-solid fa-spinner fa-spin mx-2"></i>
-                                        Fetching Quote
-                                      </>
-                                    }
-                                    {
-                                      !pathShowSpinner &&
-                                      <>
-                                        Connect Wallet
-                                      </>
-                                    }
-                                  </button>
-                                </>
-                              }
-                            </>
-                          </div>
+                            {
+                              !utilityService.isNullOrEmpty(walletData.address) &&
+                              <>
+                                <button className="btn primary-btn w-100 mt-3" onClick={() => initPayment()} disabled={sendAmount == null}>
+                                  {
+                                    pathShowSpinner &&
+                                    <>
+                                      <i className="fa-solid fa-spinner fa-spin mx-2"></i>
+                                      Fetching Quote
+                                    </>
+                                  }
+                                  {
+                                    !pathShowSpinner &&
+                                    <>
+                                      Exchange
+                                    </>
+                                  }
+                                </button>
+                              </>
+                            }
+                            {
+                              utilityService.isNullOrEmpty(walletData.address) &&
+                              <>
+                                <button className="btn primary-btn w-100 mt-3" onClick={() => dispatch(OpenWalletModalA(true))}>
+                                  {
+                                    pathShowSpinner &&
+                                    <>
+                                      <i className="fa-solid fa-spinner fa-spin mx-2"></i>
+                                      Fetching Quote
+                                    </>
+                                  }
+                                  {
+                                    !pathShowSpinner &&
+                                    <>
+                                      Connect Wallet
+                                    </>
+                                  }
+                                </button>
+                              </>
+                            }
+                          </>
                         </div>
                       </div>
-                    </>
-                  }
-                  {
-                    isShowChainUi &&
-                    <>
-                      <Chainui closeChainUI={(chain: Chains) => closeChainUi(chain)}
-                        sourceChain={sourceChain}
-                        destChain={destiationChain}
-                        dataSource={dataSource}
-                        chains={props.chains} />
-                    </>
-                  }
-                  {
-                    isShowTokenUi &&
-                    <>
-                      <Tokenui
-                        openChainUI={(isShow: boolean) => null}
-                        closeTokenUI={(token: Tokens) => closeTokenUi(token)}
-                        sourceChain={sourceChain}
-                        destChain={destiationChain}
-                        dataSource={dataSource}
-                        sourceToken={sourceToken}
-                        destToken={destiationToken} />
-                    </>
-                  }
-                </>
-              }
-              {
-                startBridging &&
-                <>
-                  <BridgeView closeBridgeView={() => closeBridBridgeView()}></BridgeView>
-                </>
-              }
+                    </div>
+                  </>
+                }
+                {
+                  isShowChainUi &&
+                  <>
+                    <Chainui closeChainUI={(chain: Chains) => closeChainUi(chain)}
+                      sourceChain={sourceChain}
+                      destChain={destiationChain}
+                      dataSource={dataSource}
+                      chains={props.chains} />
+                  </>
+                }
+                {
+                  isShowTokenUi &&
+                  <>
+                    <Tokenui
+                      openChainUI={(isShow: boolean) => null}
+                      closeTokenUI={(token: Tokens) => closeTokenUi(token)}
+                      sourceChain={sourceChain}
+                      destChain={destiationChain}
+                      dataSource={dataSource}
+                      sourceToken={sourceToken}
+                      destToken={destiationToken} />
+                  </>
+                }
+              </>
+            }
+            {
+              startBridging &&
+              <>
+                <BridgeView closeBridgeView={() => closeBridBridgeView()}></BridgeView>
+              </>
+            }
           </div>
         </div>
       </div>

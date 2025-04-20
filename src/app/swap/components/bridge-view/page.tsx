@@ -19,6 +19,7 @@ import { OwltoTransactionResponse } from "@/shared/Models/Owlto";
 import { OwltoSubStatus } from "@/shared/Const/Common.const";
 import { ActiveTransactionData } from "@/app/redux-store/reducer/reducer-redux";
 import { SupportedChains } from "@/shared/Static/SupportedChains";
+import { useSearchParams } from "next/navigation";
 
 type propsType = {
     closeBridgeView: () => void;
@@ -49,13 +50,24 @@ export default function BridgeView(props: propsType) {
 
     let [execptionErrorMessage, setExceptionErrorMessage] = useState<String>("");
 
+    const searchParams = useSearchParams();
+
+    let [showButton, setShowButton] = useState<boolean>(true);
+
 
     useEffect(() => {
+
+        showButtonItem();
+
         //clean up function
         return () => {
             clearInterval(statusIntervalId.current);
         }
     }, []);
+
+    function showButtonItem() {
+        searchParams.has('quoteId') ? setShowButton(false) : null;
+    }
 
     function getPayloadForTransaction(transactionData: TransactionRequestoDto) {
         let payLoad: InsertTransactionRequestoDto = {
@@ -402,7 +414,7 @@ export default function BridgeView(props: propsType) {
         <div className="col-lg-5 col-md-12 col-sm-12 col-12 position-relative overflow-hidden" id="swap-wrapper">
             <div className="card">
                 <div className="p-24">
-                    
+
                     <div className="d-block gap-3 align-items-center mb-4">
                         <div className="card-action-wrapper cursor-pointer left-arrow" id="back-to-swap" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>
                             <i className="fas fa-chevron-left"></i>
@@ -593,8 +605,9 @@ export default function BridgeView(props: propsType) {
                             </div>
                         </div>
                         {
-                            (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) &&
+                            ((activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) && showButton) &&
                             <>
+
                                 <div className="inner-card swap-card-btn mt-4">
                                     <label><a href="" role="button" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>Swap More</a></label>
                                 </div>

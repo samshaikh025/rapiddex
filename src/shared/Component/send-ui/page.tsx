@@ -399,7 +399,7 @@ export default function SendUI(props: propsType) {
                 <div className="card-body p-24">
                   <div className="d-flex mb-3">
                     <div className="card-action-wrapper fs-6">
-                      <i className="fa-solid fa-wallet mx-1"></i>
+                      <i className="fa-solid fa-wallet mx-1" ></i>
                     </div>
                     <span className="card-title p-1">Pay</span>
                   </div>

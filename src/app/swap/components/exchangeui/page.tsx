@@ -481,7 +481,7 @@ export default function Exchangeui(props: propsType) {
                                             <div className="d-flex flex-column">
                                                 <label className="coin-name d-block fw-600">{props.sourceChain.chainId > 0 ?
                                                     props.sourceChain.chainName : 'Chain'}</label>
-                                                <label className="coin-sub-name">{props.sourceToken.name != '' ? props.sourceToken.name :
+                                                <label className="coin-sub-name ">{props.sourceToken.name != '' ? props.sourceToken.name :
                                                     'Token'}</label>
                                             </div>
                                         </div>
@@ -493,15 +493,14 @@ export default function Exchangeui(props: propsType) {
                                     <div className="inner-card w-100 py-2 px-3" onClick={() => props.openTokenUI(DataSource.To)}>
                                         <label className="mb-2 fw-600">To</label>
                                         <div className="d-flex align-items-center gap-3">
-                                            <div className="position-relative coin-wrapper">
-
+                                            <div className="position-relative coin-wrapper2">
                                                 {utilityService.isNullOrEmpty(props.destChain.logoURI) && <div className="coin"></div>}
-                                                {utilityService.isNullOrEmpty(props.destToken.logoURI) && <div className="coin-small"></div>}
+                                                {utilityService.isNullOrEmpty(props.destToken.logoURI) && <div className="coin-small2"></div>}
 
                                                 {!utilityService.isNullOrEmpty(props.destChain.logoURI) && <img src={props.destChain.logoURI}
                                                     className="coin" alt="coin" />}
                                                 {!utilityService.isNullOrEmpty(props.destToken.logoURI) && <img src={props.destToken.logoURI}
-                                                    className="coin-small" alt="coin" />}
+                                                    className="coin-small2" alt="coin" />}
                                             </div>
                                             <div className="d-flex flex-column">
                                                 <label className="coin-name d-block fw-600">{props.destChain.chainId > 0 ?
@@ -562,12 +561,7 @@ export default function Exchangeui(props: propsType) {
                                     <>
                                         <div className="inner-card w-100 py-2 px-3 mt-2">
                                             <div className="d-flex align-items-center gap-3">
-
-
-
                                                 <span>Please enter an amount of at least $1 to proceed.</span>
-
-
                                             </div>
                                         </div>
 
@@ -695,7 +689,7 @@ export default function Exchangeui(props: propsType) {
                                 {
                                     utilityService.isNullOrEmpty(walletData.address) &&
                                     <>
-                                        <button className="btn primary-btn w-100 mt-3" onClick={() => dispatch(OpenWalletModalA(true))}>
+                                        <button className="btn primary-btn  w-100 mt-3" onClick={() => dispatch(OpenWalletModalA(true))}>
                                             Connect Wallet
                                         </button>
                                     </>

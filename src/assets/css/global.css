@@ -9,6 +9,8 @@
 
   --white-color: #ffffff;
   --black-color: #151231;
+  --black-color-2: #2F2B43;
+  --black-color-3: #7A7493;
 
   --border-color: #d5d5ee;
   --border-color-40: #d5d5ee66;
@@ -50,7 +52,7 @@ html {
 body {
   background: var(--body-bg);
   overflow-y: auto;
-  font-family: "Quicksand" !important;
+  font-family: "Inter" !important;
   margin: 0;
  
 }
@@ -119,14 +121,15 @@ img {
   box-shadow: none !important;
 }
 .btn.primary-btn {
-  background: linear-gradient(
+  /* background: linear-gradient(
     135deg,
     #454cdc 0%,
     #411dbf 19.24%,
     #4f31d8 68.64%,
     #4c32dc 81.77%,
     #372dbc 100%
-  );
+  ); */
+  background: #2563EB;
   color: var(--white-color);
 }
 .dropdown-toggle::after {
@@ -167,7 +170,8 @@ img {
   font-weight: 600;
   line-height: 17.11px;
   letter-spacing: -0.20533332228660583px;
-  color: var(--black-color);
+  color: var(--black-color-2);
+  /* color:#2F2B43; */
   margin:0;
   text-align: center;
 }
@@ -177,7 +181,7 @@ img {
   border-radius: 16px;
   box-shadow: var(--inner-card-box-shadow);
 }
-.inner-card label {
+.inner-card label { 
   color:var(--black-color)
 }
 .inner-card p {
@@ -196,7 +200,9 @@ img {
   top: 15px;
 }
 
-
+.coin-sub-name{
+  color: var(--black-color-3);
+}
 
 @media (max-width: 991.98px) {
   .container {

@@ -12,8 +12,7 @@
 .header .header-wrapper {
     border: 1px solid var(--border-color-40);
     padding: 10px 20px;
-    background: black;
-    /* background: var(--header-card); */
+    background: var(--header-card);
     border-radius: 100px;
 }
 
@@ -30,7 +29,7 @@
     font-size: 20px;
     font-weight: 600;
     line-height: 25px;
-    color: var(--white-color);
+    color: var(--black-color);
     display: inline-block;
     padding: 8px 16px;
     border-radius: 100px

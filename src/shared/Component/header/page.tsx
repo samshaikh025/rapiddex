@@ -4,8 +4,8 @@ import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useState } from "react";
 import { useAccount, useAccountEffect, useConnect, useDisconnect } from "wagmi";
-import headerLogoDesktop from '../../../assets/images/logo.png';
-import headerLogoMobile from '../../../assets/images/logoIocn.png';
+import headerLogoDesktop from '../../../assets/images/RapidX - White Logo.svg';
+import headerLogoMobile from '../../../assets/images/RapidX - White - Logo Icon.svg';
 import { useDispatch, useSelector } from "react-redux";
 import { OpenWalletModalA, SetActiveTransactionA, SetSelectedLanguageA, SetSelectedThemeA, SetWalletDataA, SetWalletDisconnectedA, } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
@@ -43,7 +43,7 @@ export default function Header() {
     dispatch(SetSelectedThemeA(mode));
   };
 
-  function showMenuItem(){
+  function showMenuItem() {
     searchParams.has('quoteId') ? setShowMenu(false) : null;
   }
 

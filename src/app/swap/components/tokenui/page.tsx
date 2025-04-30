@@ -10,7 +10,7 @@ import Skeleton from 'react-loading-skeleton'
 import { useDispatch, useSelector } from "react-redux";
 
 type propsType = {
-    sourceChain: Chains ,
+    sourceChain: Chains,
     destChain: Chains,
     dataSource: string,
     sourceToken: Tokens,
@@ -32,18 +32,17 @@ export default function Tokenui(props: propsType) {
     let defaultListSize = 20;
     let utilityService = new UtilityService();
     let chainImageURL = '';
-    chainImageURL = props.dataSource ==DataSource.From ? props.sourceChain.logoURI : props.destChain.logoURI;
-    async function getCoinsByChain(){
+    chainImageURL = props.dataSource == DataSource.From ? props.sourceChain.logoURI : props.destChain.logoURI;
+    async function getCoinsByChain() {
         let tokens: Tokens[] = [];
         let chainDataSource = new Chains();
-        try{
+        try {
             chainDataSource = props.dataSource == DataSource.From ? props.sourceChain : props.destChain;
-            if(chainDataSource.chainId > 0)
-            {
+            if (chainDataSource.chainId > 0) {
                 setShowCoinSpinner(true);
-                if(preDefineTokensContextData && preDefineTokensContextData.length > 0 && preDefineTokensContextData.findIndex(x =>x.chainId == chainDataSource.chainId) > -1){
-                    tokens = await preDefineTokensContextData?.find(x=> x.chainId == chainDataSource.chainId)?.tokens;
-                }else{
+                if (preDefineTokensContextData && preDefineTokensContextData.length > 0 && preDefineTokensContextData.findIndex(x => x.chainId == chainDataSource.chainId) > -1) {
+                    tokens = await preDefineTokensContextData?.find(x => x.chainId == chainDataSource.chainId)?.tokens;
+                } else {
                     tokens = await cryptoService.GetAvailableTokens(chainDataSource);
                     let obj = new PreDefinedTokensForChains();
                     obj.chainId = chainDataSource.chainId;
@@ -51,62 +50,60 @@ export default function Tokenui(props: propsType) {
                     dispatch(SetPredineTokensForChainA(obj));
                 }
                 setShowCoinSpinner(false);
-                if(tokens && tokens.length > 0)
-                {
+                if (tokens && tokens.length > 0) {
                     setTokenResponse(tokens);
                     setMasterAvailableToken(tokens);
-                    setAvailableToken(tokens.slice(0,defaultListSize));
+                    setAvailableToken(tokens.slice(0, defaultListSize));
                     setHasMoreData(true);
                 }
             }
-        }catch(error){
+        } catch (error) {
 
         }
     }
-    
-    async function backCloseTokenUI()
-    {
+
+    async function backCloseTokenUI() {
         let token = props.dataSource == DataSource.From ? props.sourceToken : props.destToken;
         await props.closeTokenUI(token);
     }
 
-    async function handleCloseTokenUI(token: Tokens){
+    async function handleCloseTokenUI(token: Tokens) {
         await props.closeTokenUI(token)
     }
 
-    async function filterToken(tokenValue: string)
-    {
+    async function filterToken(tokenValue: string) {
         let tempData = [];
-        if(tokenResponse && tokenResponse.length > 0){
+        if (tokenResponse && tokenResponse.length > 0) {
             setMasterAvailableToken([]);
             setAvailableToken([]);
             setShowCoinSpinner(true);
             setHasMoreData(false);
-            if(tokenValue.length > 0){
-                tempData = tokenResponse.filter(x => x.name?.toLowerCase()?.includes(tokenValue));
-            }else{
+            if (tokenValue.length > 0) {
+                debugger;
+                tempData = tokenResponse.filter(x => x.symbol?.toLowerCase()?.includes(tokenValue) || x.address?.toLowerCase() == tokenValue?.toLowerCase());
+            } else {
                 tempData = tokenResponse;
             }
             setMasterAvailableToken(tempData);
-            setAvailableToken(tempData.slice(0,defaultListSize));
+            setAvailableToken(tempData.slice(0, defaultListSize));
             setHasMoreData(true);
             setShowCoinSpinner(false);
         }
     }
 
-    function fetchMoreData(){
+    function fetchMoreData() {
         setTimeout(() => {
-            if(AvailableToken.length < masterAvailableToken.length){
+            if (AvailableToken.length < masterAvailableToken.length) {
                 setAvailableToken([...AvailableToken, ...masterAvailableToken.slice(AvailableToken.length, AvailableToken.length + defaultListSize)]);
-            }else{
+            } else {
                 setHasMoreData(false);
             }
-          }, 1500);
+        }, 1500);
     }
 
     useEffect(() => {
         getCoinsByChain();
-      }, []);
+    }, []);
 
     return (
         <>
@@ -125,8 +122,8 @@ export default function Tokenui(props: propsType) {
                         <div className="inner-card w-100 py-3 px-3 d-flex flex-column gap-3">
                             <div className="d-flex gap-3 w-100 align-items-center">
                                 <div className="selcet-coin coin-wrapper">
-                                { utilityService.isNullOrEmpty(chainImageURL) && <div className="coin"></div>}
-                                { !utilityService.isNullOrEmpty(chainImageURL) && <img src={chainImageURL} className="coin" alt="" />}
+                                    {utilityService.isNullOrEmpty(chainImageURL) && <div className="coin"></div>}
+                                    {!utilityService.isNullOrEmpty(chainImageURL) && <img src={chainImageURL} className="coin" alt="" />}
                                 </div>
                                 <button className="btn primary-btn w-100" onClick={() => props.openChainUI(true)}>
                                     {props.dataSource == DataSource.From ? (props.sourceChain.chainName == '' ? 'Select Chain' :
@@ -136,7 +133,7 @@ export default function Tokenui(props: propsType) {
                             </div>
                             <div className="search-bar position-relative">
                                 <i className="fas fa-search"></i>
-                                <input type="text" className="w-100" placeholder="Search By Token Name" onKeyUp={(e) =>
+                                <input type="text" className="w-100" placeholder="Search by token name or address" onKeyUp={(e) =>
                                     filterToken(e.currentTarget.value)} />
                             </div>
                             <div className="mt-2">
@@ -144,7 +141,7 @@ export default function Tokenui(props: propsType) {
                                     Coin List
                                 </div> */}
                                 {
-                                    showCoinSpinner == true && 
+                                    showCoinSpinner == true &&
                                     <>
                                         {Array.from({ length: 3 }, (_, i) => (
                                             <div key={i} className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3 mb-2">
@@ -163,8 +160,8 @@ export default function Tokenui(props: propsType) {
                                     </>
                                 }
                                 {
-                                showCoinSpinner == false && 
-                                <>
+                                    showCoinSpinner == false &&
+                                    <>
                                         <div id="scrollableCoinDiv" className="coin-list-wrapper d-flex flex-column gap-2">
                                             <InfiniteScroll
                                                 dataLength={AvailableToken?.length}
@@ -182,19 +179,19 @@ export default function Tokenui(props: propsType) {
                                                                     <img src={token.logoURI} className="coin" alt="coin" />
                                                                 </div>
                                                                 <div className="d-flex flex-column">
-                                                                    <label className="coin-name d-block fw-600">{token.name}</label>
-                                                                    <label className="coin-sub-name">Coin Info</label>
+                                                                    <label className="coin-name d-block fw-600">{token.symbol}</label>
+                                                                    <label className="coin-sub-name">{token.address.substring(0, 4) + '...' + token.address.substring(token.address.length - 4)}</label>
                                                                 </div>
                                                             </div>
-                                                            <label className=" fw-600">$ 0.5</label>
+                                                            {/* <label className=" fw-600">$ 0.5</label> */}
                                                         </div>
                                                     ))
                                                 }
                                             </InfiniteScroll>
                                         </div>
-                                </> 
+                                    </>
                                 }
-                                
+
                             </div>
                         </div>
                     </div>
@@ -202,5 +199,4 @@ export default function Tokenui(props: propsType) {
             </div>
         </>
     );
-  }
-  
+}

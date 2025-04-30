@@ -27,13 +27,14 @@
 }
 
 .header .header-wrapper .menu-wrapper a {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     line-height: 25px;
     color: var(--white-color);
     display: inline-block;
     padding: 8px 16px;
-    border-radius: 100px
+    border-radius: 100px;
+    cursor: pointer !important;
 }
 
 .header .header-wrapper .menu-wrapper a:hover,
@@ -130,7 +131,7 @@
     align-items: center;
     -webkit-box-pack: center;
     justify-content: center;
-    background:#2563EB;
+    background: #2563EB;
     border-radius: 50%;
     height: 35px;
     width: 35px;
@@ -140,13 +141,14 @@
     border-radius: 100px;
     /* border: 2px solid var(--primary-icon-color) */
 }
-.coin-wrapper2 .coin    {
+
+.coin-wrapper2 .coin {
     display: flex;
     -webkit-box-align: center;
     align-items: center;
     -webkit-box-pack: center;
     justify-content: center;
-    background:#F34141;
+    background: #F34141;
     border-radius: 50%;
     height: 35px;
     width: 35px;
@@ -168,6 +170,7 @@
     background: #C8D8FA;
     border-radius: 50%;
 }
+
 .coin-wrapper2 .coin-small2 {
     width: 19px;
     height: 19px;
@@ -180,7 +183,7 @@
     border-radius: 50%;
 }
 
-.price-name{
+.price-name {
     font-size: 18px;
     font-weight: bold !important;
 }
@@ -196,7 +199,7 @@
 
 .coin-sub-name {
     font-size: 12px;
-    color : #7A7493;
+    color: #7A7493;
 }
 
 .transparent-input {
@@ -435,11 +438,11 @@
     padding-left: 1em;
 }
 
-.step.step-active .title{
+.step.step-active .title {
     color: var(--primary-icon-color)
 }
 
-.step.step-active .caption{
+.step.step-active .caption {
     color: var(--primary-icon-color);
 }
 
@@ -448,7 +451,7 @@
     color: var(--white-color);
 }
 
-button.swap-btn{
+button.swap-btn {
     background: linear-gradient(135deg, #454cdc 0%, #411dbf 19.24%, #4f31d8 68.64%, #4c32dc 81.77%, #372dbc 100%);
     color: var(--white-color);
     font-size: 16px !important;
@@ -457,6 +460,7 @@ button.swap-btn{
     display: inline-block;
     text-align: center;
 }
+
 /* .swap-btn-box{
     display: inline-block;
     text-align: center;
@@ -477,7 +481,7 @@ button.swap-btn{
     border-radius: 100%;
     color: var(--black-color-2);
     text-align: center;
-    box-shadow: 0 0 0 3px  var(--border-color-40);
+    box-shadow: 0 0 0 3px var(--border-color-40);
 }
 
 /* Vertical Line */
@@ -502,12 +506,12 @@ button.swap-btn{
     background-color: transparent;
 }
 
-.swap-card-btn{
+.swap-card-btn {
     padding: 10px;
     text-align: center;
 }
 
-.swap-card-btn a{
+.swap-card-btn a {
     text-align: center;
     color: var(--primary-color);
     display: block;
@@ -519,7 +523,7 @@ button.swap-btn{
 .title {
     font-size: 20px;
     line-height: 1.5em;
-    font-weight: 600    ;
+    font-weight: 600;
     color: var(--black-color);
 }
 
@@ -538,7 +542,7 @@ button.swap-btn{
 .bar .in {
     animation: fill 30s linear 1;
     height: 100%;
-    background-color: var( --primary-color);
+    background-color: var(--primary-color);
     border-radius: 10px;
 }
 
@@ -552,11 +556,11 @@ button.swap-btn{
     }
 }
 
-.base-coin label{
+.base-coin label {
     line-height: 15px;
 }
 
-.right-arrow i{
+.right-arrow i {
     min-width: 30px;
     height: 30px;
     color: var(--primary-color);
@@ -564,14 +568,14 @@ button.swap-btn{
     top: 50%;
 }
 
-.active-txn-swap{
+.active-txn-swap {
     height: 30px;
     color: var(--primary-color);
     left: 50%;
     top: 50%;
 }
 
-.offcanvas-close-btn i{
+.offcanvas-close-btn i {
     color: var(--primary-icon-color);
     font-size: 18px;
 }
@@ -615,7 +619,7 @@ button.swap-btn{
     animation: reloadPath 60s linear infinite forwards;
 }
 
-.aggrigator-box img{
+.aggrigator-box img {
     width: 100%;
 }
 
@@ -628,7 +632,7 @@ button.swap-btn{
     width: 110px !important;
 }
 
-.aggrigator-box h5{
+.aggrigator-box h5 {
     margin-bottom: 0;
     font-size: 16px;
     font-weight: 600;
@@ -643,4 +647,5 @@ button.swap-btn{
         stroke-dashoffset: 113px;
     }
 }
+
 /* progress bar end*/

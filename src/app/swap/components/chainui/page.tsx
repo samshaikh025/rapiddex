@@ -19,35 +19,32 @@ export default function Chainui(props: propsType) {
     let [AvailableChains, setAvailableChains] = useState<Chains[]>([]);
     let [masterAvailableChains, setMasterAvailableChains] = useState<Chains[]>([]);
     let [showChainSpinner, setShowChainSpinner] = useState<boolean>(true);
-    
-    async function setInitData(chains: Chains[])
-    {
+
+    async function setInitData(chains: Chains[]) {
         //let chains = await cryptoService.GetAvailableChains();
         setShowChainSpinner(false);
         setAvailableChains(chains);
         setMasterAvailableChains(chains);
     }
 
-    function backFromChain(){
+    function backFromChain() {
         let chain = props.dataSource == DataSource.From ? props.sourceChain : props.destChain;
         props.closeChainUI(chain)
     }
 
-    function filterChain(chainValue: string)
-    {
+    function filterChain(chainValue: string) {
         setAvailableChains([]);
-        if(chainValue == '')
-        {
+        if (chainValue == '') {
             setAvailableChains(masterAvailableChains);
-        }else{
-            let filter = masterAvailableChains.filter(x=> x.chainName?.toLowerCase()?.includes(chainValue));
+        } else {
+            let filter = masterAvailableChains.filter(x => x.chainName?.toLowerCase()?.includes(chainValue));
             setAvailableChains(filter);
         }
     }
 
     useEffect(() => {
         setInitData(props.chains);
-      }, []);
+    }, []);
 
     return (
         <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-coin-wrapper">
@@ -62,7 +59,7 @@ export default function Chainui(props: propsType) {
                         </div>
                     </div>
                     {
-                        showChainSpinner == true && 
+                        showChainSpinner == true &&
                         <>
                             {Array.from({ length: 3 }, (_, i) => (
                                 <div key={i} className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3 mb-2">
@@ -81,7 +78,7 @@ export default function Chainui(props: propsType) {
                         </>
                     }
                     {
-                        showChainSpinner == false && 
+                        showChainSpinner == false &&
                         <>
                             <div className="inner-card w-100 py-3 px-3 d-flex flex-column gap-3">
 
@@ -106,10 +103,10 @@ export default function Chainui(props: propsType) {
                                                         </div>
                                                         <div className="d-flex flex-column">
                                                             <label className="coin-name d-block fw-600">{chain.chainName}</label>
-                                                            <label className="coin-sub-name">Coin Info</label>
+                                                            {/* <label className="coin-sub-name">Coin Info</label> */}
                                                         </div>
                                                     </div>
-                                                    <label className=" fw-600">$ 0.5</label>
+                                                    {/* <label className=" fw-600">$ 0.5</label> */}
                                                 </div>
                                             ))
                                         }
@@ -122,5 +119,4 @@ export default function Chainui(props: propsType) {
             </div>
         </div>
     );
-  }
-  
+}

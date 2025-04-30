@@ -512,7 +512,7 @@ export class CryptoService {
             // Fetch paths concurrently with timeout
             // same param for wallet address because this method called from swap within same account so from and to are same
             const [rapidXPath, fastestPath, cheapestPath, rangoPath, owltoPath] = await Promise.all([
-                withTimeout(this.getRapidXPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress,walletAddress, "CHEAPEST"), apiTimeout, 'RapidX'),
+                withTimeout(this.getRapidXPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, walletAddress, "CHEAPEST"), apiTimeout, 'RapidX'),
                 withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "FASTEST"), apiTimeout, 'Lifi (Fastest)'),
                 withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Lifi (Cheapest)'),
                 withTimeout(this.getRangoPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Rango'),
@@ -889,7 +889,7 @@ export class CryptoService {
 
         }
         else {
-            tokenfrom = +sourceToken.symbol + "--" + sourceToken.address;
+            tokenfrom = sourceToken.symbol + "--" + sourceToken.address;
         }
 
         if (destNative == true) {
@@ -906,11 +906,11 @@ export class CryptoService {
         requestRangoPath.from = sourceChain.rangoName.toString() + "." + tokenfrom;
         requestRangoPath.to = destChain.rangoName.toString() + "." + tokento;
 
-        requestRangoPath.amount = Number(await this.utilityService.convertToDecimals(amount, sourceToken.decimal));
+        requestRangoPath.amount = await this.utilityService.convertToDecimals(amount, sourceToken.decimal);
         requestRangoPath.fromAddress = walletAddress;
         requestRangoPath.toAddress = walletAddress;
         requestRangoPath.slippage = 0.5;
-
+        requestRangoPath.disableEstimate = "true";
         return requestRangoPath;
     }
 
@@ -974,7 +974,8 @@ export class CryptoService {
             amount: requestRangoPath.amount.toString(),
             fromAddress: requestRangoPath.fromAddress,
             toAddress: requestRangoPath.toAddress,
-            slippage: requestRangoPath.slippage.toString()
+            slippage: requestRangoPath.slippage.toString(),
+            disableEstimate: requestRangoPath.disableEstimate.toString()
         });
     }
 
@@ -1029,11 +1030,11 @@ export class CryptoService {
             pathShowViewModel.entire = RapidXPath;
             pathShowViewModel.fromAmountWei = RapidXPath.data.quote.fromAmount;
             pathShowViewModel.isMultiChain = RapidXPath.data.isMultiChain;
-            
+
             let sourceTxnData = new RapidQuoteTransactionDto();
             let destinationTxnData = new RapidQuoteTransactionDto();
 
-            if(RapidXPath.data.isMultiChain){
+            if (RapidXPath.data.isMultiChain) {
                 sourceTxnData.tokenAddress = sourceToken.address;
                 sourceTxnData.amountinWei = RapidXPath.data.route.sourceTransaction.fromToken.amount;
                 sourceTxnData.approvalAddress = RapidXPath.data.transactionData.to;
@@ -1126,10 +1127,10 @@ export class CryptoService {
 
 
             const gasPrice = BigInt(responseRangoPath.tx?.gasLimit);
-            const gasLimit = BigInt(responseRangoPath.tx?.gasPrice);
+            const gasLimit = BigInt(responseRangoPath.tx?.gasPrice ?? responseRangoPath.tx?.maxGasPrice);
 
             pathShowViewModel.gasafeeRequiredTransaction = (gasPrice * gasLimit).toString();
-            pathShowViewModel.gasPrice = responseRangoPath.tx?.gasPrice.toString();
+            pathShowViewModel.gasPrice = responseRangoPath.tx?.gasPrice?.toString() ?? responseRangoPath.tx?.maxGasPrice?.toString();
             pathShowViewModel.gasLimit = responseRangoPath.tx?.gasLimit.toString();
             pathShowViewModel.data = responseRangoPath.tx?.txData;
 

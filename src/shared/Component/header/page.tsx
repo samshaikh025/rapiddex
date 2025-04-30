@@ -4,7 +4,7 @@ import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useState } from "react";
 import { useAccount, useAccountEffect, useConnect, useDisconnect } from "wagmi";
-import headerLogoDesktop from '../../../assets/images/RapidX - White Logo.svg';
+import headerLogoDesktop from '../../../assets/images/rapid_dex_light.svg';
 import headerLogoMobile from '../../../assets/images/RapidX - White - Logo Icon.svg';
 import { useDispatch, useSelector } from "react-redux";
 import { OpenWalletModalA, SetActiveTransactionA, SetSelectedLanguageA, SetSelectedThemeA, SetWalletDataA, SetWalletDisconnectedA, } from "@/app/redux-store/action/action-redux";
@@ -142,11 +142,11 @@ export default function Header() {
             showMenu &&
             <>
               <div className="menu-wrapper d-flex align-items-center">
-                <Link href="/swap" className="active"> Swap </Link>
-                <Link href="/send"> Send </Link>
-                <a href="#">Loans</a>
-                <a href="#">Liquidity</a>
-                <a href="#">Stak</a>
+                <Link href="/swap" className="active"> Multi-Swap </Link>
+                <a href="#"> Fixed Deposit </a>
+                <a href="#">Crypto Funds</a>
+                <a href="#">Secure P2P</a>
+
               </div>
             </>
           }
@@ -231,7 +231,7 @@ export default function Header() {
                     <i className="fas fa-bars"></i>
                   </button>
                   <ul className="dropdown-menu dropdown-menu-right">
-                    <div className="d-flex align-items-center user-profile">
+                    {/* <div className="d-flex align-items-center user-profile">
                       <img src="assets/images/avatar.svg" alt="avatar" />
                       <div className="d-flex flex-column">
                         <label>John Carter</label>
@@ -239,19 +239,20 @@ export default function Header() {
                           <span>View Profile</span>
                         </a>
                       </div>
-                    </div>
+                    </div> */}
 
                     <li className="mobile-menu">
-                      <Link href="/swap" className="dropdown-item active">Swap</Link>
+                      <Link href="/swap" className="dropdown-item active">Multi-Swap</Link>
                     </li>
-                    <li className="mobile-menu">
+                    {/* <li className="mobile-menu">
                       <Link href="/send" className="dropdown-item">Send</Link>
-                    </li>
-                    <li className="mobile-menu"><a href="#" className="dropdown-item">Liquidity</a></li>
-                    <li className="mobile-menu"><a href="#" className="dropdown-item">Stak</a></li>
-                    <li><a href="#" className="dropdown-item">Action</a></li>
+                    </li> */}
+                    <li className="mobile-menu"><a href="#" className="dropdown-item">Fixed Deposit</a></li>
+                    <li className="mobile-menu"><a href="#" className="dropdown-item">Crypto Funds</a></li>
+                    <li className="mobile-menu"><a href="#" className="dropdown-item">Secure P2P</a></li>
+                    {/* <li><a href="#" className="dropdown-item">Action</a></li>
                     <li><a href="#" className="dropdown-item">Another action</a></li>
-                    <li><a href="#" className="dropdown-item">Something else here</a></li>
+                    <li><a href="#" className="dropdown-item">Something else here</a></li> */}
                     {
                       (SupportedLanguage && SupportedLanguage.length > 0) &&
                       <>

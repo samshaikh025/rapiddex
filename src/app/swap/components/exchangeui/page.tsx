@@ -308,10 +308,10 @@ export default function Exchangeui(props: propsType) {
         let sendAmt = '';
         let sendAmtUsdc = '0';
 
-        if(selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain){
+        if (selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain) {
             sendAmt = selectedPath.fromAmountWei;
             sendAmtUsdc = selectedPath.fromAmountUsd;
-        }else if(selectedPath.aggregator != AggregatorProvider.RAPID_DEX){
+        } else if (selectedPath.aggregator != AggregatorProvider.RAPID_DEX) {
             let wei = parseEther(sendAmount.toString());
             sendAmt = String(wei);
             sendAmtUsdc = String(equAmountUSD);
@@ -350,7 +350,7 @@ export default function Exchangeui(props: propsType) {
         transactoinObj.transactionAggregatorRequestData = selectedPath.data;
         transactoinObj.isMultiChain = selectedPath.isMultiChain;
         transactoinObj.sourceTransactionData = selectedPath.sourceTransactionData;
-        transactoinObj.destinationTransactionData  = selectedPath.destinationTransactionData;
+        transactoinObj.destinationTransactionData = selectedPath.destinationTransactionData;
         transactoinObj.transactionSourceHash = '';
         transactoinObj.transactionSourceStatus = TransactionStatus.ALLOWANCSTATE;
         transactoinObj.transactionSourceSubStatus = 0;
@@ -369,7 +369,7 @@ export default function Exchangeui(props: propsType) {
     async function exchange() {
         //setStartBridging(true);
         if (!utilityService.isNullOrEmpty(walletData.address)) {
-            
+
             let workingRpc = await utilityService.setupProviderForChain(props.sourceChain.chainId, props.sourceChain.rpcUrl);
 
             if (workingRpc != undefined && workingRpc != null) {
@@ -481,7 +481,7 @@ export default function Exchangeui(props: propsType) {
                                             <div className="d-flex flex-column">
                                                 <label className="coin-name d-block fw-600">{props.sourceChain.chainId > 0 ?
                                                     props.sourceChain.chainName : 'Chain'}</label>
-                                                <label className="coin-sub-name ">{props.sourceToken.name != '' ? props.sourceToken.name :
+                                                <label className="coin-sub-name ">{props.sourceToken.symbol != '' ? props.sourceToken.symbol :
                                                     'Token'}</label>
                                             </div>
                                         </div>
@@ -505,7 +505,7 @@ export default function Exchangeui(props: propsType) {
                                             <div className="d-flex flex-column">
                                                 <label className="coin-name d-block fw-600">{props.destChain.chainId > 0 ?
                                                     props.destChain.chainName : 'Chain'}</label>
-                                                <label className="coin-sub-name">{props.destToken.name != '' ? props.destToken.name :
+                                                <label className="coin-sub-name">{props.destToken.symbol != '' ? props.destToken.symbol :
                                                     'Token'}</label>
                                             </div>
                                         </div>

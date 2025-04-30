@@ -12,6 +12,7 @@ export class UtilityService {
     async convertToDecimals(amount: number, decimals: number): Promise<string> {
         try {
             // Use ethers.js to handle the conversion
+            debugger;
             const parsedAmount = ethers.parseUnits(amount.toString(), decimals);
             return parsedAmount.toString();
         } catch (error) {

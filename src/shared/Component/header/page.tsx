@@ -4,7 +4,8 @@ import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useState } from "react";
 import { useAccount, useAccountEffect, useConnect, useDisconnect } from "wagmi";
-import headerLogoDesktop from '../../../assets/images/logo.png';
+import headerLogoDesktop from '../../../assets/images/logo/Logo - Light.png';
+import headerLogoDesktopDark from '../../../assets/images/logo/Logo - dark.png';
 import headerLogoMobile from '../../../assets/images/logoIocn.png';
 import { useDispatch, useSelector } from "react-redux";
 import { OpenWalletModalA, SetActiveTransactionA, SetSelectedLanguageA, SetSelectedThemeA, SetWalletDataA, SetWalletDisconnectedA, } from "@/app/redux-store/action/action-redux";
@@ -134,7 +135,8 @@ export default function Header() {
         <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
           <div className="site-logo">
             <a href="index.html">
-              <img src={headerLogoDesktop.src} className="desktop-logo" alt="site-logo" />
+              <img src={headerLogoDesktop.src} className="desktop-logo light-logo" alt="site-logo" />
+              <img src={headerLogoDesktopDark.src} className="desktop-logo dark-logo" alt="site-logo" />
               <img src={headerLogoMobile.src} className="mobile-logo" alt="site-logo" />
             </a>
           </div>
@@ -169,7 +171,7 @@ export default function Header() {
               {
                 utilityService.isNullOrEmpty(walletData.address) &&
                 <>
-                  <button className="btn primary-btn" onClick={() => open()}>
+                  <button className="btn primary-btn border-radius-half" onClick={() => open()}>
                     {utilityService.Translate(selectedLang, 'CONNECT_WALLET')}</button>
                 </>
               }
@@ -227,7 +229,7 @@ export default function Header() {
               showMenu &&
               <>
                 <div className="dropdown">
-                  <button className="btn primary-btn dropdown-toggle w-48" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <button className="btn primary-btn dropdown-toggle w-48 border-radius-half" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i className="fas fa-bars"></i>
                   </button>
                   <ul className="dropdown-menu dropdown-menu-right">

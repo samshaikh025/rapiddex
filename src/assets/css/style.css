@@ -29,7 +29,7 @@
     font-size: 20px;
     font-weight: 600;
     line-height: 25px;
-    color: var(--black-color);
+    color: var(--text-color-white);
     display: inline-block;
     padding: 8px 16px;
     border-radius: 100px
@@ -48,8 +48,8 @@
 }
 
 .header .user-profile img {
-    /* width:40px; 
-    height:40px; */
+    width: 50px;
+    height: 50px;
     border-radius: 100px;
     border: 1px solid var(--primary-color);
     margin-right: 12px
@@ -123,12 +123,13 @@
 }
 
 .coin-wrapper .coin {
+    --large-coin-icon-color: #2563EB;
     display: flex;
     -webkit-box-align: center;
     align-items: center;
     -webkit-box-pack: center;
     justify-content: center;
-    background: rgb(229, 225, 235);
+    background: var(--large-coin-icon-color);
     border-radius: 50%;
     height: 35px;
     width: 35px;
@@ -136,22 +137,34 @@
     mask: radial-gradient(10.5px at calc(100% - 5.5px) calc(100% - 5.5px), rgba(255, 255, 255, 0) 96%, rgb(255, 255, 255)) 100% 100% / 100% 100% no-repeat;
     min-width: 35px;
     border-radius: 100px;
-    border: 2px solid var(--primary-icon-color)
+    border: 2px solid var(--large-coin-icon-color)
 }
 
 .coin-wrapper .coin-small {
+    --small-coin-icon-color: #C8D8FA;
     width: 19px;
     height: 19px;
     border-radius: 100px;
-    border: 2px solid var(--white-color);
+    border: 2px solid var(--small-coin-icon-color);
     position: absolute;
     bottom: -2px;
     left: 18px;
-    background: rgb(229, 225, 235);
+    background: var(--small-coin-icon-color);
     border-radius: 50%;
 }
 
-.price-name{
+.coin-wrapper.coin-to .coin {
+    --largeCoin-to-bgColor: #F34141;
+    background-color: var(--largeCoin-to-bgColor);
+    border-color: var(--largeCoin-to-bgColor);
+}
+
+.coin-wrapper.coin-to .coin-small {
+    --small-coin-icon-color: #FAC7C7;
+    background-color: var(--small-coin-icon-color);
+}
+
+.price-name {
     font-size: 18px;
     font-weight: bold !important;
 }
@@ -334,19 +347,32 @@
     color: var(--black-color);
 }
 
+[data-theme="dark"] .light-logo {
+    display: none;
+}
+
+[data-theme="light"] .dark-logo {
+    display: none;
+}
+
 
 /* Set the dark mode variables... */
+
 [data-theme="dark"] {
     --body-bg: radial-gradient(123.22% 129.67% at 100.89% -5.6%, #05040B 0%, #060316 100%);
-    --primary-color: #fff;
+    --primary-color: #7A7493;
+    /* --primary-iconcolor:#7A7493; */
     --primary-color-8: #322C4B;
-    --primary-icon-color: #BC9FED;
+    --primary-icon-color: #2F2B43;
     --white-color: #ffffff;
-    --black-color: #ffffff;
+    /* --black-color: #ffffff; */
+    --text-color-white: #ffffff;
     --border-color: #ffffff1f;
     --border-color-40: #ffffff1f;
-    --outer-card-bg: linear-gradient(210.96deg, rgba(32, 20, 96, 0.61) 0.01%, rgba(49, 30, 95, 0.7) 42.05%, rgba(57, 33, 113, 0.1) 104.81%);
-    --inner-card-bg: #372A77;
+    --outer-card-bg: #EDEDF1;
+    --black-color: #000000;
+    /* --outer-card-bg: linear-gradient(210.96deg, rgba(32, 20, 96, 0.61) 0.01%, rgba(49, 30, 95, 0.7) 42.05%, rgba(57, 33, 113, 0.1) 104.81%); */
+    --inner-card-bg: #FFFFFF;
     --header-card: #0f0d1d;
     --box-shadow: 0px 20px 69px 0px #080711D8;
     --inner-card-box-shadow: 50px 38px 102.37px 0px #78769424;
@@ -355,16 +381,21 @@
     --inner-card-bg-2: #372A77;
     --black-color-2: #151231;
     --border-color-2: #fff;
+    --bg-color-btn-primary: #2563EB;
 }
 
+
 /* Set the light mode variables... */
+
 [data-theme="light"] {
     --body-bg: radial-gradient(123.22% 129.67% at 100.89% -5.6%, #fbfbfd 0%, #f2f2ff 100%);
     --primary-color: #5244d2;
     --primary-color-8: #5244d214;
     --primary-icon-color: #7851bc;
     --white-color: #ffffff;
-    --black-color: #151231;
+    --text-color-white: #151231;
+    --black-color: #000000;
+    --bg-color-btn-primary: #2563EB;
     --border-color: #d5d5ee;
     --border-color-40: #d5d5ee66;
     --outer-card-bg: linear-gradient(210.96deg, rgba(245, 242, 255, 0.8) 0.01%, #f5f1ff 42.05%, rgba(247, 243, 255, 0.06) 104.81%);
@@ -379,11 +410,14 @@
     --border-color-2: #8080804f;
 }
 
+
 /* -------------------------------------------------------------------------
   VERTICAL STEPPERS
 -------------------------------------------------------------------------- */
 
+
 /* Steps */
+
 .step {
     position: relative;
     min-height: 1em;
@@ -404,11 +438,11 @@
     padding-left: 1em;
 }
 
-.step.step-active .title{
+.step.step-active .title {
     color: var(--primary-icon-color)
 }
 
-.step.step-active .caption{
+.step.step-active .caption {
     color: var(--primary-icon-color);
 }
 
@@ -417,7 +451,7 @@
     color: var(--white-color);
 }
 
-button.swap-btn{
+button.swap-btn {
     background: linear-gradient(135deg, #454cdc 0%, #411dbf 19.24%, #4f31d8 68.64%, #4c32dc 81.77%, #372dbc 100%);
     color: var(--white-color);
     font-size: 16px !important;
@@ -426,17 +460,22 @@ button.swap-btn{
     display: inline-block;
     text-align: center;
 }
+
+
 /* .swap-btn-box{
     display: inline-block;
     text-align: center;
     width: 100%;
 } */
 
+
 /* .swap-card{
     background: unset;
 } */
 
+
 /* Circle */
+
 .circle {
     background: rgb(229, 225, 235);
     position: relative;
@@ -446,10 +485,12 @@ button.swap-btn{
     border-radius: 100%;
     color: var(--black-color-2);
     text-align: center;
-    box-shadow: 0 0 0 3px  var(--border-color-40);
+    box-shadow: 0 0 0 3px var(--border-color-40);
 }
 
+
 /* Vertical Line */
+
 .circle:after {
     content: ' ';
     position: absolute;
@@ -471,12 +512,12 @@ button.swap-btn{
     background-color: transparent;
 }
 
-.swap-card-btn{
+.swap-card-btn {
     padding: 10px;
     text-align: center;
 }
 
-.swap-card-btn a{
+.swap-card-btn a {
     text-align: center;
     color: var(--primary-color);
     display: block;
@@ -484,11 +525,13 @@ button.swap-btn{
     font-size: 20px;
 }
 
+
 /* Stepper Titles */
+
 .title {
     font-size: 20px;
     line-height: 1.5em;
-    font-weight: 600    ;
+    font-weight: 600;
     color: var(--black-color);
 }
 
@@ -507,7 +550,7 @@ button.swap-btn{
 .bar .in {
     animation: fill 30s linear 1;
     height: 100%;
-    background-color: var( --primary-color);
+    background-color: var(--primary-color);
     border-radius: 10px;
 }
 
@@ -515,17 +558,16 @@ button.swap-btn{
     0% {
         width: 0%;
     }
-
     100% {
         width: 100%;
     }
 }
 
-.base-coin label{
+.base-coin label {
     line-height: 15px;
 }
 
-.right-arrow i{
+.right-arrow i {
     min-width: 30px;
     height: 30px;
     color: var(--primary-color);
@@ -533,19 +575,21 @@ button.swap-btn{
     top: 50%;
 }
 
-.active-txn-swap{
+.active-txn-swap {
     height: 30px;
     color: var(--primary-color);
     left: 50%;
     top: 50%;
 }
 
-.offcanvas-close-btn i{
-    color: var(--primary-icon-color);
+.offcanvas-close-btn i {
+    color: var(--black-color-900);
     font-size: 18px;
 }
 
+
 /*progress bar for realod path on every 60s*/
+
 #countdown {
     position: absolute;
     margin: auto;
@@ -583,7 +627,7 @@ button.swap-btn{
     animation: reloadPath 60s linear infinite forwards;
 }
 
-.aggrigator-box img{
+.aggrigator-box img {
     width: 100%;
 }
 
@@ -596,7 +640,7 @@ button.swap-btn{
     width: 110px !important;
 }
 
-.aggrigator-box h5{
+.aggrigator-box h5 {
     margin-bottom: 0;
     font-size: 16px;
     font-weight: 600;
@@ -606,9 +650,15 @@ button.swap-btn{
     from {
         stroke-dashoffset: 0px;
     }
-
     to {
         stroke-dashoffset: 113px;
     }
 }
+
+
 /* progress bar end*/
+
+.btn.btn-primary-bgColor {
+    background-color: var(--bg-color-btn-primary) !important;
+    color: var(--white-color) !important;
+}

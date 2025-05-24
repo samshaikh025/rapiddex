@@ -51,47 +51,11 @@ export default function Pathshow(props: PropsType) {
       }
       try {
         walletAddress = !utilityService.isNullOrEmpty(walletData.address) ? walletData.address : '';
-        pathShowInvokedForAmount.current = props.Amountpathshow;
-
+        //pathShowInvokedForAmount.current = props.Amountpathshow;
         if ((props.amountInUsd < 0.95)) {
           throw new Error();
         }
-        cryptoService.getBestPathFromChosenChains(
-          props.sourceChain,
-          props.destChain,
-          props.sourceToken,
-          props.destToken,
-          props.Amountpathshow,
-          walletAddress
-        ).then((result) => {
-          if (result && result.length > 0 && props.Amountpathshow == pathShowInvokedForAmount.current) {
-            //result = result.slice(0,2);
-            result.forEach((item, index) => {
-              item.pathId = index + 1;
-              item.fromAmountUsd = String(props.amountInUsd);
-            });
-            props.sendInitData(result);
-            setCurrentSelectedPath(result[0]);
-            setAvailablePaths(result);
-            setPathShowSpinner(false);
-            props.isPathLoadingParent(false);
-            setIsShowPathShowTimer(true);
-            //call time out for realod path
-            invokeTimeOutForReloadPath();
-          } else if (result && result.length == 0 && props.Amountpathshow == pathShowInvokedForAmount.current) {
-            props.sendInitData([]);
-            //setCurrentSelectedPath(new PathShowViewModel());
-            //setAvailablePaths([]);
-            setPathShowSpinner(false);
-            props.isPathLoadingParent(false);
-            //setIsShowPathShowTimer(true);
-          }
-        }).catch((error) => {
-          props.sendInitData([]);
-          setPathShowSpinner(false);
-          bridgeMessage.message = "No path found";
-          props.isPathLoadingParent(false);
-        })
+        getAllPathForAmount(props.Amountpathshow);
       } catch (error) {
         props.sendInitData([]);
         setPathShowSpinner(false);
@@ -102,6 +66,8 @@ export default function Pathshow(props: PropsType) {
   };
 
   useEffect(() => {
+    pathShowInvokedForAmount.current = props.Amountpathshow;
+    console.log("Props changed : ", props.Amountpathshow);
     fetchData();
   }, [props.Amountpathshow]);
 
@@ -116,6 +82,53 @@ export default function Pathshow(props: PropsType) {
     props.sendSelectedPath(path);
     //close offcanvas
     //document.getElementById('offcanvasBottom').classList.remove('show')
+  }
+
+  function getAllPathForAmount(amt: number) {
+
+    let routeAmount = amt;
+    console.log("Props Amount : ", pathShowInvokedForAmount.current);
+    console.log("Temp Props : ", routeAmount);
+
+    cryptoService.getBestPathFromChosenChains(
+      props.sourceChain,
+      props.destChain,
+      props.sourceToken,
+      props.destToken,
+      props.Amountpathshow,
+      walletAddress
+    ).then((result) => {
+      console.log("Result recived for : " ,routeAmount);
+      console.log("current props : " , pathShowInvokedForAmount.current);
+      console.log("result len : ", result.length);
+      if (result && result.length > 0 && routeAmount == pathShowInvokedForAmount.current) {
+        //result = result.slice(0,2);
+        result.forEach((item, index) => {
+          item.pathId = index + 1;
+          item.fromAmountUsd = String(props.amountInUsd);
+        });
+        props.sendInitData(result);
+        setCurrentSelectedPath(result[0]);
+        setAvailablePaths(result);
+        setPathShowSpinner(false);
+        props.isPathLoadingParent(false);
+        setIsShowPathShowTimer(true);
+        //call time out for realod path
+        invokeTimeOutForReloadPath();
+      } else if (result && result.length == 0 && routeAmount == pathShowInvokedForAmount.current) {
+        props.sendInitData([]);
+        //setCurrentSelectedPath(new PathShowViewModel());
+        //setAvailablePaths([]);
+        setPathShowSpinner(false);
+        props.isPathLoadingParent(false);
+        //setIsShowPathShowTimer(true);
+      }
+    }).catch((error) => {
+      props.sendInitData([]);
+      setPathShowSpinner(false);
+      bridgeMessage.message = "No path found";
+      props.isPathLoadingParent(false);
+    })
   }
 
   function invokeTimeOutForReloadPath() {

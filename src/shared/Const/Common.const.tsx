@@ -21,7 +21,7 @@ export const CommonConfig = [
     },
     {
         apiKey: '',
-        apiUrl: 'http://localhost:3001/api/'//'https://rapidnextapigooglecloud-535626413367.us-central1.run.app/api/rapidquote/'
+        apiUrl: 'https://rapidnextapigooglecloud-535626413367.us-central1.run.app/api/'
     }
 ]
 

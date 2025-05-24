@@ -140,7 +140,8 @@ export default function Exchangeui(props: propsType) {
     function getInitData(data: PathShowViewModel[]) {
         setTotalAvailablePath(data.length);
         if (data.length > 0) {
-            setSelectedPath(data[0])
+            setSelectedPath(data[0]);
+            setIsShowPathComponent(true);
         } else {
             setIsShowPathComponent(false);
             setSelectedPath(new PathShowViewModel());
@@ -706,7 +707,7 @@ export default function Exchangeui(props: propsType) {
                         </div>
                     </div>
 
-                    {isShowPathComponent &&
+                    {(isShowPathComponent && sendAmount > 0) &&
                         <Pathshow Amountpathshow={sendAmount}
                             destChain={props.destChain}
                             sourceChain={props.sourceChain}

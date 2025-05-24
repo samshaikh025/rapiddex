@@ -20,7 +20,10 @@ import { OwltoSubStatus } from "@/shared/Const/Common.const";
 import { ActiveTransactionData } from "@/app/redux-store/reducer/reducer-redux";
 import { SupportedChains } from "@/shared/Static/SupportedChains";
 import { useSearchParams } from "next/navigation";
-
+import { Client } from "@bnb-chain/greenfield-js-sdk";
+import Long from "long";
+import { ReedSolomon } from "@bnb-chain/reed-solomon";
+import { ethers } from "ethers";
 type propsType = {
     closeBridgeView: () => void;
 }
@@ -56,9 +59,7 @@ export default function BridgeView(props: propsType) {
 
 
     useEffect(() => {
-
         showButtonItem();
-
         //clean up function
         return () => {
             clearInterval(statusIntervalId.current);
@@ -245,18 +246,31 @@ export default function BridgeView(props: propsType) {
                     payLoad.rpcUrl = activeTransactionData.destinationTransactionData.rpcUrl;
 
                     let destinationStatus = await GetTransactionStatusRapidDex(payLoad);
-
+                    let GUID = utilityService.uuidv4();
                     let updateDestTransactionData = {
                         ...activeTransactionData,
                         transactionSourceHash: tx ? tx : null,// update source transaction state
                         transactionSourceStatus: TransactionStatus.COMPLETED,
                         transactionSourceSubStatus: status,
                         transactionHash: destinationTxn ? destinationTxn : null,// update destination txn state
-                        transactionGuid: utilityService.uuidv4(),
+                        transactionGuid: GUID,
                         transactionStatus: TransactionStatus.COMPLETED,
                         transactionSubStatus: destinationStatus
                     };
                     dispatch(SetActiveTransactionA(updateDestTransactionData));
+
+                    let storeSign = {
+                        quoteId: GUID,
+                        txnHash: tx,
+                        signatureData: signData?.validators.map(e=> e?.data?.sign )
+                    }
+
+                    storeSignDceller(storeSign).then((res)=>{
+                        console.log("data stored on green feild");
+                    }).catch((e)=>{
+                        console.log("failed to stored on green feild");
+                    });
+
                 }
             }
             catch (error) {
@@ -408,6 +422,88 @@ export default function BridgeView(props: propsType) {
 
     function closeExceptionModal() {
         document.getElementById('exceptionOffCanvas').classList.remove('show');
+    }
+
+    async function storeSignDceller(signdata : any) {
+        try {
+            const PRIVATE_KEY = process.env.NEXT_DCELLER_WALLET_ACCOUNT; // WARNING: Don't expose this in production
+            const wallet = new ethers.Wallet(PRIVATE_KEY);
+
+            const client = Client.create('https://greenfield-chain.bnbchain.org', '1017');
+
+            const bucketName = 'rapidx-sign-storage'; // Must exist already
+            const objectName = `my-json-${Date.now()}.json`;
+
+            // 1) Prepare your JSON
+            const jsonObject = {...signdata};
+            const jsonString = JSON.stringify(jsonObject, null, 2);
+            const fileBuffer = new Uint8Array(Buffer.from(jsonString, 'utf-8'));
+
+            // 2) Use Reed–Solomon to generate the exact checksums array
+            const rs = new ReedSolomon();
+            // rs.encode returns an array of Base64-encoded shards (data+parity)
+            const base64Shards = rs.encode(fileBuffer);
+            // Convert each Base64 shard to raw bytes (Uint8Array/Buffer)
+            const checksums = base64Shards.map(b64 => {
+                const buffer = Buffer.from(b64, 'base64');
+                return new Uint8Array(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
+            });
+
+            console.log('File size:', fileBuffer.length);
+            console.log('Shards (checksums) count:', checksums.length);
+
+            const createObjectTx = await client.object.createObject({
+                bucketName,
+                objectName,
+                creator: wallet.address,
+                visibility: 1, // public
+                contentType: 'application/json',
+                redundancyType: 0, // EC_TYPE
+                payloadSize: Long.fromInt(fileBuffer.length),
+                expectChecksums: checksums, // Let SDK handle checksums internally
+            });
+
+            const simulateInfo = await createObjectTx.simulate({
+                denom: 'BNB',
+            });
+
+            const broadcastRes = await createObjectTx.broadcast({
+                denom: 'BNB',
+                gasLimit: Number(simulateInfo.gasLimit),
+                gasPrice: simulateInfo.gasPrice || '5000000000',
+                payer: wallet.address,
+                granter: '',
+                privateKey: wallet.privateKey,
+            });
+
+            if (broadcastRes.code !== 0) {
+                console.log("Broadcast failed", broadcastRes.rawLog);
+            }
+
+            // ✅ Use native Blob or File
+            const file = new File([fileBuffer], objectName, { type: 'application/json' });
+
+            const uploadRes = await client.object.uploadObject(
+                {
+                    bucketName,
+                    objectName,
+                    body: file,
+                    txnHash: broadcastRes.transactionHash,
+                },
+                {
+                    type: 'ECDSA',
+                    privateKey: wallet.privateKey,
+                }
+            );
+
+            if (uploadRes.code === 0) {
+                console.log('JSON uploaded to green feild successfully! Object.');
+            } else {
+                console.log('Error while uploaded data on green field.');
+            }
+        } catch (ex) {
+            console.log("Error while store data on greenfeild");
+        }
     }
 
     return (

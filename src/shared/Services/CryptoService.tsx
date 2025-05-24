@@ -498,7 +498,7 @@ export class CryptoService {
             }
 
             // Set a 5-second timeout for each API call
-            const apiTimeout = 10000; // 5 seconds
+            const apiTimeout = 100000; // 5 seconds
 
             const withTimeout = (promise: Promise<any>, ms: number, apiName: string) => {
                 return Promise.race([
@@ -607,7 +607,7 @@ export class CryptoService {
             };
 
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            const timeout = setTimeout(() => controller.abort(), 50000); // 5 second timeout
 
             const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",
@@ -668,7 +668,7 @@ export class CryptoService {
             };
 
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            const timeout = setTimeout(() => controller.abort(), 50000); // 5 second timeout
 
             const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",
@@ -714,7 +714,7 @@ export class CryptoService {
             };
 
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            const timeout = setTimeout(() => controller.abort(), 50000); // 5 second timeout
 
             const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",
@@ -760,7 +760,7 @@ export class CryptoService {
                 };
 
                 const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+                const timeout = setTimeout(() => controller.abort(), 50000); // 5 second timeout
 
                 const response = await fetch(this.apiUrlENV + '/api/common', {
                     method: "POST",
@@ -805,7 +805,7 @@ export class CryptoService {
             };
 
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            const timeout = setTimeout(() => controller.abort(), 50000); // 5 second timeout
 
             const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",

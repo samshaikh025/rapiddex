@@ -128,7 +128,7 @@ export default function Tokenui(props: propsType) {
                                 { utilityService.isNullOrEmpty(chainImageURL) && <div className="coin"></div>}
                                 { !utilityService.isNullOrEmpty(chainImageURL) && <img src={chainImageURL} className="coin" alt="" />}
                                 </div>
-                                <button className="btn primary-btn w-100" onClick={() => props.openChainUI(true)}>
+                                <button className="btn primary-btn w-100 btn-primary-bgColor" onClick={() => props.openChainUI(true)}>
                                     {props.dataSource == DataSource.From ? (props.sourceChain.chainName == '' ? 'Select Chain' :
                                         props.sourceChain.chainName) : (props.destChain.chainName == '' ? 'Select Chain' :
                                             props.destChain.chainName)}

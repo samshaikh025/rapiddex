@@ -288,7 +288,7 @@ export default function Pathshow(props: PropsType) {
           </div>
         </div>
       </div>
-      <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasBottom" data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{ height: '50%' }}>
+      <div className="offcanvas offcanvas-bottom custom-backgrop offcanvas-cms p-0" id="offcanvasBottom" data-bs-backdrop="true" aria-labelledby="offcanvasBottomLabel" style={{ height: '50%' }}>
         <div className="offcanvas-header">
           <h5 className="offcanvas-title primary-text" id="offcanvasBottomLabel">Showing {availablePaths.length} Routes</h5>
           <button type="button" className="btn-close text-reset primary-text" data-bs-dismiss="offcanvas" aria-label="Close">

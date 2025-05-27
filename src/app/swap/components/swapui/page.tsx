@@ -109,7 +109,7 @@ export default function Swapui(props: propsType) {
         <>
             <div className="exchange-wrapper">
                 <div className="container">
-                    <div className="row justify-content-center">
+                    <div className="row justify-content-center gap-md-0 gap-3">
                         {showExchangeUI &&
                             <Exchangeui openTokenUI={(dataSource: string) =>
                                 OpenTokenUI(dataSource)}

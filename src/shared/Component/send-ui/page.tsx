@@ -393,7 +393,7 @@ export default function SendUI(props: propsType) {
     <>
       <div className="exchange-wrapper">
         <div className="container">
-          <div className="row justify-content-center">
+          <div className="row justify-content-center gap-md-0 gap-3">
             <div className="col-lg-5">
               <div className="card shadow-sm">
                 <div className="card-body p-24">
@@ -540,7 +540,7 @@ export default function SendUI(props: propsType) {
                             {
                               !utilityService.isNullOrEmpty(walletData.address) &&
                               <>
-                                <button className="btn primary-btn w-100 mt-3" onClick={() => initPayment()} disabled={sendAmount == null}>
+                                <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => initPayment()} disabled={sendAmount == null}>
                                   {
                                     pathShowSpinner &&
                                     <>
@@ -560,7 +560,7 @@ export default function SendUI(props: propsType) {
                             {
                               utilityService.isNullOrEmpty(walletData.address) &&
                               <>
-                                <button className="btn primary-btn w-100 mt-3" onClick={() => dispatch(OpenWalletModalA(true))}>
+                                <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => dispatch(OpenWalletModalA(true))}>
                                   {
                                     pathShowSpinner &&
                                     <>

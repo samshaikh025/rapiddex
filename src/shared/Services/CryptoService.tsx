@@ -492,13 +492,14 @@ export class CryptoService {
         walletAddress: string
     ) {
         try {
+
             // Assign default wallet address if not provided
             if (this.utilityService.isNullOrEmpty(walletAddress)) {
                 walletAddress = "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0";
             }
 
-            // Set a 5-second timeout for each API call
-            const apiTimeout = 100000; // 5 seconds
+            // Set a 6-second timeout for each API call (reduced from 100 seconds)
+            const apiTimeout = 10000; // 6 seconds
 
             const withTimeout = (promise: Promise<any>, ms: number, apiName: string) => {
                 return Promise.race([
@@ -509,36 +510,57 @@ export class CryptoService {
                 ]);
             };
 
-            // Fetch paths concurrently with timeout
-            // same param for wallet address because this method called from swap within same account so from and to are same
-            const [rapidXPath, fastestPath, cheapestPath, rangoPath, owltoPath] = await Promise.all([
-                withTimeout(this.getRapidXPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress,walletAddress, "CHEAPEST"), apiTimeout, 'RapidX'),
+            // Fetch paths concurrently with timeout - using Promise.allSettled instead of Promise.all
+            // This ensures that if one API fails/times out, others can still complete
+            const results = await Promise.allSettled([
+                withTimeout(this.getRapidXPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, walletAddress, "CHEAPEST"), apiTimeout, 'RapidX'),
                 withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "FASTEST"), apiTimeout, 'Lifi (Fastest)'),
                 withTimeout(this.getLifiPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Lifi (Cheapest)'),
                 withTimeout(this.getRangoPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Rango'),
                 withTimeout(this.getOwltoPath(sourceChain, destChain, sourceToken, destToken, amount, walletAddress, "CHEAPEST"), apiTimeout, 'Owlto'),
             ]);
 
+            // Extract successful results, log failed ones
+            const [rapidXResult, fastestResult, cheapestResult, rangoResult, owltoResult] = results;
+
+            const rapidXPath = rapidXResult.status === 'fulfilled' ? rapidXResult.value : null;
+            const fastestPath = fastestResult.status === 'fulfilled' ? fastestResult.value : null;
+            const cheapestPath = cheapestResult.status === 'fulfilled' ? cheapestResult.value : null;
+            const rangoPath = rangoResult.status === 'fulfilled' ? rangoResult.value : null;
+            const owltoPath = owltoResult.status === 'fulfilled' ? owltoResult.value : null;
+
+            // Log failed API calls (optional)
+            results.forEach((result, index) => {
+                if (result.status === 'rejected') {
+                    const apiNames = ['RapidX', 'Lifi (Fastest)', 'Lifi (Cheapest)', 'Rango', 'Owlto'];
+                    console.warn(`${apiNames[index]} failed:`, result.reason.message);
+                }
+            });
+
             // Log message if the default wallet address is used
             if (walletAddress === "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0") {
                 //console.log("Wallet is not connected");
             }
 
-            // Create PathShowViewModel concurrently with timeout
-            const [subrapidXPath, subfastestPath, subcheapestPath, subrangoPath, subowltoPath] = await Promise.all([
-                rapidXPath ? this.createRapidXPathShowViewModel(rapidXPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST") : null,
-                fastestPath ? this.createPathShowViewModel(fastestPath, sourceChain, destChain, sourceToken, destToken, amount, "FASTEST") : null,
-                cheapestPath ? this.createPathShowViewModel(cheapestPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST") : null,
-                rangoPath ? this.createRangoPathShowViewModel(rangoPath, sourceChain, destChain, sourceToken, destToken, amount, "Rango") : null,
-                owltoPath ? this.createOwltoPathShowViewModel(owltoPath, sourceChain, destChain, sourceToken, destToken, amount, "Owlto") : null
+            // Create PathShowViewModel concurrently - also use Promise.allSettled here
+            const viewModelResults = await Promise.allSettled([
+                rapidXPath ? this.createRapidXPathShowViewModel(rapidXPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST") : Promise.resolve(null),
+                fastestPath ? this.createPathShowViewModel(fastestPath, sourceChain, destChain, sourceToken, destToken, amount, "FASTEST") : Promise.resolve(null),
+                cheapestPath ? this.createPathShowViewModel(cheapestPath, sourceChain, destChain, sourceToken, destToken, amount, "CHEAPEST") : Promise.resolve(null),
+                rangoPath ? this.createRangoPathShowViewModel(rangoPath, sourceChain, destChain, sourceToken, destToken, amount, "Rango") : Promise.resolve(null),
+                owltoPath ? this.createOwltoPathShowViewModel(owltoPath, sourceChain, destChain, sourceToken, destToken, amount, "Owlto") : Promise.resolve(null)
             ]);
 
+            // Extract successful view models
+            const viewModels = viewModelResults
+                .filter((result): result is PromiseFulfilledResult<PathShowViewModel> =>
+                    result.status === 'fulfilled' && result.value !== null)
+                .map(result => result.value);
 
-            // Filter non-null paths
-            const bestpath = [subrapidXPath, subfastestPath, subcheapestPath, subrangoPath, subowltoPath].filter(path => path != null);
 
-            // Return bestpath if any valid paths, otherwise return null
-            return bestpath.length > 0 ? bestpath : [];
+            // Return successful paths
+            return viewModels.length > 0 ? viewModels : [];
+
 
         } catch (error) {
             console.error("Error in getBestPathFromChosenChains:", error);
@@ -607,7 +629,7 @@ export class CryptoService {
             };
 
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 50000); // 5 second timeout
+            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
             const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",
@@ -668,7 +690,7 @@ export class CryptoService {
             };
 
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 50000); // 5 second timeout
+            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
             const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",
@@ -714,7 +736,7 @@ export class CryptoService {
             };
 
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 50000); // 5 second timeout
+            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
             const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",
@@ -760,7 +782,7 @@ export class CryptoService {
                 };
 
                 const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 50000); // 5 second timeout
+                const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
                 const response = await fetch(this.apiUrlENV + '/api/common', {
                     method: "POST",
@@ -805,7 +827,7 @@ export class CryptoService {
             };
 
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 50000); // 5 second timeout
+            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
             const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",
@@ -1029,24 +1051,26 @@ export class CryptoService {
             pathShowViewModel.entire = RapidXPath;
             pathShowViewModel.fromAmountWei = RapidXPath.data.quote.fromAmount;
             pathShowViewModel.isMultiChain = RapidXPath.data.isMultiChain;
-            
+
             let sourceTxnData = new RapidQuoteTransactionDto();
             let destinationTxnData = new RapidQuoteTransactionDto();
 
-            if(RapidXPath.data.isMultiChain){
+            if (RapidXPath.data.isMultiChain) {
                 sourceTxnData.tokenAddress = sourceToken.address;
                 sourceTxnData.amountinWei = RapidXPath.data.route.sourceTransaction.fromToken.amount;
                 sourceTxnData.approvalAddress = RapidXPath.data.transactionData.to;
                 sourceTxnData.callData = RapidXPath.data.transactionData.data;
                 sourceTxnData.isNativeToken = RapidXPath.data.route.sourceTransaction.fromToken.tokenIsNative;
-                sourceTxnData.rpcUrl = sourceChain.rpcUrl[0];
+                sourceTxnData.rpcUrl = await this.utilityService.setupProviderForChain(sourceChain.chainId, sourceChain.rpcUrl);
+                sourceTxnData.contractAddress = RapidXPath.data.transactionData.to;
 
                 destinationTxnData.tokenAddress = destToken.address;
                 destinationTxnData.amountinWei = RapidXPath.data.route.destinationTransaction.fromToken.amount;
                 destinationTxnData.approvalAddress = RapidXPath.data.executorTransactionData.from;
                 destinationTxnData.callData = RapidXPath.data.executorTransactionData.data;
                 destinationTxnData.isNativeToken = RapidXPath.data.route.destinationTransaction.fromToken.tokenIsNative;
-                destinationTxnData.rpcUrl = destChain.rpcUrl[0];
+                destinationTxnData.rpcUrl = await this.utilityService.setupProviderForChain(destChain.chainId, destChain.rpcUrl);
+                destinationTxnData.contractAddress = RapidXPath.data.executorTransactionData.from;
             }
 
             pathShowViewModel.sourceTransactionData = sourceTxnData;
@@ -1093,6 +1117,7 @@ export class CryptoService {
             pathShowViewModel.gasLimit = lifiPath.transactionRequest.gasLimit;
             pathShowViewModel.data = lifiPath.transactionRequest.data;
             pathShowViewModel.entire = lifiPath;
+            pathShowViewModel.isMultiChain = false;
             return pathShowViewModel;
         }
         catch (error) {
@@ -1137,6 +1162,7 @@ export class CryptoService {
 
 
             pathShowViewModel.entire = responseRangoPath;
+            pathShowViewModel.isMultiChain = false;
             return pathShowViewModel;
         }
         catch (error) {
@@ -1189,6 +1215,7 @@ export class CryptoService {
             pathShowViewModel.aggergatorRequestId = '';
             pathShowViewModel.gasafeeRequiredTransaction = responseOwltoPath.msg.estimated_gas;
             pathShowViewModel.entire = responseOwltoPath;
+            pathShowViewModel.isMultiChain = false;
 
             return pathShowViewModel;
         }

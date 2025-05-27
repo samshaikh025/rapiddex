@@ -76,6 +76,7 @@ export class RapidQuoteTransactionDto {
   callData: string;
   rpcUrl: string;
   tokenAddress: string;
+  contractAddress: string;
 }
 
 export class ResponseMobulaPricing {
@@ -254,12 +255,12 @@ export class UpdateTransactionRequestoDto {
   transactionSubStatus: number = 0;
 }
 
-export class GetSignPayload  {
+export class GetSignPayload {
   txnHash: string;
   rpcUrl: string;
 }
 
-export class SignatureResponseRapid{
+export class SignatureResponseRapid {
   txnHash: string;
   signValid: boolean;
   validators: ValidatorSign[] = [];
@@ -267,12 +268,12 @@ export class SignatureResponseRapid{
   validSignatureCount: number
 }
 
-export class ValidatorSign{
+export class ValidatorSign {
   name: string;
   data: SignatureResponseAws;
 }
 
-export class SignatureResponseAws{
+export class SignatureResponseAws {
   txnHash: string;
   sign: string = '';
   message: string;

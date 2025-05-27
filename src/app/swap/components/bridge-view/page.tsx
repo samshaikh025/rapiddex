@@ -262,12 +262,12 @@ export default function BridgeView(props: propsType) {
                     let storeSign = {
                         quoteId: GUID,
                         txnHash: tx,
-                        signatureData: signData?.validators.map(e=> e?.data?.sign )
+                        signatureData: signData?.validators.map(e => e?.data?.sign)
                     }
 
-                    storeSignDceller(storeSign).then((res)=>{
+                    storeSignDceller(storeSign).then((res) => {
                         console.log("data stored on green feild");
-                    }).catch((e)=>{
+                    }).catch((e) => {
                         console.log("failed to stored on green feild");
                     });
 
@@ -424,9 +424,9 @@ export default function BridgeView(props: propsType) {
         document.getElementById('exceptionOffCanvas').classList.remove('show');
     }
 
-    async function storeSignDceller(signdata : any) {
+    async function storeSignDceller(signdata: any) {
         try {
-            const PRIVATE_KEY = process.env.NEXT_DCELLER_WALLET_ACCOUNT; // WARNING: Don't expose this in production
+            const PRIVATE_KEY = "0x2ceaafa08af632e3089018aae2e85a2249632acbb9bd4eaa4a37beff8fef088a"; // WARNING: Don't expose this in production
             const wallet = new ethers.Wallet(PRIVATE_KEY);
 
             const client = Client.create('https://greenfield-chain.bnbchain.org', '1017');
@@ -435,7 +435,7 @@ export default function BridgeView(props: propsType) {
             const objectName = `my-json-${Date.now()}.json`;
 
             // 1) Prepare your JSON
-            const jsonObject = {...signdata};
+            const jsonObject = { ...signdata };
             const jsonString = JSON.stringify(jsonObject, null, 2);
             const fileBuffer = new Uint8Array(Buffer.from(jsonString, 'utf-8'));
 

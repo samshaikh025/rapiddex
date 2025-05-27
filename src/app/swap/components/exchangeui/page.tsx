@@ -101,7 +101,7 @@ export default function Exchangeui(props: propsType) {
                 if (props.sourceTokenAmount > 0 && Number(amount) > 0) {
                     let eq = (amount * props.sourceTokenAmount);
                     setequAmountUSD(Number(eq.toFixed(2)));
-                    setIsShowPathComponent(true);
+                    //setIsShowPathComponent(true);
                     //shwo validation message if balance is less than 1 USD
 
                     if (eq < 0.95) {

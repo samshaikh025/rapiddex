@@ -41,10 +41,7 @@ export default function Pathshow(props: PropsType) {
   function fetchData() {
 
     if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
-      props.isPathLoadingParent(true);
-      setPathShowSpinner(true);
-      setIsShowPathShowTimer(false);
-
+      
       if (pathReloadIntervalId.current != null) {
         clearInterval(pathReloadIntervalId.current);
         pathReloadIntervalId.current = null;
@@ -55,6 +52,9 @@ export default function Pathshow(props: PropsType) {
         if ((props.amountInUsd < 0.95)) {
           throw new Error();
         }
+        props.isPathLoadingParent(true);
+        setPathShowSpinner(true);
+        setIsShowPathShowTimer(false);
         getAllPathForAmount(props.Amountpathshow);
       } catch (error) {
         props.sendInitData([]);
@@ -107,31 +107,31 @@ export default function Pathshow(props: PropsType) {
           item.pathId = index + 1;
           item.fromAmountUsd = String(props.amountInUsd);
         });
+        setPathShowSpinner(false);
+        props.isPathLoadingParent(false);
+        //call time out for realod path
+        invokeTimeOutForReloadPath();
         props.sendInitData(result);
         setCurrentSelectedPath(result[0]);
         setAvailablePaths(result);
-        setPathShowSpinner(false);
-        props.isPathLoadingParent(false);
-        setIsShowPathShowTimer(true);
-        //call time out for realod path
-        invokeTimeOutForReloadPath();
       } else if (result && result.length == 0 && routeAmount == pathShowInvokedForAmount.current) {
-        props.sendInitData([]);
-        //setCurrentSelectedPath(new PathShowViewModel());
-        //setAvailablePaths([]);
         setPathShowSpinner(false);
         props.isPathLoadingParent(false);
-        //setIsShowPathShowTimer(true);
+        props.sendInitData([]);
+        setIsShowPathShowTimer(false);
+        setCurrentSelectedPath(new PathShowViewModel());
+        setAvailablePaths([]);
       }
     }).catch((error) => {
-      props.sendInitData([]);
-      setPathShowSpinner(false);
-      bridgeMessage.message = "No path found";
       props.isPathLoadingParent(false);
+      setPathShowSpinner(false);
+      props.sendInitData([]);
+      bridgeMessage.message = "No path found";
     })
   }
 
   function invokeTimeOutForReloadPath() {
+    setIsShowPathShowTimer(true);
     let reloadPathShow = setTimeout(() => {
       fetchData();
     }, 60000);
@@ -226,7 +226,7 @@ export default function Pathshow(props: PropsType) {
                 </div>
               </>
             }
-            {pathShowSpinner == false && (
+            {pathShowSpinner == false && 
               <>
                 <div className="d-flex flex-column gap-3 add-scroll-bar mt-4">
                   {
@@ -284,7 +284,7 @@ export default function Pathshow(props: PropsType) {
                     ))}
                 </div>
               </>
-            )}
+            }
           </div>
         </div>
       </div>

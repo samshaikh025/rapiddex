@@ -48,10 +48,10 @@
 }
 
 .header .user-profile img {
-    width: 50px;
+    /* width: 50px;
     height: 50px;
     border-radius: 100px;
-    border: 1px solid var(--primary-color);
+    border: 1px solid var(--primary-color); */
     margin-right: 12px
 }
 
@@ -83,7 +83,7 @@
 }
 
 .theme-mode .checkbox-label {
-    background-color: #5244d2;
+    background-color: var(--bg-color-btn-primary);
     width: 50px;
     height: 26px;
     border-radius: 50px;
@@ -140,6 +140,7 @@
     border: 2px solid var(--large-coin-icon-color)
 }
 
+.header .user-profile .coin-wrapper .coin-small,
 .coin-wrapper .coin-small {
     --small-coin-icon-color: #C8D8FA;
     width: 19px;
@@ -200,7 +201,12 @@
 }
 
 .search-bar input {
-    padding-left: 36px
+    padding-left: 36px;
+    border-color: var(--border-color-comman);
+}
+
+.search-bar input:focus {
+    outline-color: var(--border-color-comman);
 }
 
 .coin-list-wrapper {
@@ -209,7 +215,7 @@
 }
 
 .coin-list-wrapper .inner-card:hover {
-    background: var(--primary-color-8);
+    background: #5244d214 !important;
     cursor: pointer
 }
 
@@ -255,7 +261,7 @@
 }
 
 .active-card {
-    border: 2px solid var(--active-card)
+    border: 2px solid var(--bg-color-btn-primary) !important;
 }
 
 .selcet-coin.coin-wrapper {
@@ -360,7 +366,7 @@
 
 [data-theme="dark"] {
     --body-bg: radial-gradient(123.22% 129.67% at 100.89% -5.6%, #05040B 0%, #060316 100%);
-    --primary-color: #7A7493;
+    --primary-color: #2563eb;
     /* --primary-iconcolor:#7A7493; */
     --primary-color-8: #322C4B;
     --primary-icon-color: #2F2B43;
@@ -368,13 +374,13 @@
     /* --black-color: #ffffff; */
     --text-color-white: #ffffff;
     --border-color: #ffffff1f;
-    --border-color-40: #ffffff1f;
+    --border-color-40: #d5d5ee66;
     --outer-card-bg: #EDEDF1;
     --black-color: #000000;
     /* --outer-card-bg: linear-gradient(210.96deg, rgba(32, 20, 96, 0.61) 0.01%, rgba(49, 30, 95, 0.7) 42.05%, rgba(57, 33, 113, 0.1) 104.81%); */
     --inner-card-bg: #FFFFFF;
     --header-card: #0f0d1d;
-    --box-shadow: 0px 20px 69px 0px #080711D8;
+    /* --box-shadow: 0px 20px 69px 0px #080711D8; */
     --inner-card-box-shadow: 50px 38px 102.37px 0px #78769424;
     --offcanvas: #0f0d1d;
     --active-card: #fff;
@@ -382,6 +388,7 @@
     --black-color-2: #151231;
     --border-color-2: #fff;
     --bg-color-btn-primary: #2563EB;
+    --box-shadow: 0px 20px 69px 0px #878787d8
 }
 
 
@@ -389,7 +396,7 @@
 
 [data-theme="light"] {
     --body-bg: radial-gradient(123.22% 129.67% at 100.89% -5.6%, #fbfbfd 0%, #f2f2ff 100%);
-    --primary-color: #5244d2;
+    --primary-color: #2563eb;
     --primary-color-8: #5244d214;
     --primary-icon-color: #7851bc;
     --white-color: #ffffff;
@@ -398,7 +405,7 @@
     --bg-color-btn-primary: #2563EB;
     --border-color: #d5d5ee;
     --border-color-40: #d5d5ee66;
-    --outer-card-bg: linear-gradient(210.96deg, rgba(245, 242, 255, 0.8) 0.01%, #f5f1ff 42.05%, rgba(247, 243, 255, 0.06) 104.81%);
+    --outer-card-bg: #EDEDF1;
     --inner-card-bg: linear-gradient(241.25deg, rgba(255, 255, 255, 0.45) 4.4%, rgba(255, 255, 255, 0.65) 61.77%, rgba(255, 255, 255, 0.54) 119.94%);
     --header-card: linear-gradient(90deg, #f3f3ff 29.59%, #f2f2ff 100%);
     --box-shadow: 0px 20px 69px 0px #dfdcffd8;
@@ -439,15 +446,15 @@
 }
 
 .step.step-active .title {
-    color: var(--primary-icon-color)
+    color: var(--bg-color-btn-primary) !important
 }
 
 .step.step-active .caption {
-    color: var(--primary-icon-color);
+    color: var(--bg-color-btn-primary) !important;
 }
 
 .step.step-active .circle {
-    background-color: var(--primary-icon-color);
+    background-color: var(--bg-color-btn-primary) !important;
     color: var(--white-color);
 }
 
@@ -621,7 +628,7 @@ button.swap-btn {
     stroke-dashoffset: 0px;
     stroke-linecap: round;
     stroke-width: 4px;
-    stroke: #5244d2;
+    stroke: var(--bg-color-btn-primary) !important;
     /* Main animated color */
     fill: none;
     animation: reloadPath 60s linear infinite forwards;

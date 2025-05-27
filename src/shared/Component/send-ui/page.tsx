@@ -393,7 +393,7 @@ export default function SendUI(props: propsType) {
     <>
       <div className="exchange-wrapper">
         <div className="container">
-          <div className="row justify-content-center">
+          <div className="row justify-content-center gap-md-0 gap-3">
             <div className="col-lg-5">
               <div className="card shadow-sm">
                 <div className="card-body p-24">

@@ -91,9 +91,26 @@ export default function Exchangeui(props: propsType) {
 
     // Type assertion to tuple
     const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
 
-    async function updateAmount(amount) {
+        // Clear the previous timeout
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        // Set a new timeout
+        typingTimeoutRef.current = setTimeout(() => {
+            console.log("User stopped typing. Final input value:", value);
+            updateAmount(value);
+            // Call your custom function here
+            // e.g., fetchSuggestions(value);
+        }, 1200); // Wait 500ms after user stops typing
+    };
+
+    function updateAmount(amount) {
         try {
             if (!utilityService.isNullOrEmpty(amount) && !isNaN(amount)) {
                 setSendAmount(Number(amount));
@@ -106,7 +123,7 @@ export default function Exchangeui(props: propsType) {
 
                     if (eq < 0.95) {
                         setShowMinOneUSDAmountErr(true);
-                        setIsShowPathComponent(false);
+                        //setIsShowPathComponent(false);
                     }
                     else {
                         setShowMinOneUSDAmountErr(false);
@@ -118,7 +135,7 @@ export default function Exchangeui(props: propsType) {
                 setSendAmount(null);
                 setequAmountUSD(null);
                 setShowMinOneUSDAmountErr(false);
-                setIsShowPathComponent(false);
+                //setIsShowPathComponent(false);
             }
             setTotalAvailablePath(0);
             setSelectedPath(new PathShowViewModel());
@@ -449,9 +466,9 @@ export default function Exchangeui(props: propsType) {
                                     <div className="card-title">
                                         Exchange
                                     </div>
-                                    <div className="card-action-wrapper">
+                                    {/* <div className="card-action-wrapper">
                                         <i className="fas fa-cog cursor-pointer"></i>
-                                    </div>
+                                    </div> */}
                                 </div>
                                 {
                                     showSubBridgeView &&
@@ -526,8 +543,8 @@ export default function Exchangeui(props: propsType) {
                                                 className="coin-small" alt="coin" />}
                                         </div>
                                         <div className="d-flex flex-column">
-                                            <input type="text" ref={amountTextBoxRef} className="transparent-input" onKeyUp={(e) =>
-                                                updateAmount(e.currentTarget.value)} placeholder="0" />
+                                            <input type="text" ref={amountTextBoxRef} className="transparent-input" onChange={(e) =>
+                                                handleChange(e)} placeholder="0" />
                                             {(equAmountUSD != null && equAmountUSD > 0) && <label className="coin-sub-name">$ {equAmountUSD}</label>}
                                             {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
                                         </div>
@@ -648,8 +665,8 @@ export default function Exchangeui(props: propsType) {
                                                                         <span className="d-block fw-600"> {selectedPath.toAmount} {selectedPath.toToken} </span>
                                                                         <span className="d-block coin-sub-name" >$ {selectedPath.toAmountUsd}</span>
                                                                     </label>
-                                                                    <p className="faster fw-600 px-2 py-1">
-                                                                        Faster
+                                                                    <p className="faster fw-600 px-2 py-1 text-capitalize">
+                                                                        { selectedPath?.aggregatorOrderType }
                                                                     </p>
                                                                 </label>
                                                             </div>
@@ -669,7 +686,7 @@ export default function Exchangeui(props: propsType) {
                                                                 !utilityService.isNullOrEmpty(currentTheme) &&
                                                                 <>
                                                                     <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                                                                        <img src={apiUrlENV + '/assets/images/provider-logo/' + selectedPath.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                                                                        <img src={apiUrlENV + '/assets/images/provider-logo/' + selectedPath.aggregator + '.svg'} alt="" />
                                                                     </div>
                                                                 </>
                                                             }
@@ -707,7 +724,7 @@ export default function Exchangeui(props: propsType) {
                         </div>
                     </div>
 
-                    {(isShowPathComponent && sendAmount > 0) &&
+                    {(isShowPathComponent) &&
                         <Pathshow Amountpathshow={sendAmount}
                             destChain={props.destChain}
                             sourceChain={props.sourceChain}

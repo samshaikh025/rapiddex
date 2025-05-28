@@ -8,7 +8,7 @@ const defaultLanguage = 'en';
 const preDefineTokensData = [];
 const defaultTransactionData = new TransactionRequestoDto();
 const defaultWalletState = false;
-const defaultTheme = 'light';
+const defaultTheme = 'dark';
 
 export function OpenWalletModalStatus(state = modalInitialState, action: any) {
     switch (action.type) {

@@ -38,42 +38,46 @@ export default function Pathshow(props: PropsType) {
   let currentTheme = useSelector((state: any) => state.SelectedTheme);
   let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_ENV == 'production' ? process.env.NEXT_PUBLIC_NODE_API_URL_PRODUCTION : process.env.NEXT_PUBLIC_NODE_API_URL;
 
-  function fetchData() {
-
+  function fetchData(sendAmt: number) {
+    if (pathReloadIntervalId.current != null) {
+      clearInterval(pathReloadIntervalId.current);
+      pathReloadIntervalId.current = null;
+    }
     if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
-      
-      if (pathReloadIntervalId.current != null) {
-        clearInterval(pathReloadIntervalId.current);
-        pathReloadIntervalId.current = null;
-      }
       try {
         walletAddress = !utilityService.isNullOrEmpty(walletData.address) ? walletData.address : '';
         //pathShowInvokedForAmount.current = props.Amountpathshow;
         if ((props.amountInUsd < 0.95)) {
-          throw new Error();
+          props.sendInitData([]);
+          setCurrentSelectedPath(new PathShowViewModel());
+          setAvailablePaths([]);
         }
         props.isPathLoadingParent(true);
         setPathShowSpinner(true);
         setIsShowPathShowTimer(false);
-        getAllPathForAmount(props.Amountpathshow);
+        getAllPathForAmount(sendAmt);
       } catch (error) {
         props.sendInitData([]);
         setPathShowSpinner(false);
         props.isPathLoadingParent(false);
         console.error('Error fetching path data:', error);
       }
+    }else{
+      props.sendInitData([]);
+      setCurrentSelectedPath(new PathShowViewModel());
+      setAvailablePaths([]);
     }
   };
 
   useEffect(() => {
     pathShowInvokedForAmount.current = props.Amountpathshow;
     console.log("Props changed : ", props.Amountpathshow);
-    fetchData();
+    fetchData(props.Amountpathshow);
   }, [props.Amountpathshow]);
 
   useEffect(() => {
     if (walletData.isReconnected == false) {
-      fetchData();
+      fetchData(props.Amountpathshow);
     }
   }, [walletData.isReconnected]);
 
@@ -87,8 +91,8 @@ export default function Pathshow(props: PropsType) {
   function getAllPathForAmount(amt: number) {
 
     let routeAmount = amt;
-    console.log("Props Amount : ", pathShowInvokedForAmount.current);
-    console.log("Temp Props : ", routeAmount);
+    //console.log("Props Amount : ", pathShowInvokedForAmount.current);
+    //console.log("Temp Props : ", routeAmount);
 
     cryptoService.getBestPathFromChosenChains(
       props.sourceChain,
@@ -110,7 +114,7 @@ export default function Pathshow(props: PropsType) {
         setPathShowSpinner(false);
         props.isPathLoadingParent(false);
         //call time out for realod path
-        invokeTimeOutForReloadPath();
+        invokeTimeOutForReloadPath(routeAmount);
         props.sendInitData(result);
         setCurrentSelectedPath(result[0]);
         setAvailablePaths(result);
@@ -130,10 +134,10 @@ export default function Pathshow(props: PropsType) {
     })
   }
 
-  function invokeTimeOutForReloadPath() {
+  function invokeTimeOutForReloadPath(sendAmt) {
     setIsShowPathShowTimer(true);
     let reloadPathShow = setTimeout(() => {
-      fetchData();
+      fetchData(sendAmt);
     }, 60000);
     pathReloadIntervalId.current = (reloadPathShow as unknown as number);
   }
@@ -249,8 +253,8 @@ export default function Pathshow(props: PropsType) {
                               </div>
                             </div>
                             <div className="d-block align-items-center gap-2 flex-wrap">
-                              <label className="best-return fw-600 px-2 py-1">
-                                Best Return
+                              <label className="best-return fw-600 px-2 py-1 text-capitalize">
+                                { pathshow?.aggregatorOrderType }
                               </label>
                               {/* <label className="faster fw-600 px-2 py-1">
                                   {pathshow.aggregatorOrderType}
@@ -274,7 +278,7 @@ export default function Pathshow(props: PropsType) {
                             !utilityService.isNullOrEmpty(currentTheme) &&
                             <>
                               <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                                <img src={apiUrlENV + '/assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                                <img src={apiUrlENV + '/assets/images/provider-logo/' + pathshow.aggregator + '.svg'} alt="" />
                               </div>
                             </>
                           }
@@ -311,8 +315,8 @@ export default function Pathshow(props: PropsType) {
                           <span className="d-block fw-600"> {pathshow.toAmount} {pathshow.toToken} </span>
                           <span className="d-block coin-sub-name" >$ {pathshow.toAmountUsd}</span>
                         </label>
-                        <p className="faster fw-600 px-2 py-1">
-                          Faster
+                        <p className="faster fw-600 px-2 py-1 text-capitalize">
+                          { pathshow?.aggregatorOrderType }
                         </p>
                       </label>
                     </div>
@@ -329,7 +333,7 @@ export default function Pathshow(props: PropsType) {
                       </label>
                     </div>
                     <div className='d-flex align-item-center gap-2 aggrigator-box'>
-                      <img src={apiUrlENV + '/assets/images/provider-logo/' + pathshow.aggregator + '_' + currentTheme + '.svg'} alt="" />
+                      <img src={apiUrlENV + '/assets/images/provider-logo/' + pathshow.aggregator + '.svg'} alt="" />
                     </div>
                   </div>
                 </div>

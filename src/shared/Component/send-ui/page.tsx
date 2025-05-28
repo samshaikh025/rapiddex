@@ -403,19 +403,21 @@ export default function SendUI(props: propsType) {
                     </div>
                     <span className="card-title p-1">Pay</span>
                   </div>
-                  <div className="d-flex justify-content-between mb-2">
-                    <span>Payment To RapidY Merch</span>
-                    <span>$ {sendAmountUSDC}</span>
-                  </div>
-                  <hr />
-                  <div className="d-flex justify-content-between mb-3">
-                    <span>Subtotal</span>
-                    <span>$ {sendAmountUSDC}</span>
-                  </div>
+                  <div className="inner-card w-100 py-2 px-3 mt-3">
+                    <div className="d-flex justify-content-between my-2">
+                      <span>Payment To RapidY Merch</span>
+                      <span>$ {sendAmountUSDC}</span>
+                    </div>
+                    <hr />
+                    <div className="d-flex justify-content-between mb-3">
+                      <span>Subtotal</span>
+                      <span>$ {sendAmountUSDC}</span>
+                    </div>
 
-                  <div className="d-flex justify-content-between mb-2 card-title">
-                    <h5>Total due</h5>
-                    <h5>$ {sendAmountUSDC}</h5>
+                    <div className="d-flex justify-content-between mb-2 card-title">
+                      <h5>Total due</h5>
+                      <h5>$ {sendAmountUSDC}</h5>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -470,7 +472,7 @@ export default function SendUI(props: propsType) {
                               <div className="inner-card w-100 py-2 px-3" onClick={() => openTokenUi()}>
                                 <label className="mb-2 fw-600">Coin</label>
                                 <div className="d-flex align-items-center gap-3">
-                                  <div className="selcet-coin coin-wrapper">
+                                  <div className="selcet-coin coin-wrapper coin-to coin">
 
                                     {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin"></div>}
 
@@ -488,7 +490,7 @@ export default function SendUI(props: propsType) {
                             <div className="inner-card w-100 py-2 px-3 mt-3">
                               <label className="mb-2 fw-600">Send</label>
                               <div className="d-flex align-items-center gap-3 pb-2">
-                                <div className="position-relative coin-wrapper">
+                                <div className="position-relative coin-wrapper ">
                                   {utilityService.isNullOrEmpty(sourceChain.logoURI) && <div className="coin"></div>}
                                   {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin-small"></div>}
 

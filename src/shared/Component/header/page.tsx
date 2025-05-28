@@ -34,6 +34,7 @@ export default function Header() {
   const selectedLang = useSelector((state: any) => state.SelectedLanguage);
   let currentTheme = useSelector((state: any) => state.SelectedTheme);
   let [showMenu, setShowMenu] = useState<boolean>(true);
+  let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_ENV == 'production' ? process.env.NEXT_PUBLIC_NODE_API_URL_PRODUCTION : process.env.NEXT_PUBLIC_NODE_API_URL;
 
   const searchParams = useSearchParams();
 
@@ -84,9 +85,7 @@ export default function Header() {
     showMenuItem();
     //getWalletAddressFromStorageAndSet();
     let theme = sharedService.getData(Keys.THEME);
-    if (theme && theme == 'dark') {
-      toggleTheme(true);
-    }
+    theme && theme == 'light' ? toggleTheme(false) : null;
     let lang = sharedService.getData(Keys.SELECTED_LANG);
     if (lang) {
       dispatch(SetSelectedLanguageA(lang));
@@ -135,9 +134,8 @@ export default function Header() {
         <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
           <div className="site-logo">
             <a href="index.html">
-              <img src={headerLogoDesktop.src} className="desktop-logo light-logo" alt="site-logo" />
-              <img src={headerLogoDesktopDark.src} className="desktop-logo dark-logo" alt="site-logo" />
-              <img src={headerLogoMobile.src} className="mobile-logo" alt="site-logo" />
+            <img src={apiUrlENV + '/assets/images/rapidx/logo_' + currentTheme + '.svg'} className="desktop-logo"  alt="" />
+            <img src={apiUrlENV + '/assets/images/rapidx/logo_icon_'+ currentTheme +'.svg'} className="mobile-logo" alt="site-logo" />
             </a>
           </div>
           {

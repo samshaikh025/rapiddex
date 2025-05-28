@@ -616,8 +616,8 @@ export class CryptoService {
                 order
             );
 
-            console.log("aaaaaaaaa");
-            console.log(requestRapidXPath);
+            // console.log("aaaaaaaaa");
+            // console.log(requestRapidXPath);
             //const params = this.createRapidXUrlParams(requestRapidXPath);
             const url = 'rapidquote';
 

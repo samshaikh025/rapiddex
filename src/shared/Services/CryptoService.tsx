@@ -25,7 +25,7 @@ export class CryptoService {
     }
     utilityService = new UtilityService();
 
-    apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_ENV == 'production' ? process.env.NEXT_PUBLIC_NODE_API_URL_PRODUCTION : process.env.NEXT_PUBLIC_NODE_API_URL;
+    apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
     async GetAvailableTokens(selectedChain: Chains) {
         this.SetLifiCoins = [];
         //this.SetDlnCoins = [];

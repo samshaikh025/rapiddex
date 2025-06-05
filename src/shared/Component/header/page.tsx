@@ -34,7 +34,7 @@ export default function Header() {
   const selectedLang = useSelector((state: any) => state.SelectedLanguage);
   let currentTheme = useSelector((state: any) => state.SelectedTheme);
   let [showMenu, setShowMenu] = useState<boolean>(true);
-  let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_ENV == 'production' ? process.env.NEXT_PUBLIC_NODE_API_URL_PRODUCTION : process.env.NEXT_PUBLIC_NODE_API_URL;
+  let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
 
   const searchParams = useSearchParams();
 
@@ -45,7 +45,7 @@ export default function Header() {
     dispatch(SetSelectedThemeA(mode));
   };
 
-  function showMenuItem(){
+  function showMenuItem() {
     searchParams.has('quoteId') ? setShowMenu(false) : null;
   }
 
@@ -134,8 +134,8 @@ export default function Header() {
         <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
           <div className="site-logo">
             <a href="index.html">
-            <img src={apiUrlENV + '/assets/images/rapidx/logo_' + currentTheme + '.svg'} className="desktop-logo"  alt="" />
-            <img src={apiUrlENV + '/assets/images/rapidx/logo_icon_'+ currentTheme +'.svg'} className="mobile-logo" alt="site-logo" />
+              <img src={apiUrlENV + '/assets/images/rapidx/logo_' + currentTheme + '.svg'} className="desktop-logo" alt="" />
+              <img src={apiUrlENV + '/assets/images/rapidx/logo_icon_' + currentTheme + '.svg'} className="mobile-logo" alt="site-logo" />
             </a>
           </div>
           {
@@ -220,7 +220,7 @@ export default function Header() {
                     <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()}>Diconnect</a></li>
                   </ul>
                 </>
-              } 
+              }
 
             </div>
             {

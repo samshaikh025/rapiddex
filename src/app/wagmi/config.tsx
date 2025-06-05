@@ -4,7 +4,7 @@ import { mainnet, sepolia } from "wagmi/chains";
 import * as definedChains from "wagmi/chains";
 import type { Chain } from "wagmi/chains"; // Import Chain type
 
-export const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+export const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID;
 
 if (!projectId) throw new Error("Project ID is not defined");
 

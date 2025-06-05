@@ -51,7 +51,7 @@ export default function Exchangeui(props: propsType) {
     let activeTransactionData: TransactionRequestoDto = useSelector((state: any) => state.ActiveTransactionData);
     let walletDisconnected: boolean = useSelector((state: any) => state.WalletDisconnected);
     let currentTheme = useSelector((state: any) => state.SelectedTheme);
-    let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_ENV == 'production' ? process.env.NEXT_PUBLIC_NODE_API_URL_PRODUCTION : process.env.NEXT_PUBLIC_NODE_API_URL;
+    let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
 
     const {
         switchChain,
@@ -326,10 +326,10 @@ export default function Exchangeui(props: propsType) {
         let sendAmt = '';
         let sendAmtUsdc = '0';
 
-        if(selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain){
+        if (selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain) {
             sendAmt = selectedPath.fromAmountWei;
             sendAmtUsdc = selectedPath.fromAmountUsd;
-        }else if(selectedPath.aggregator != AggregatorProvider.RAPID_DEX){
+        } else if (selectedPath.aggregator != AggregatorProvider.RAPID_DEX) {
             let wei = parseEther(sendAmount.toString());
             sendAmt = String(wei);
             sendAmtUsdc = String(equAmountUSD);
@@ -368,7 +368,7 @@ export default function Exchangeui(props: propsType) {
         transactoinObj.transactionAggregatorRequestData = selectedPath.data;
         transactoinObj.isMultiChain = selectedPath.isMultiChain;
         transactoinObj.sourceTransactionData = selectedPath.sourceTransactionData;
-        transactoinObj.destinationTransactionData  = selectedPath.destinationTransactionData;
+        transactoinObj.destinationTransactionData = selectedPath.destinationTransactionData;
         transactoinObj.transactionSourceHash = '';
         transactoinObj.transactionSourceStatus = TransactionStatus.ALLOWANCSTATE;
         transactoinObj.transactionSourceSubStatus = 0;
@@ -387,7 +387,7 @@ export default function Exchangeui(props: propsType) {
     async function exchange() {
         //setStartBridging(true);
         if (!utilityService.isNullOrEmpty(walletData.address)) {
-            
+
             let workingRpc = await utilityService.setupProviderForChain(props.sourceChain.chainId, props.sourceChain.rpcUrl);
 
             if (workingRpc != undefined && workingRpc != null) {
@@ -666,7 +666,7 @@ export default function Exchangeui(props: propsType) {
                                                                         <span className="d-block coin-sub-name" >$ {selectedPath.toAmountUsd}</span>
                                                                     </label>
                                                                     <p className="faster fw-600 px-2 py-1 text-capitalize">
-                                                                        { selectedPath?.aggregatorOrderType }
+                                                                        {selectedPath?.aggregatorOrderType}
                                                                     </p>
                                                                 </label>
                                                             </div>

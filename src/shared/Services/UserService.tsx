@@ -2,8 +2,10 @@ import { walletConnect } from "wagmi/connectors";
 import { SwapProvider } from "../Enum/Common.enum";
 import { LoggedParams, OperationResult, WalletConnectData } from "../Models/Common.model";
 
+let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
+
 export class UserService {
-    async AddLog(input: WalletConnectData){
+    async AddLog(input: WalletConnectData) {
         let loggedResult = new OperationResult();
         let param = new LoggedParams();
         param.WalletAddress = input.address;
@@ -14,28 +16,28 @@ export class UserService {
         param.LoggedTime = new Date().toISOString().substring(11, 19);
         //let checkLifiCoins = await this.SharedService.getIndexDbItem(Keys.All_LIFI_COINS);
         let payLoad = {
-            apiType : 'POST',
-            apiUrl : 'User/AddLog',
-            apiData : param,
+            apiType: 'POST',
+            apiUrl: 'User/AddLog',
+            apiData: param,
             apiProvider: SwapProvider.DOTNET
         }
-        try{
-            let apiResult = await fetch('http://localhost:3000/api/common', {
+        try {
+            let apiResult = await fetch(apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payLoad),
-    
+
             });
-            if(apiResult.status == 200){
+            if (apiResult.status == 200) {
                 let data = await apiResult.json();
                 loggedResult = data?.Data;
             }
-        }catch(error){
+        } catch (error) {
             console.log(error);
         }
-        
-        return loggedResult; 
+
+        return loggedResult;
     }
 }

@@ -36,7 +36,7 @@ export default function Pathshow(props: PropsType) {
   const cryptoService = new CryptoService();
   let sharedService = SharedService.getSharedServiceInstance();
   let currentTheme = useSelector((state: any) => state.SelectedTheme);
-  let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_ENV == 'production' ? process.env.NEXT_PUBLIC_NODE_API_URL_PRODUCTION : process.env.NEXT_PUBLIC_NODE_API_URL;
+  let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
 
   function fetchData(sendAmt: number) {
     if (pathReloadIntervalId.current != null) {
@@ -62,7 +62,7 @@ export default function Pathshow(props: PropsType) {
         props.isPathLoadingParent(false);
         console.error('Error fetching path data:', error);
       }
-    }else{
+    } else {
       props.sendInitData([]);
       setCurrentSelectedPath(new PathShowViewModel());
       setAvailablePaths([]);
@@ -102,8 +102,8 @@ export default function Pathshow(props: PropsType) {
       props.Amountpathshow,
       walletAddress
     ).then((result) => {
-      console.log("Result recived for : " ,routeAmount);
-      console.log("current props : " , pathShowInvokedForAmount.current);
+      console.log("Result recived for : ", routeAmount);
+      console.log("current props : ", pathShowInvokedForAmount.current);
       console.log("result len : ", result.length);
       if (result && result.length > 0 && routeAmount == pathShowInvokedForAmount.current) {
         //result = result.slice(0,2);
@@ -230,7 +230,7 @@ export default function Pathshow(props: PropsType) {
                 </div>
               </>
             }
-            {pathShowSpinner == false && 
+            {pathShowSpinner == false &&
               <>
                 <div className="d-flex flex-column gap-3 add-scroll-bar mt-4">
                   {
@@ -254,7 +254,7 @@ export default function Pathshow(props: PropsType) {
                             </div>
                             <div className="d-block align-items-center gap-2 flex-wrap">
                               <label className="best-return fw-600 px-2 py-1 text-capitalize">
-                                { pathshow?.aggregatorOrderType }
+                                {pathshow?.aggregatorOrderType}
                               </label>
                               {/* <label className="faster fw-600 px-2 py-1">
                                   {pathshow.aggregatorOrderType}
@@ -316,7 +316,7 @@ export default function Pathshow(props: PropsType) {
                           <span className="d-block coin-sub-name" >$ {pathshow.toAmountUsd}</span>
                         </label>
                         <p className="faster fw-600 px-2 py-1 text-capitalize">
-                          { pathshow?.aggregatorOrderType }
+                          {pathshow?.aggregatorOrderType}
                         </p>
                       </label>
                     </div>

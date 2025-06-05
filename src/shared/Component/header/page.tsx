@@ -169,7 +169,7 @@ export default function Header() {
               {
                 utilityService.isNullOrEmpty(walletData.address) &&
                 <>
-                  <button className="btn primary-btn border-radius-half" onClick={() => open()}>
+                  <button className="btn primary-btn border-radius-half btn-primary-bgColor" onClick={() => open()}>
                     {utilityService.Translate(selectedLang, 'CONNECT_WALLET')}</button>
                 </>
               }

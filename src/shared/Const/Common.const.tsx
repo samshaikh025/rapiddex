@@ -1,8 +1,5 @@
 let apiQuoteUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_QUOTE_URL;
 
-console.log('aaaaaaaaaaaa');
-console.log(apiQuoteUrlENV);
-
 export const CommonConfig = [
     {
         apiKey: 'd7cf755b-117a-4edd-8be1-49f3a9deec42.60b2f5b9-96cb-4edd-9603-ef988fd359a3',

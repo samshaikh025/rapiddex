@@ -144,9 +144,9 @@ export default function Header() {
               <div className="menu-wrapper d-flex align-items-center">
                 <Link href="/swap" className="active"> Swap </Link>
                 <Link href="/send"> Send </Link>
-                <a href="#">Loans</a>
-                <a href="#">Liquidity</a>
-                <a href="#">Stak</a>
+                <Link href="/loans">Loans</Link>
+                <Link href="/liquidity">Liquidity</Link>
+                <Link href="/stack">Stack</Link>
               </div>
             </>
           }
@@ -223,7 +223,7 @@ export default function Header() {
               }
 
             </div>
-            {
+            {/* {
               showMenu &&
               <>
                 <div className="dropdown">
@@ -247,8 +247,9 @@ export default function Header() {
                     <li className="mobile-menu">
                       <Link href="/send" className="dropdown-item">Send</Link>
                     </li>
-                    <li className="mobile-menu"><a href="#" className="dropdown-item">Liquidity</a></li>
-                    <li className="mobile-menu"><a href="#" className="dropdown-item">Stak</a></li>
+                    <li className="mobile-menu"><a href="/loans" className="dropdown-item">Loans</a></li>
+                    <li className="mobile-menu"><a href="/liquidity" className="dropdown-item">Liquidity</a></li>
+                    <li className="mobile-menu"><a href="/stck" className="dropdown-item">Stak</a></li>
                     <li><a href="#" className="dropdown-item">Action</a></li>
                     <li><a href="#" className="dropdown-item">Another action</a></li>
                     <li><a href="#" className="dropdown-item">Something else here</a></li>
@@ -265,7 +266,7 @@ export default function Header() {
                   </ul>
                 </div>
               </>
-            }
+            } */}
           </div>
         </div>
       </div>

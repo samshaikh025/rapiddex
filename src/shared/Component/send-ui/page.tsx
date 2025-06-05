@@ -406,17 +406,17 @@ export default function SendUI(props: propsType) {
                   <div className="inner-card w-100 py-2 px-3 mt-3">
                     <div className="d-flex justify-content-between my-2">
                       <span>Payment To RapidY Merch</span>
-                      <span>$ {sendAmountUSDC}</span>
+                      <span>{props.transactionRequest.amountIn} {destiationToken?.symbol}</span>
                     </div>
                     <hr />
                     <div className="d-flex justify-content-between mb-3">
                       <span>Subtotal</span>
-                      <span>$ {sendAmountUSDC}</span>
+                      <span>{props.transactionRequest.amountIn} {destiationToken?.symbol}</span>
                     </div>
 
                     <div className="d-flex justify-content-between mb-2 card-title">
                       <h5>Total due</h5>
-                      <h5>$ {sendAmountUSDC}</h5>
+                      <h5>{props.transactionRequest.amountIn} {destiationToken?.symbol}</h5>
                     </div>
                   </div>
                 </div>
@@ -500,7 +500,7 @@ export default function SendUI(props: propsType) {
                                     className="coin-small" alt="coin" />}
                                 </div>
                                 <div className="d-flex flex-column">
-                                  <input type="text" className="transparent-input" value={sendAmount} onChange={() => null} readOnly />
+                                  <input type="text" className="transparent-input" value={sendAmount} onChange={() => null} readOnly /> {destiationToken?.symbol}
                                   {(sendAmountUSDC != null && sendAmountUSDC > 0) && <label className="coin-sub-name">$ {sendAmountUSDC}</label>}
                                   {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
                                 </div>

@@ -499,7 +499,7 @@ export default function Exchangeui(props: propsType) {
                                             <div className="d-flex flex-column">
                                                 <label className="coin-name d-block fw-600">{props.sourceChain.chainId > 0 ?
                                                     props.sourceChain.chainName : 'Chain'}</label>
-                                                <label className="coin-sub-name">{props.sourceToken.name != '' ? props.sourceToken.name :
+                                                <label className="coin-sub-name">{props.sourceToken.symbol != '' ? props.sourceToken.symbol :
                                                     'Token'}</label>
                                             </div>
                                         </div>
@@ -524,7 +524,7 @@ export default function Exchangeui(props: propsType) {
                                             <div className="d-flex flex-column ">
                                                 <label className="coin-name d-block fw-600">{props.destChain.chainId > 0 ?
                                                     props.destChain.chainName : 'Chain'}</label>
-                                                <label className="coin-sub-name">{props.destToken.name != '' ? props.destToken.name :
+                                                <label className="coin-sub-name">{props.destToken.symbol != '' ? props.destToken.symbol :
                                                     'Token'}</label>
                                             </div>
                                         </div>

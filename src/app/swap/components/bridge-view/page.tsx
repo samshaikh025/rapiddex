@@ -535,7 +535,7 @@ export default function BridgeView(props: propsType) {
                                 </div>
                                 <div className="d-flex flex-column">
                                     <label className="coin-name d-block fw-600">{activeTransactionData?.sourceChainName}</label>
-                                    <label className="coin-sub-name">{activeTransactionData?.sourceTokenName}</label>
+                                    <label className="coin-sub-name">{activeTransactionData?.sourceTokenSymbol}</label>
                                 </div>
                             </div>
                         </div>
@@ -553,7 +553,7 @@ export default function BridgeView(props: propsType) {
                                 </div>
                                 <div className="d-flex flex-column">
                                     <label className="coin-name d-block fw-600">{activeTransactionData?.destinationChainName}</label>
-                                    <label className="coin-sub-name">{activeTransactionData?.destinationTokenName}</label>
+                                    <label className="coin-sub-name">{activeTransactionData?.destinationTokenSymbol}</label>
                                 </div>
                             </div>
                         </div>

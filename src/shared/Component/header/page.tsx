@@ -142,11 +142,11 @@ export default function Header() {
             showMenu &&
             <>
               <div className="menu-wrapper d-flex align-items-center">
-                <Link href="/swap" className="active"> Swap </Link>
-                <Link href="/send"> Send </Link>
-                <Link href="/loans">Loans</Link>
-                <Link href="/liquidity">Liquidity</Link>
-                <Link href="/stack">Stack</Link>
+                <Link href="/swap" className="active"> Multi - Swap </Link>
+                <Link href="/liquidity"> Fixed Deposit </Link>
+                <Link href="/loans">Crypto Funds</Link>
+                <Link href="/liquidity">Secure P2P</Link>
+                {/* <Link href="/stack">Stack</Link> */}
               </div>
             </>
           }
@@ -177,7 +177,7 @@ export default function Header() {
                 !utilityService.isNullOrEmpty(walletData.address) &&
                 <>
                   {/* button for small screen */}
-                  <button className="btn primary-btn dropdown-toggle d-flex d-lg-none header-btn border-radius-half" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWalletData" aria-controls="offcanvasWalletData">
+                  <button className="btn primary-btn dropdown-toggle d-flex d-lg-none header-btn border-radius-half btn-primary-bgColor" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWalletData" aria-controls="offcanvasWalletData">
                     <div className="position-relative coin-wrapper">
                       {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
                         className="coin" alt="coin" />}
@@ -188,7 +188,7 @@ export default function Header() {
                   </button>
 
                   {/* button for large screen */}
-                  <button className="btn primary-btn dropdown-toggle d-none d-lg-flex header-btn border-radius-half" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <button className="btn primary-btn dropdown-toggle d-none d-lg-flex header-btn border-radius-half btn-primary-bgColor" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <div className="position-relative coin-wrapper">
                       {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
                         className="coin" alt="coin" />}

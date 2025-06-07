@@ -500,7 +500,8 @@ export default function SendUI(props: propsType) {
                                     className="coin-small" alt="coin" />}
                                 </div>
                                 <div className="d-flex flex-column">
-                                  <input type="text" className="transparent-input" value={sendAmount} onChange={() => null} readOnly /> {destiationToken?.symbol}
+                                  <input type="text" className="transparent-input" value={sendAmount} onChange={() => null} readOnly />
+                                  {/* {sourceToken?.symbol} */}
                                   {(sendAmountUSDC != null && sendAmountUSDC > 0) && <label className="coin-sub-name">$ {sendAmountUSDC}</label>}
                                   {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
                                 </div>

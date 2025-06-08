@@ -124,6 +124,7 @@ export default function BridgeView(props: propsType) {
                 }
             }
             else if (activeTransactionData.transactiionAggregator == AggregatorProvider.RAPID_DEX) {
+                debugger;
                 // cheack Rapid Dex
                 let payLoad = new GetSignPayload();
                 payLoad.txnHash = activeTransactionData.transactionHash;
@@ -192,6 +193,13 @@ export default function BridgeView(props: propsType) {
                 }
 
                 tx = await sendTransactionAsync(transactionRequest);
+
+                if (searchParams.toString().includes('quoteId') && tx != null) {
+
+                    window.location.href = 'https://demochekout.rapidx.app/success'
+
+                }
+
                 let status = await GetTransactionStatus(tx);
 
                 let updateTransactionData = {
@@ -230,7 +238,14 @@ export default function BridgeView(props: propsType) {
                     transactionRequest["value"] = activeTransactionData.sourceTransactionData.amountinWei;
                 }
 
+
                 tx = await sendTransactionAsync(transactionRequest);
+
+                if (searchParams.toString().includes('quoteId') && tx != null) {
+
+                    window.location.href = 'demochekout.rapidx.app/success'
+
+                }
 
                 let payLoad = new GetSignPayload();
                 payLoad.txnHash = tx;

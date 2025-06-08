@@ -629,7 +629,7 @@ export class CryptoService {
             };
 
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            const timeout = setTimeout(() => controller.abort(), 7000); // 5 second timeout
 
             const response = await fetch(this.apiUrlENV + '/api/common', {
                 method: "POST",

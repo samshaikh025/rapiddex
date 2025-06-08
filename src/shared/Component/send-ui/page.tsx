@@ -60,6 +60,8 @@ export default function SendUI(props: propsType) {
   let [isShowTokenUi, setIsShowTokenUi] = useState<boolean>(false);
   let [pathShowSpinner, setPathShowSpinner] = useState<boolean>(false);
 
+  let [pathShowRetry, setPathShowRetry] = useState<boolean>(false);
+
 
   let [sourceChain, setSourceChain] = useState<Chains>(new Chains());
   let [destiationChain, setDestinationChain] = useState<Chains>();
@@ -184,7 +186,7 @@ export default function SendUI(props: propsType) {
     let payableGasChain = allChains.find(a => a.id == sourceChain.chainId);
     let payableGasToken = new Tokens();
 
-    if (payableGasChain.nativeCurrency.symbol == "ETH") {
+    if (payableGasChain.nativeCurrency.symbol == "ETH" || payableGasChain.nativeCurrency.symbol == "BNB") {
       payableGasToken.address = "0x0000000000000000000000000000000000000000";
     }
 
@@ -297,6 +299,7 @@ export default function SendUI(props: propsType) {
     if (!isNaN(sendAmount) && sendAmount > 0) {
       // props.isPathLoadingParent(true);
       setPathShowSpinner(true);
+      setPathShowRetry(false);
       // setIsShowPathShowTimer(false);
 
       // if (pathReloadIntervalId.current != null) {
@@ -323,6 +326,7 @@ export default function SendUI(props: propsType) {
             console.log("Path from rapid dex", result);
             setSelectedPath(result);
             setPathShowSpinner(false);
+            setPathShowRetry(false);
             //result = result.slice(0,2);
 
             // props.sendInitData(result);
@@ -335,6 +339,7 @@ export default function SendUI(props: propsType) {
             // invokeTimeOutForReloadPath();
           } else {
             setPathShowSpinner(false);
+            setPathShowRetry(true);
           }
           // else if (result && result.length == 0 && props.Amountpathshow == pathShowInvokedForAmount.current) {
           //   props.sendInitData([]);
@@ -347,12 +352,14 @@ export default function SendUI(props: propsType) {
         }).catch((error) => {
           // props.sendInitData([]);
           setPathShowSpinner(false);
+          setPathShowRetry(true);
           // bridgeMessage.message = "No path found";
           // props.isPathLoadingParent(false);
         })
       } catch (error) {
         // props.sendInitData([]);
         setPathShowSpinner(false);
+        setPathShowRetry(true);
         // props.isPathLoadingParent(false);
         // console.error('Error fetching path data:', error);
       }
@@ -418,6 +425,8 @@ export default function SendUI(props: propsType) {
                       <h5>Total due</h5>
                       <h5>{props.transactionRequest.amountIn} {destiationToken?.symbol}</h5>
                     </div>
+
+                    <div className="d-flex justify-content-between mb-3"><span>Note - Payment will automatically will credited at RapidY Merchant.</span><span></span></div>
                   </div>
                 </div>
               </div>
@@ -541,7 +550,7 @@ export default function SendUI(props: propsType) {
                           }  */}
 
                             {
-                              !utilityService.isNullOrEmpty(walletData.address) &&
+                              (!utilityService.isNullOrEmpty(walletData.address) && pathShowRetry == false) &&
                               <>
                                 <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => initPayment()} disabled={sendAmount == null}>
                                   {
@@ -560,6 +569,29 @@ export default function SendUI(props: propsType) {
                                 </button>
                               </>
                             }
+
+                            {
+                              pathShowRetry == true &&
+                              <>
+                                <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => fetchQuoteFromRapidx(sourceToken, sendAmount, sendAmountUSDC)} disabled={sendAmount == null}>
+                                  {
+                                    pathShowSpinner &&
+                                    <>
+                                      <i className="fa-solid fa-spinner fa-spin mx-2"></i>
+                                      Retry Fetching Quote
+                                    </>
+                                  }
+                                  {
+                                    !pathShowSpinner &&
+                                    <>
+                                      Retry
+                                    </>
+                                  }
+                                </button>
+                              </>
+                            }
+
+
                             {
                               utilityService.isNullOrEmpty(walletData.address) &&
                               <>
@@ -619,7 +651,7 @@ export default function SendUI(props: propsType) {
             }
           </div>
         </div>
-      </div>
+      </div >
     </>
   );
 }

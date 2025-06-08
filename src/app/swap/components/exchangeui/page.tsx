@@ -274,7 +274,7 @@ export default function Exchangeui(props: propsType) {
         let payableGasChain = allChains.find(a => a.id == props.sourceChain.chainId);
         let payableGasToken = new Tokens();
 
-        if (payableGasChain.nativeCurrency.symbol == "ETH") {
+        if (payableGasChain.nativeCurrency.symbol == "ETH" || payableGasChain.nativeCurrency.symbol == "BNB") {
             payableGasToken.address = "0x0000000000000000000000000000000000000000";
         }
 

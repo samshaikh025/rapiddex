@@ -215,7 +215,7 @@ export default function Header() {
                         <i className="fa-regular fa-clipboard px-2" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
                       </div>
                     </div>
-                    <li><a href="#" className="dropdown-item">View Transaction</a></li>
+                    <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
                     <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()}>View On Block Explorer</a></li>
                     <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()}>Diconnect</a></li>
                   </ul>
@@ -297,7 +297,7 @@ export default function Header() {
                   <i className="fa-regular fa-clipboard px-2 py-1" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
                 </div>
               </div>
-              <li><a href="#" className="dropdown-item">View Transaction</a></li>
+              <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
               <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()} data-bs-dismiss="offcanvas">View On Block Explorer</a></li>
               <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()} data-bs-dismiss="offcanvas">Diconnect</a></li>
             </ul>

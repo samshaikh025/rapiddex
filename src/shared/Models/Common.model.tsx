@@ -219,8 +219,8 @@ export class TransactionRequestoDto {
 export class InsertTransactionRequestoDto {
   transactionGuid: string = '';
   walletAddress: string = '';
-  amount: string;
-  amountUsd: string = '';
+  amount: number;
+  amountUsd: number;
   approvalAddress: string = '';
   transactionHash: string = '';
   transactionStatus: number = 0;
@@ -240,6 +240,22 @@ export class InsertTransactionRequestoDto {
   destinationTokenAddress: string = '';
   destinationTokenSymbol: string = '';
   destinationTokenLogoUri: string = '';
+  sourceChain: string = '';//store chains object as stringify
+  destinationChain: string; //store chains object as stringify
+  isNativeToken: boolean = false;
+  transactiionAggregator: string;
+  transactionAggregatorRequestId: string;
+  transactionAggregatorRequestData: string;
+  transactionAggregatorGasPrice: string;
+  transactionAggregatorGasLimit: string;
+  isMultiChain: boolean;
+  sourceTransactionData: string = '';//RapidQuoteTransactionDto store as stringify
+  destinationTransactionData: string = '';//RapidQuoteTransactionDto store as stringify
+  transactionSourceHash: string = '';
+  transactionSourceStatus: number = 0;
+  transactionSourceSubStatus: number = 0;
+  greenFieldTxnHash: string = '';
+  greenFieldUrl: string= '';
   // sourceChain: Chains;
   // destinationChain: Chains;
   // isNativeToken: boolean = false;
@@ -289,4 +305,64 @@ export class GetPaymentRequest {
   amountIn: number;
   toChainJSon: string;
   toTokenJSon: string;
+}
+
+export class GreenFieldResponse{
+  greenFieldTxnHash: string =  '';
+  greenFieldUrl: string = '';
+}
+
+export class TransactionHistoryPayload {
+  walletAddress: string;
+}
+
+export class TransactionHistoryResponse {
+  transactionId: number;
+  transactionGuid: string;
+  walletAddress: string;
+  amount: number;
+  amountUsd: number;
+
+  approvalAddress: string;
+  transactionHash: string;
+  transactionStatus: number;
+  transactionSubStatus: number;
+
+  quoteDetail: string;
+  sourceChainId: number;
+  sourceChainName: string;
+  sourceChainLogoUri: string;
+  destinationChainId: number;
+  destinationChainName: string;
+  destinationChainLogoUri: string;
+
+  sourceTokenName: string;
+  sourceTokenAddress: string;
+  sourceTokenSymbol: string;
+  sourceTokenLogoUri: string;
+  destinationTokenName: string;
+  destinationTokenAddress: string;
+  destinationTokenSymbol: string;
+  destinationTokenLogoUri: string;
+
+  sourceChain: string; // JSON string
+  destinationChain: string; // JSON string
+  isNativeToken: boolean;
+
+  transactiionAggregator: string;
+  transactionAggregatorRequestId: string;
+  transactionAggregatorRequestData: string;
+  transactionAggregatorGasPrice: string;
+  transactionAggregatorGasLimit: string;
+
+  isMultiChain: boolean;
+  sourceTransactionData: string; // JSON string
+  destinationTransactionData: string; // JSON string
+
+  transactionSourceHash: string;
+  transactionSourceStatus: number;
+  transactionSourceSubStatus: number;
+
+  greenFieldTxnHash: string;
+  greenFieldUrl: string;
 }

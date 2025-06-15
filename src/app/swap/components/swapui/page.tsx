@@ -6,7 +6,6 @@ import Chainui from "../chainui/page";
 import { Chains, Tokens } from "@/shared/Models/Common.model";
 import { DataSource } from "@/shared/Enum/Common.enum";
 import { CryptoService } from "@/shared/Services/CryptoService";
-import 'react-loading-skeleton/dist/skeleton.css'
 import { useDispatch } from "react-redux";
 import { SetAllAvailableChainsA } from "@/app/redux-store/action/action-redux";
 

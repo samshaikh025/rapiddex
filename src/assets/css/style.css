@@ -669,3 +669,7 @@ button.swap-btn {
     background-color: var(--bg-color-btn-primary) !important;
     color: var(--white-color) !important;
 }
+
+.cursor-pointer {
+    cursor: pointer;
+}

@@ -12,6 +12,8 @@ import { config } from './wagmi/config'
 import { headers } from "next/headers";
 import WagmiProviderComp from "./wagmi/wagmi-provider";
 import Providers from "@/shared/Component/header/providers/page";
+import 'react-loading-skeleton/dist/skeleton.css'
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {

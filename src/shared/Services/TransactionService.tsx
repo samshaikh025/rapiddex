@@ -1,5 +1,5 @@
 import { SwapProvider, TransactionSubStatus } from "../Enum/Common.enum";
-import { GetSignPayload, InsertTransactionRequestoDto, OperationResult, RapidQuoteTransactionDto, SignatureResponseRapid, TransactionRequestoDto, UpdateTransactionRequestoDto } from "../Models/Common.model";
+import { GetSignPayload, InsertTransactionRequestoDto, OperationResult, RapidQuoteTransactionDto, SignatureResponseRapid, TransactionHistoryPayload, TransactionRequestoDto, UpdateTransactionRequestoDto } from "../Models/Common.model";
 let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
 
 
@@ -142,6 +142,34 @@ export class TransactionService {
         }
 
         return txnHash;
+    }
+
+    async GetTransactionTxnHistory(input: TransactionHistoryPayload) {
+        let response = [];
+        let payLoad = {
+            apiType: 'GET',
+            apiUrl: 'Crypto/GetTransaction?walletAddress='+input.walletAddress,
+            apiData: null,
+            apiProvider: SwapProvider.DOTNET
+        }
+        try {
+            let apiResult = await fetch(apiUrlENV + '/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+
+            });
+            if (apiResult.status == 200) {
+                let data = await apiResult.json();
+                response = data?.Data?.data;
+            }
+        } catch (error) {
+            console.log(error);
+        }
+
+        return response;
     }
 }
 

@@ -9,7 +9,7 @@ import { useSendTransaction } from "wagmi";
 import { AggregatorProvider, Keys, TransactionStatus, TransactionSubStatus, TransactionSubStatusLIFI, TransactionSubStatusRango } from "@/shared/Enum/Common.enum";
 import { SetActiveTransactionA, UpdateTransactionStatusA } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
-import { Chains, GetSignPayload, InsertTransactionRequestoDto, TransactionRequestoDto, UpdateTransactionRequestoDto } from "@/shared/Models/Common.model";
+import { Chains, GetSignPayload, GreenFieldResponse, InsertTransactionRequestoDto, TransactionRequestoDto, UpdateTransactionRequestoDto } from "@/shared/Models/Common.model";
 import { TransactionService } from "@/shared/Services/TransactionService";
 import { SharedService } from "@/shared/Services/SharedService";
 import { CryptoService } from "@/shared/Services/CryptoService";
@@ -24,6 +24,7 @@ import { Client } from "@bnb-chain/greenfield-js-sdk";
 import Long from "long";
 import { ReedSolomon } from "@bnb-chain/reed-solomon";
 import { ethers } from "ethers";
+import { json } from "stream/consumers";
 type propsType = {
     closeBridgeView: () => void;
 }
@@ -74,8 +75,8 @@ export default function BridgeView(props: propsType) {
         let payLoad: InsertTransactionRequestoDto = {
             transactionGuid: transactionData.transactionGuid,
             walletAddress: transactionData.walletAddress,
-            amount: transactionData.amount,
-            amountUsd: transactionData.amountUsd,
+            amount: Number(transactionData.amount),
+            amountUsd: Number(transactionData.amountUsd),
             approvalAddress: transactionData.approvalAddress,
             transactionHash: transactionData.transactionHash,
             transactionStatus: transactionData.transactionStatus,
@@ -94,7 +95,23 @@ export default function BridgeView(props: propsType) {
             destinationTokenName: transactionData.destinationTokenName,
             destinationTokenAddress: transactionData.destinationTokenAddress,
             destinationTokenSymbol: transactionData.destinationTokenSymbol,
-            destinationTokenLogoUri: transactionData.destinationTokenLogoUri
+            destinationTokenLogoUri: transactionData.destinationTokenLogoUri,
+            sourceChain: transactionData?.sourceChain ? JSON.stringify(transactionData.sourceChain) : '',
+            destinationChain: transactionData?.destinationChain ? JSON.stringify(transactionData.destinationChain) : '',
+            isNativeToken : transactionData.isNativeToken,
+            transactiionAggregator : transactionData.transactiionAggregator,
+            transactionAggregatorRequestId : transactionData.transactionAggregatorRequestId,
+            transactionAggregatorRequestData : transactionData.transactionAggregatorRequestData,
+            transactionAggregatorGasPrice: transactionData.transactionAggregatorGasLimit,
+            transactionAggregatorGasLimit: transactionData.transactionAggregatorGasLimit,
+            isMultiChain: transactionData.isMultiChain,
+            sourceTransactionData: transactionData?.sourceTransactionData ? JSON.stringify(transactionData?.sourceTransactionData) : '',
+            destinationTransactionData: transactionData?.destinationTransactionData ? JSON.stringify(transactionData?.destinationTransactionData) : '',
+            transactionSourceHash: activeTransactionData.transactionSourceHash,
+            transactionSourceStatus: activeTransactionData.transactionSourceStatus,
+            transactionSourceSubStatus: activeTransactionData.transactionSourceSubStatus,
+            greenFieldTxnHash: '',
+            greenFieldUrl : ''
         }
         return payLoad;
     }
@@ -204,7 +221,7 @@ export default function BridgeView(props: propsType) {
 
                 let updateTransactionData = {
                     ...activeTransactionData,
-                    transactionHash: tx ? tx : null,
+                    transactionHash: tx ? tx : '',
                     transactionGuid: utilityService.uuidv4(),
                     transactionStatus: TransactionStatus.COMPLETED,
                     transactionSubStatus: status
@@ -267,12 +284,12 @@ export default function BridgeView(props: propsType) {
                         transactionSourceHash: tx ? tx : null,// update source transaction state
                         transactionSourceStatus: TransactionStatus.COMPLETED,
                         transactionSourceSubStatus: status,
-                        transactionHash: destinationTxn ? destinationTxn : null,// update destination txn state
+                        transactionHash: destinationTxn ? destinationTxn : '',// update destination txn state
                         transactionGuid: GUID,
                         transactionStatus: TransactionStatus.COMPLETED,
                         transactionSubStatus: destinationStatus
                     };
-                    dispatch(SetActiveTransactionA(updateDestTransactionData));
+                    
 
                     let storeSign = {
                         quoteId: GUID,
@@ -280,12 +297,13 @@ export default function BridgeView(props: propsType) {
                         signatureData: signData?.validators.map(e => e?.data?.sign)
                     }
 
-                    storeSignDceller(storeSign).then((res) => {
-                        console.log("data stored on green feild");
-                    }).catch((e) => {
-                        console.log("failed to stored on green feild");
-                    });
-
+                    let greenFieldResponse  = await storeSignDceller(storeSign);
+                    
+                    let requestPayload = getPayloadForTransaction(updateDestTransactionData);
+                    requestPayload.greenFieldTxnHash = greenFieldResponse.greenFieldTxnHash;
+                    requestPayload.greenFieldUrl = greenFieldResponse.greenFieldUrl;
+                    addTransactionLog(requestPayload);
+                    dispatch(SetActiveTransactionA(updateDestTransactionData));
                 }
             }
             catch (error) {
@@ -440,6 +458,9 @@ export default function BridgeView(props: propsType) {
     }
 
     async function storeSignDceller(signdata: any) {
+
+        let response = new GreenFieldResponse();
+
         try {
             const PRIVATE_KEY = "0x2ceaafa08af632e3089018aae2e85a2249632acbb9bd4eaa4a37beff8fef088a"; // WARNING: Don't expose this in production
             const wallet = new ethers.Wallet(PRIVATE_KEY);
@@ -491,6 +512,9 @@ export default function BridgeView(props: propsType) {
                 privateKey: wallet.privateKey,
             });
 
+            response.greenFieldTxnHash = broadcastRes.transactionHash;
+            response.greenFieldUrl = objectName;
+
             if (broadcastRes.code !== 0) {
                 console.log("Broadcast failed", broadcastRes.rawLog);
             }
@@ -519,6 +543,8 @@ export default function BridgeView(props: propsType) {
         } catch (ex) {
             console.log("Error while store data on greenfeild");
         }
+
+        return response;
     }
 
     return (

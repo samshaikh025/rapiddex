@@ -7,7 +7,7 @@ import { PredefineChains } from "@/shared/Const/PredefineChains";
 export default async function Swap() {
 
     let cryptoService = new CryptoService();
-    let chains = await cryptoService.GetAvailableChains();
+    let chains = await cryptoService.GetAllAvailableChainsRapidX();
     //let preDefinedTokensForChains: PreDefinedTokensForChains[] = [];
     //let predefineChains = PredefineChains;
     

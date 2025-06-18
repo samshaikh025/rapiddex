@@ -26,109 +26,7 @@ export class CryptoService {
     utilityService = new UtilityService();
 
     apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
-    async GetAvailableTokens(selectedChain: Chains) {
-        this.SetLifiCoins = [];
-        //this.SetDlnCoins = [];
-        this.SetRangoCoins = [];
-        this.SetOwltoCoins = [];
-        this.AvailableCoins = [];
-
-        // Fetch all coins concurrently for better performance
-        const [lifiCoins, rangoCoins, owltoCoins] = await Promise.all([
-            this.GetCoinsForLifi(selectedChain),
-            this.GetCoinsForRango(selectedChain),
-            this.GetCoinsForOwlto(selectedChain)
-        ]);
-
-        this.SetLifiCoins = lifiCoins;
-        this.SetRangoCoins = rangoCoins;
-        this.SetOwltoCoins = owltoCoins;
-
-        try {
-            this.SetLifiCoins?.map((coin: any) => {
-                let obj = new Tokens();
-                obj.name = coin.name;
-                obj.address = coin.address;
-                obj.symbol = coin.symbol;
-                obj.logoURI = coin.logoURI;
-                obj.decimal = coin.decimals;
-                obj.price = Number(coin.priceUSD);
-                obj.chainId = selectedChain.chainId;
-                this.AvailableCoins.push(obj);
-            })
-        }
-        catch (error) {
-
-        }
-
-        // this.SetDlnCoins?.map((coin: any)=>{
-
-        //     if(this.AvailableCoins.filter(x => x.address == coin.address).length == 0)
-        //     {
-        //         let obj = new Tokens();
-        //         obj.name = coin.name;
-        //         obj.address = coin.address;
-        //         obj.symbol = coin.symbol;
-        //         obj.logoURI = coin.logoURI;
-
-        //         this.AvailableCoins.push(obj);
-        //     }    
-        // })
-
-        try {
-
-
-
-            this.SetRangoCoins?.map((coin: any) => {
-
-                if (this.AvailableCoins.filter(x => x.address == coin.address).length == 0) {
-                    let obj = new Tokens();
-                    obj.name = coin.name;
-                    obj.address = coin.address;
-                    obj.symbol = coin.symbol;
-                    obj.logoURI = coin.image;
-                    obj.decimal = coin.decimals;
-                    obj.price = Number(coin.usdPrice);
-                    obj.chainId = selectedChain.chainId;
-                    this.AvailableCoins.push(obj);
-                }
-            })
-        }
-        catch (error) {
-
-        }
-
-
-        if (this.SetOwltoChains != undefined && this.SetOwltoChains.length > 0) {
-
-
-
-            // this.SetOwltoCoins?.map((coin: any)=>{
-
-            //     if(this.AvailableCoins.filter(x => x.address == coin.address).length == 0)
-            //     {
-            //         let obj = new Tokens();
-            //         obj.name = coin.text;
-            //         obj.address = coin.address;
-            //         obj.symbol = coin.symbol;
-            //         obj.logoURI = coin.icon;
-            //         obj.decimal = coin.decimal;
-            //         this.AvailableCoins.push(obj);
-            //     }    
-            // })
-        }
-
-        let chainList = await this.getAvailableChainList();
-        chainList?.forEach((chain) => {
-            let index = this.AvailableChains.findIndex(x => x.chainId == chain.chainId);
-            if (index > -1) {
-                this.AvailableChains[index].rpcUrl = chain.rpc;
-            }
-        });
-
-        return this.AvailableCoins;
-    }
-
+    
     async getAvailableChainList() {
         let ChainListAPIResponseData = [];
         try {
@@ -139,315 +37,6 @@ export class CryptoService {
             console.log(error);
         }
         return ChainListAPIResponseData;
-    }
-
-    async GetCoinsForLifi(chain: Chains) {
-        let lifiCoins = [];
-        let payLoad = {
-            apiType: 'GET',
-            apiUrl: `tokens?chains=${chain.lifiName}`,
-            apiData: null,
-            apiProvider: SwapProvider.LIFI
-        }
-        try {
-            let LIFICoinResult = await fetch(this.apiUrlENV + '/api/common', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payLoad),
-
-            });
-            const LIFICoinData = await LIFICoinResult.json();
-            lifiCoins = LIFICoinData?.Data?.tokens[chain.chainId];
-            //let data = await this.SharedService.setIndexDbItem(Keys.All_LIFI_COINS, lifiCoins);
-        } catch (error) {
-            console.log(error);
-        }
-        return lifiCoins;
-    }
-
-    async GetCoinsForDln(id: number) {
-        let dlnCoins: any[] = [];
-        let dlnId = 0;
-        let dlnChains: DLNChainResponse[] = await this.SharedService.getIndexDbItem(Keys.All_DLN_CHAINS);
-        if (dlnChains && dlnChains?.length > 0) {
-            dlnId = dlnChains.find(x => x.originalChainId == id)?.chainId;
-        }
-        try {
-            let payLoad = {
-                apiType: 'GET',
-                apiUrl: `https://api.dln.trade/v1.0/token-list?chainId=${dlnId}`,
-                apiData: null
-            }
-            let DlnCoinResult = await fetch(this.apiUrlENV + '/api/common', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payLoad),
-
-            });
-            const DLnCoinData = await DlnCoinResult.json();
-            let keys = Object.keys(DLnCoinData.Data.tokens);
-            keys.map((index) => {
-                dlnCoins.push(DLnCoinData.Data.tokens[index])
-            })
-        } catch (error) {
-            console.log(error);
-        }
-
-        return dlnCoins;
-    }
-
-    async GetCoinsForRango(chain: Chains) {
-        let rangoCoins = [];
-        //let checkLifiCoins = await this.SharedService.getIndexDbItem(Keys.All_LIFI_COINS);
-        let payLoad = {
-            apiType: 'GET',
-            apiUrl: `basic/meta?blockchains=${chain.rangoName}`,
-            apiData: null,
-            apiProvider: SwapProvider.RANGO
-        }
-        try {
-            let RangoCoinResult = await fetch(this.apiUrlENV + '/api/common', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payLoad),
-
-            });
-            const RangoCoinData = await RangoCoinResult.json();
-            rangoCoins = RangoCoinData?.Data?.tokens;
-            //let data = await this.SharedService.setIndexDbItem(Keys.All_LIFI_COINS, lifiCoins);
-        } catch (error) {
-            console.log(chain.rangoName, error);
-        }
-
-        return rangoCoins;
-    }
-
-    async GetCoinsForOwlto(chain: Chains) {
-        let owltCoins = [];
-        let payLoad = {
-            apiType: 'GET',
-            apiUrl: `api/config/all-tokens`,
-            apiData: null,
-            apiProvider: SwapProvider.OWLTO
-        }
-        try {
-            let LIFICoinResult = await fetch(this.apiUrlENV + '/api/common', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payLoad),
-
-            });
-            const OwltoCoinData = await LIFICoinResult.json();
-            owltCoins = OwltoCoinData?.Data?.msg?.filter((x) => x.chainId == chain.chainId);
-            //let data = await this.SharedService.setIndexDbItem(Keys.All_OWLTO_COINS, owltCoins);
-        } catch (error) {
-            console.log(error);
-        }
-
-        return owltCoins;
-    }
-
-
-    async GetAvailableChains() {
-        this.AvailableChains = [];
-        // Fetch all chains concurrently
-        const [lifiChains, rangoChains, owltoChains] = await Promise.all([
-            this.GetLifiChains(),
-            this.GetRangoChains(),
-            this.GetOwltoChains()
-        ]);
-
-        this.SetLifiChains = lifiChains;
-        this.SetRangoChains = rangoChains;
-        this.SetOwltoChains = owltoChains;
-
-        this.SetLifiChains?.map((chain) => {
-
-            let obj = new Chains();
-            obj.chainId = chain.id;
-            obj.lifiName = chain.key;
-            obj.chainName = chain.name;
-            obj.rangoName = '';
-            obj.logoURI = chain.logoURI;
-
-
-            this.AvailableChains.push(obj);
-        });
-
-        // this.SetDlnChains?.map((chain) => {
-        //     if (this.AvailableChains?.filter(x => x.chainId == chain.originalChainId).length == 0) {
-        //         let obj = new Chains();
-        //         obj.chainId = chain.originalChainId
-        //         obj.chainName = chain.chainName;
-        //         this.AvailableChains.push(obj);
-        //     }
-        // });
-
-        this.SetRangoChains?.map((chain) => {
-            let includeLength = this.AvailableChains.filter(x => x.chainId == parseInt(chain.chainId)).length;
-            if (includeLength == 0) {
-                let obj = new Chains();
-                obj.chainId = parseInt(chain.chainId)
-                obj.chainName = chain.displayName;
-                obj.rangoName = chain.name;
-                obj.lifiName = '';
-                obj.logoURI = chain.logo;
-
-                this.AvailableChains.push(obj);
-            } else if (includeLength == 1) {
-                let index = this.AvailableChains?.findIndex(x => x.chainId == parseInt(chain.chainId));
-                this.AvailableChains[index].rangoName = chain.name;
-            }
-        });
-
-        if (this.SetOwltoChains != undefined && this.SetOwltoChains.length > 0) {
-
-
-
-            this.SetOwltoChains?.map((chain) => {
-                let includeLength = this.AvailableChains.filter(x => x.chainId == parseInt(chain.chainId)).length;
-                // if (this.AvailableChains.filter(x => x.chainId == chain.chainId).length == 0) {
-                //     let obj = new Chains();
-                //     obj.chainId = chain.chainId;
-                //     obj.chainName = chain.aliasName;
-                //     obj.lifiName = '';
-                //     obj.rangoName = '';
-                //     obj.logoURI = chain.icon;
-
-
-                //     this.AvailableChains.push(obj);
-                // }
-                // else if (includeLength == 1) {
-                //     let index = this.AvailableChains?.findIndex(x => x.chainId == parseInt(chain.chainId));
-                //     this.AvailableChains[index].owltoName = chain.name;
-                // }
-
-                if (includeLength == 1) {
-                    let index = this.AvailableChains?.findIndex(x => x.chainId == parseInt(chain.chainId));
-                    this.AvailableChains[index].owltoName = chain.name;
-                }
-            });
-        }
-
-        //let res = await this.SharedService.setIndexDbItem(Keys.All_AVAILABLE_CHAINS, this.AvailableChains)
-        let chainList = await this.getAvailableChainList();
-        chainList?.forEach((chain) => {
-            let index = this.AvailableChains.findIndex(x => x.chainId == chain.chainId);
-            if (index > -1) {
-                this.AvailableChains[index].rpcUrl = chain.rpc;
-            }
-        });
-
-        return this.AvailableChains;
-    }
-
-    async GetLifiChains() {
-        console.log('env' + this.apiUrlENV);
-        let lifiChains = [];
-        let payLoad = {
-            apiType: 'GET',
-            apiUrl: 'chains',
-            apiData: null,
-            apiProvider: SwapProvider.LIFI
-        }
-        try {
-            let LIFIChainResult = await fetch(this.apiUrlENV + '/api/common', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payLoad),
-            });
-            const LIFIChainData = await LIFIChainResult.json();
-            lifiChains = LIFIChainData.Data?.chains;
-        } catch (error) {
-            console.log(error);
-        }
-        return lifiChains;
-    }
-
-    async GetDlnChains() {
-        let dlnChains = [];
-        let payLoad = {
-            apiType: 'GET',
-            apiUrl: 'https://api.dln.trade/v1.0/supported-chains-info',
-            apiData: null
-        }
-        try {
-            let DlnChainResult = await fetch(this.apiUrlENV + '/api/common', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payLoad),
-
-            });
-            const DlnChainData = await DlnChainResult.json();
-            dlnChains = DlnChainData.Data?.chains;
-            let res = this.SharedService.setIndexDbItem(Keys.All_DLN_CHAINS, dlnChains);
-        } catch (error) {
-            console.log(error);
-        }
-        return dlnChains;
-    }
-
-    async GetRangoChains() {
-        let rangoChains = [];
-        let payLoad = {
-            apiType: 'GET',
-            apiUrl: 'basic/meta',
-            apiData: null,
-            apiProvider: SwapProvider.RANGO
-        }
-        try {
-            let RangoChainResult = await fetch(this.apiUrlENV + '/api/common', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payLoad),
-
-            });
-            const RangoChainData = await RangoChainResult.json();
-            rangoChains = RangoChainData.Data.blockchains.filter((x: any) => x.type == 'EVM');
-        } catch (error) {
-            console.log(error);
-        }
-
-        return rangoChains;
-    }
-
-    async GetOwltoChains() {
-        let owltoChains = [];
-        let payLoad = {
-            apiType: 'GET',
-            apiUrl: 'api/config/all-chains',
-            apiData: null,
-            apiProvider: SwapProvider.OWLTO
-        }
-        try {
-            let OwltoChainResult = await fetch(this.apiUrlENV + '/api/common', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payLoad)
-            });
-            const OwltoChainData = await OwltoChainResult.json();
-            owltoChains = OwltoChainData.Data.msg;
-        } catch (error) {
-            console.log(error);
-        }
-
-        return owltoChains;
     }
 
     async GetTokenData(token: Tokens) {
@@ -478,10 +67,6 @@ export class CryptoService {
 
         return TokenData;
     }
-
-
-
-
 
     async getBestPathFromChosenChains(
         sourceChain: Chains,
@@ -1312,5 +897,53 @@ export class CryptoService {
         }
 
         return transactionStatus;
+    }
+
+    async GetAllAvailableCoinsRapidX(chain: Chains){
+        let allAvailableCoins = [];
+        let payLoad = {
+            apiType: 'POST',
+            apiUrl: 'getallcoinsbychain',
+            apiData: chain,
+            apiProvider: SwapProvider.RAPIDDEX
+        }
+        try {
+            let LIFIChainResult = await fetch(this.apiUrlENV + '/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+            });
+            const AllCoins = await LIFIChainResult.json();
+            allAvailableCoins = (AllCoins && AllCoins?.Data) ? AllCoins?.Data?.Data : [];
+        } catch (error) {
+            console.log(error);
+        }
+        return allAvailableCoins;
+    }
+
+    async GetAllAvailableChainsRapidX(){
+        let allAvailableChains = [];
+        let payLoad = {
+            apiType: 'GET',
+            apiUrl: 'getavailablechains',
+            apiData: null,
+            apiProvider: SwapProvider.RAPIDDEX
+        }
+        try {
+            let LIFIChainResult = await fetch(this.apiUrlENV + '/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+            });
+            const AllChains = await LIFIChainResult.json();
+            allAvailableChains = (AllChains && AllChains?.Data) ? AllChains?.Data?.Data : [];
+        } catch (error) {
+            console.log(error);
+        }
+        return allAvailableChains;
     }
 }

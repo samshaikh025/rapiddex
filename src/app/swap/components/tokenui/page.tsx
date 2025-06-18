@@ -43,7 +43,7 @@ export default function Tokenui(props: propsType) {
                 if (preDefineTokensContextData && preDefineTokensContextData.length > 0 && preDefineTokensContextData.findIndex(x => x.chainId == chainDataSource.chainId) > -1) {
                     tokens = await preDefineTokensContextData?.find(x => x.chainId == chainDataSource.chainId)?.tokens;
                 } else {
-                    tokens = await cryptoService.GetAvailableTokens(chainDataSource);
+                    tokens = await cryptoService.GetAllAvailableCoinsRapidX(chainDataSource);
                     let obj = new PreDefinedTokensForChains();
                     obj.chainId = chainDataSource.chainId;
                     obj.tokens = tokens;

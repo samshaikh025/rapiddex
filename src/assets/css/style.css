@@ -644,7 +644,8 @@ button.swap-btn {
     gap: 10px;
     padding: 4px 8px;
     /* background-color: #337cf21a; */
-    width: 110px !important;
+    width: 100px !important;
+    height: 30px !important;
 }
 
 .aggrigator-box h5 {

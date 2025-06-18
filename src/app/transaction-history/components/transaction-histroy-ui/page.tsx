@@ -11,7 +11,7 @@ export default function TransactionHistroyUI() {
     let transactionService = new TransactionService();
     let [transactionHistoryData, setTransactionHistoryData] = useState<TransactionHistoryResponse[]>();
     let [showListView, setShowListView] = useState<boolean>(true);
-    let [detailViewData, setDetailViewData] = useState<TransactionHistoryResponse>();
+    let [detailViewHistoryData, setDetailViewHistoryData] = useState<TransactionHistoryResponse>();
     let [showfetchLoader, setShowfetchLoader] = useState<boolean>();
     async function GetTransactionHistory() {
         let input = new TransactionHistoryPayload();
@@ -29,12 +29,12 @@ export default function TransactionHistroyUI() {
 
     function showDetailViewPage(object: TransactionHistoryResponse){
         setShowListView(false);
-        setDetailViewData(object);
+        setDetailViewHistoryData(object);
     }
 
     function hideDetailViewPage(){
         setShowListView(true);
-        setDetailViewData(new TransactionHistoryResponse());
+        setDetailViewHistoryData(new TransactionHistoryResponse());
     }
 
     return (
@@ -51,7 +51,7 @@ export default function TransactionHistroyUI() {
             {
                 !showListView && 
                 <>
-                    <DetailView detailViewData = {detailViewData} hideDetailView={()=>hideDetailViewPage()}/>
+                    <DetailView detailViewData = {detailViewHistoryData} hideDetailView={()=>hideDetailViewPage()}/>
                 </>
             }
         </>

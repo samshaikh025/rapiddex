@@ -171,6 +171,34 @@ export class TransactionService {
 
         return response;
     }
+
+    async GetZkProofForTransaction(input: GetSignPayload) {
+        let status = new SignatureResponseRapid();
+        let payLoad = {
+            apiType: 'POST',
+            apiUrl: 'generatezkproof',
+            apiData: input,
+            apiProvider: SwapProvider.RAPIDDEX
+        }
+        try {
+            let apiResult = await fetch(apiUrlENV + '/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+
+            });
+            if (apiResult.status == 200) {
+                let data = await apiResult.json();
+                status = data?.Data?.Data;
+            }
+        } catch (error) {
+            console.log(error);
+        }
+
+        return status;
+    }
 }
 
 

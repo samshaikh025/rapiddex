@@ -1,5 +1,5 @@
 import { SwapProvider, TransactionSubStatus } from "../Enum/Common.enum";
-import { GetSignPayload, InsertTransactionRequestoDto, OperationResult, RapidQuoteTransactionDto, SignatureResponseRapid, TransactionHistoryPayload, TransactionRequestoDto, UpdateTransactionRequestoDto } from "../Models/Common.model";
+import { GetSignPayload, InsertTransactionRequestoDto, OperationResult, RapidQuoteTransactionDto, SignatureResponseRapid, TransactionHistoryPayload, TransactionRequestoDto, UpdateTransactionRequestoDto, ZkProofPayload, ZkProofResponse } from "../Models/Common.model";
 let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
 
 
@@ -172,8 +172,8 @@ export class TransactionService {
         return response;
     }
 
-    async GetZkProofForTransaction(input: GetSignPayload) {
-        let status = new SignatureResponseRapid();
+    async GetZkProofForTransaction(input: ZkProofPayload) {
+        let response = new ZkProofResponse();
         let payLoad = {
             apiType: 'POST',
             apiUrl: 'generatezkproof',
@@ -191,13 +191,13 @@ export class TransactionService {
             });
             if (apiResult.status == 200) {
                 let data = await apiResult.json();
-                status = data?.Data?.Data;
+                response = data?.Data?.Data;
             }
         } catch (error) {
             console.log(error);
         }
 
-        return status;
+        return response;
     }
 }
 

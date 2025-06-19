@@ -19,7 +19,8 @@ export const CommonConfig = [
     },
     {
         apiKey: '',
-        apiUrl: 'http://localhost:5159/api/'
+        // apiUrl: 'http://localhost:5159/api/'
+        apiUrl: 'https://rapidxapp-c3gdccd3ezhfgbbx.canadacentral-01.azurewebsites.net/api/'
     },
     {
         apiKey: '',

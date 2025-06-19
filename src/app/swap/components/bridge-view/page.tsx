@@ -9,7 +9,7 @@ import { useSendTransaction } from "wagmi";
 import { AggregatorProvider, Keys, TransactionStatus, TransactionSubStatus, TransactionSubStatusLIFI, TransactionSubStatusRango } from "@/shared/Enum/Common.enum";
 import { SetActiveTransactionA, UpdateTransactionStatusA } from "@/app/redux-store/action/action-redux";
 import { UtilityService } from "@/shared/Services/UtilityService";
-import { Chains, GetSignPayload, GreenFieldResponse, InsertTransactionRequestoDto, TransactionRequestoDto, UpdateTransactionRequestoDto } from "@/shared/Models/Common.model";
+import { Chains, GetSignPayload, GreenFieldResponse, InsertTransactionRequestoDto, TransactionRequestoDto, UpdateTransactionRequestoDto, ZkProofPayload } from "@/shared/Models/Common.model";
 import { TransactionService } from "@/shared/Services/TransactionService";
 import { SharedService } from "@/shared/Services/SharedService";
 import { CryptoService } from "@/shared/Services/CryptoService";
@@ -289,15 +289,12 @@ export default function BridgeView(props: propsType) {
                         transactionStatus: TransactionStatus.COMPLETED,
                         transactionSubStatus: destinationStatus
                     };
-                    
 
-                    let storeSign = {
-                        quoteId: GUID,
-                        txnHash: tx,
-                        signatureData: signData?.validators.map(e => e?.data?.sign)
-                    }
+                    let zkProofInput  = new ZkProofPayload();
+                    zkProofInput.sign = signData?.validators?.map(e => e?.data?.sign)
 
-                    let greenFieldResponse  = await storeSignDceller(storeSign);
+                    const zkProof = await transactionService.GetZkProofForTransaction(zkProofInput);
+                    let greenFieldResponse  = await storeSignDceller(zkProof);
                     
                     let requestPayload = getPayloadForTransaction(updateDestTransactionData);
                     requestPayload.greenFieldTxnHash = greenFieldResponse.greenFieldTxnHash;

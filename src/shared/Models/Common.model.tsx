@@ -366,3 +366,24 @@ export class TransactionHistoryResponse {
   greenFieldTxnHash: string;
   greenFieldUrl: string;
 }
+
+export class ZkProofPayload {
+  sign: string[] = [];
+}
+
+export class ZkProofResponse {
+  success: boolean;
+  proofHash: string;
+  proof: {
+    pi_a: [string, string, string];
+    pi_b: [[string, string], [string, string], [string, string]];
+    pi_c: [string, string, string];
+    protocol: string;
+    curve: string;
+  };
+  publicSignals: string[];
+  validatorCount: number;
+  isValid: boolean;
+  verified: boolean;
+  generationTime: number;
+}

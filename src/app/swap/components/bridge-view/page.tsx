@@ -227,7 +227,7 @@ export default function BridgeView(props: propsType) {
                     transactionSubStatus: status
                 }
                 let requestPayload = getPayloadForTransaction(updateTransactionData);
-                addTransactionLog(requestPayload);
+                addTransactionLog(requestPayload, new ZkProofPayload());
                 dispatch(SetActiveTransactionA(updateTransactionData));
             }
             catch (error) {
@@ -293,13 +293,8 @@ export default function BridgeView(props: propsType) {
                     let zkProofInput  = new ZkProofPayload();
                     zkProofInput.sign = signData?.validators?.map(e => e?.data?.sign)
 
-                    const zkProof = await transactionService.GetZkProofForTransaction(zkProofInput);
-                    let greenFieldResponse  = await storeSignDceller(zkProof);
-                    
                     let requestPayload = getPayloadForTransaction(updateDestTransactionData);
-                    requestPayload.greenFieldTxnHash = greenFieldResponse.greenFieldTxnHash;
-                    requestPayload.greenFieldUrl = greenFieldResponse.greenFieldUrl;
-                    addTransactionLog(requestPayload);
+                    addTransactionLog(requestPayload, zkProofInput);
                     dispatch(SetActiveTransactionA(updateDestTransactionData));
                 }
             }
@@ -345,7 +340,16 @@ export default function BridgeView(props: propsType) {
         }
     }
 
-    function addTransactionLog(payLoad: InsertTransactionRequestoDto) {
+    async function addTransactionLog(payLoad: InsertTransactionRequestoDto, zkProofPayload: ZkProofPayload) {
+        
+        if(payLoad.isMultiChain){
+            const zkProof = await transactionService.GetZkProofForTransaction(zkProofPayload);
+            let greenFieldResponse  = await storeSignDceller(zkProof);
+
+            payLoad.greenFieldTxnHash = greenFieldResponse.greenFieldTxnHash;
+            payLoad.greenFieldUrl = greenFieldResponse.greenFieldUrl;
+        }
+
         transactionService.AddTransactionLog(payLoad).then((response) => {
             if (response?.data && response.data.transactionGuid) {
                 //dispatch(SetActiveTransactionA(response.data));

@@ -26,7 +26,7 @@ export class CryptoService {
     utilityService = new UtilityService();
 
     apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
-    
+
     async getAvailableChainList() {
         let ChainListAPIResponseData = [];
         try {
@@ -496,7 +496,7 @@ export class CryptoService {
 
         }
         else {
-            tokenfrom = +sourceToken.symbol + "--" + sourceToken.address;
+            tokenfrom = sourceToken.symbol + "--" + sourceToken.address;
         }
 
         if (destNative == true) {
@@ -513,10 +513,11 @@ export class CryptoService {
         requestRangoPath.from = sourceChain.rangoName.toString() + "." + tokenfrom;
         requestRangoPath.to = destChain.rangoName.toString() + "." + tokento;
 
-        requestRangoPath.amount = Number(await this.utilityService.convertToDecimals(amount, sourceToken.decimal));
+        requestRangoPath.amount = await this.utilityService.convertToDecimals(amount, sourceToken.decimal);
         requestRangoPath.fromAddress = walletAddress;
         requestRangoPath.toAddress = walletAddress;
         requestRangoPath.slippage = 0.5;
+        requestRangoPath.disableEstimate = "true";
 
         return requestRangoPath;
     }
@@ -581,7 +582,8 @@ export class CryptoService {
             amount: requestRangoPath.amount.toString(),
             fromAddress: requestRangoPath.fromAddress,
             toAddress: requestRangoPath.toAddress,
-            slippage: requestRangoPath.slippage.toString()
+            slippage: requestRangoPath.slippage.toString(),
+            disableEstimate: requestRangoPath.disableEstimate
         });
     }
 
@@ -735,11 +737,11 @@ export class CryptoService {
             pathShowViewModel.aggergatorRequestId = responseRangoPath.requestId;
 
 
-            const gasPrice = BigInt(responseRangoPath.tx?.gasLimit);
-            const gasLimit = BigInt(responseRangoPath.tx?.gasPrice);
+            const gasPrice = BigInt(responseRangoPath.tx?.gasPrice ?? responseRangoPath?.tx?.maxGasPrice);
+            const gasLimit = BigInt(responseRangoPath.tx?.gasLimit);
 
             pathShowViewModel.gasafeeRequiredTransaction = (gasPrice * gasLimit).toString();
-            pathShowViewModel.gasPrice = responseRangoPath.tx?.gasPrice.toString();
+            pathShowViewModel.gasPrice = gasPrice.toString();
             pathShowViewModel.gasLimit = responseRangoPath.tx?.gasLimit.toString();
             pathShowViewModel.data = responseRangoPath.tx?.txData;
 
@@ -899,7 +901,7 @@ export class CryptoService {
         return transactionStatus;
     }
 
-    async GetAllAvailableCoinsRapidX(chain: Chains){
+    async GetAllAvailableCoinsRapidX(chain: Chains) {
         let allAvailableCoins = [];
         let payLoad = {
             apiType: 'POST',
@@ -923,7 +925,7 @@ export class CryptoService {
         return allAvailableCoins;
     }
 
-    async GetAllAvailableChainsRapidX(){
+    async GetAllAvailableChainsRapidX() {
         let allAvailableChains = [];
         let payLoad = {
             apiType: 'GET',

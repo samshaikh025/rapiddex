@@ -98,10 +98,10 @@ export default function BridgeView(props: propsType) {
             destinationTokenLogoUri: transactionData.destinationTokenLogoUri,
             sourceChain: transactionData?.sourceChain ? JSON.stringify(transactionData.sourceChain) : '',
             destinationChain: transactionData?.destinationChain ? JSON.stringify(transactionData.destinationChain) : '',
-            isNativeToken : transactionData.isNativeToken,
-            transactiionAggregator : transactionData.transactiionAggregator,
-            transactionAggregatorRequestId : transactionData.transactionAggregatorRequestId,
-            transactionAggregatorRequestData : transactionData.transactionAggregatorRequestData,
+            isNativeToken: transactionData.isNativeToken,
+            transactiionAggregator: transactionData.transactiionAggregator,
+            transactionAggregatorRequestId: transactionData.transactionAggregatorRequestId,
+            transactionAggregatorRequestData: transactionData.transactionAggregatorRequestData,
             transactionAggregatorGasPrice: transactionData.transactionAggregatorGasLimit,
             transactionAggregatorGasLimit: transactionData.transactionAggregatorGasLimit,
             isMultiChain: transactionData.isMultiChain,
@@ -111,7 +111,7 @@ export default function BridgeView(props: propsType) {
             transactionSourceStatus: activeTransactionData.transactionSourceStatus,
             transactionSourceSubStatus: activeTransactionData.transactionSourceSubStatus,
             greenFieldTxnHash: '',
-            greenFieldUrl : ''
+            greenFieldUrl: ''
         }
         return payLoad;
     }
@@ -227,7 +227,7 @@ export default function BridgeView(props: propsType) {
                     transactionSubStatus: status
                 }
                 let requestPayload = getPayloadForTransaction(updateTransactionData);
-                addTransactionLog(requestPayload, new ZkProofPayload());
+                addTransactionLog(requestPayload);
                 dispatch(SetActiveTransactionA(updateTransactionData));
             }
             catch (error) {
@@ -290,11 +290,16 @@ export default function BridgeView(props: propsType) {
                         transactionSubStatus: destinationStatus
                     };
 
-                    let zkProofInput  = new ZkProofPayload();
+                    let zkProofInput = new ZkProofPayload();
                     zkProofInput.sign = signData?.validators?.map(e => e?.data?.sign)
 
+                    const zkProof = await transactionService.GetZkProofForTransaction(zkProofInput);
+                    let greenFieldResponse = await storeSignDceller(zkProof);
+
                     let requestPayload = getPayloadForTransaction(updateDestTransactionData);
-                    addTransactionLog(requestPayload, zkProofInput);
+                    requestPayload.greenFieldTxnHash = greenFieldResponse.greenFieldTxnHash;
+                    requestPayload.greenFieldUrl = greenFieldResponse.greenFieldUrl;
+                    addTransactionLog(requestPayload);
                     dispatch(SetActiveTransactionA(updateDestTransactionData));
                 }
             }
@@ -340,16 +345,7 @@ export default function BridgeView(props: propsType) {
         }
     }
 
-    async function addTransactionLog(payLoad: InsertTransactionRequestoDto, zkProofPayload: ZkProofPayload) {
-        
-        if(payLoad.isMultiChain){
-            const zkProof = await transactionService.GetZkProofForTransaction(zkProofPayload);
-            let greenFieldResponse  = await storeSignDceller(zkProof);
-
-            payLoad.greenFieldTxnHash = greenFieldResponse.greenFieldTxnHash;
-            payLoad.greenFieldUrl = greenFieldResponse.greenFieldUrl;
-        }
-
+    function addTransactionLog(payLoad: InsertTransactionRequestoDto) {
         transactionService.AddTransactionLog(payLoad).then((response) => {
             if (response?.data && response.data.transactionGuid) {
                 //dispatch(SetActiveTransactionA(response.data));

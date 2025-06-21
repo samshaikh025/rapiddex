@@ -255,7 +255,7 @@ export class InsertTransactionRequestoDto {
   transactionSourceStatus: number = 0;
   transactionSourceSubStatus: number = 0;
   greenFieldTxnHash: string = '';
-  greenFieldUrl: string= '';
+  greenFieldUrl: string = '';
   // sourceChain: Chains;
   // destinationChain: Chains;
   // isNativeToken: boolean = false;
@@ -307,8 +307,8 @@ export class GetPaymentRequest {
   toTokenJSon: string;
 }
 
-export class GreenFieldResponse{
-  greenFieldTxnHash: string =  '';
+export class GreenFieldResponse {
+  greenFieldTxnHash: string = '';
   greenFieldUrl: string = '';
 }
 
@@ -365,6 +365,8 @@ export class TransactionHistoryResponse {
 
   greenFieldTxnHash: string;
   greenFieldUrl: string;
+
+  createdOn: string
 }
 
 export class ZkProofPayload {

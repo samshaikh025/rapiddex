@@ -273,6 +273,20 @@ export class UtilityService {
         }
     }
 
+    formatUtcToLocal(utcString: string, locale: string = 'en-IN') {
+        const date = new Date(utcString);
+        return date.toLocaleString(locale, {
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            hour12: true, // or false for 24-hour format
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
     uuidv4() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
             .replace(/[xy]/g, function (c) {

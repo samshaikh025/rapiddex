@@ -1,7 +1,7 @@
 export class RequestRangoPath {
   from: string; // The asset X that user likes to swap (e.g., "BSC.BNB")
   to: string; // The asset Y that user wants to swap X into (e.g., "AVAX_CCHAIN.USDT.E--0xc7198437980c041c805a1edcba50c1ce5db95118")
-  amount: number; // The machine-readable amount of asset X to be swapped (e.g., 100000000000000000)
+  amount: string; // The machine-readable amount of asset X to be swapped (e.g., 100000000000000000)
   slippage?: number; // Optional: User's preferred slippage in percent, default is 0.5%
   swappers?: string[]; // List of all accepted swappers, empty list means no filter is required
   swappersExclude?: boolean; // Defines the provided swappers as include/exclude list, default is false (include)
@@ -18,6 +18,7 @@ export class RequestRangoPath {
   enableCentralizedSwappers?: boolean; // Specify if centralized swappers must be included or not, default is false
   fromAddress: string;
   toAddress: string;
+  disableEstimate: string;
 }
 
 type Blockchain = 'ETH' | 'BSC' | 'ARBITRUM' | 'POLYGON' | 'ZKSYNC' | 'STARKNET' | 'OPTIMISM' | 'AVAX_CCHAIN' | 'POLYGONZK' | 'BASE' | 'LINEA' | 'MODE' | 'TRON' | 'BTC' | 'SCROLL' | 'BLAST' | 'COSMOS' | 'OSMOSIS' | 'NEUTRON' | 'NOBLE' | 'DYDX' | 'SOLANA' | 'CRONOS' | 'BNB' | 'FANTOM' | 'AURORA' | 'MAYA' | 'THOR' | 'BOBA' | 'MOONBEAM' | 'MOONRIVER' | 'OKC' | 'BOBA_BNB' | 'BOBA_AVALANCHE' | 'LTC' | 'BCH' | 'HARMONY' | 'EVMOS' | 'HECO' | 'METIS' | 'SIF' | 'BRISE' | 'STARGAZE' | 'FUSE' | 'CRYPTO_ORG' | 'CHIHUAHUA' | 'BANDCHAIN' | 'COMDEX' | 'REGEN' | 'IRIS' | 'EMONEY' | 'GNOSIS' | 'JUNO' | 'AXELAR' | 'STRIDE' | 'KCC' | 'MARS' | 'TERRA' | 'TELOS' | 'BITSONG' | 'AKASH' | 'KI' | 'PERSISTENCE' | 'MEDIBLOC' | 'KUJIRA' | 'SENTINEL' | 'INJECTIVE' | 'SECRET' | 'KONSTELLATION' | 'STARNAME' | 'BITCANNA' | 'UMEE' | 'DESMOS' | 'LUMNETWORK' | 'TERRA_CLASSIC' | 'CELO' | 'DASH' | 'XLAYER' | 'POLKADOT' | 'DOGE' | 'GOERLI' | 'GOERLI_ARBITRUM' | 'GOERLI_OPTIMISM';

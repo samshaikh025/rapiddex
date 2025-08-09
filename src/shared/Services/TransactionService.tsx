@@ -1,5 +1,7 @@
+import { promises } from "dns";
 import { SwapProvider, TransactionSubStatus } from "../Enum/Common.enum";
 import { GetSignPayload, InsertTransactionRequestoDto, OperationResult, RapidQuoteTransactionDto, SignatureResponseRapid, TransactionHistoryPayload, TransactionRequestoDto, UpdateTransactionRequestoDto, ZkProofPayload, ZkProofResponse } from "../Models/Common.model";
+import { PaymentLinkDto } from "../Models/PaymentDetailsByQuote";
 let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
 
 
@@ -192,6 +194,34 @@ export class TransactionService {
             if (apiResult.status == 200) {
                 let data = await apiResult.json();
                 response = data?.Data?.Data;
+            }
+        } catch (error) {
+            console.log(error);
+        }
+
+        return response;
+    }
+
+    async GetPaymentDetailByQuoteId(quoteId: string) : Promise<PaymentLinkDto> {
+        let response : PaymentLinkDto;
+        let payLoad = {
+            apiType: 'GET',
+            apiUrl: 'Checkout/'+quoteId,
+            apiData: null,
+            apiProvider: SwapProvider.DOTNETPAYMENTAPI
+        }
+        try {
+            let apiResult = await fetch(apiUrlENV + '/api/common', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payLoad),
+
+            });
+            if (apiResult.status == 200) {
+                let data = await apiResult.json();
+                response = data?.Data;
             }
         } catch (error) {
             console.log(error);

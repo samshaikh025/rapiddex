@@ -25,6 +25,10 @@ export const CommonConfig = [
     {
         apiKey: '',
         apiUrl: apiQuoteUrlENV + '/api/'
+    },
+    {
+        apiKey: '',
+        apiUrl: 'https://rapidxpaymentapi-f0cseqamcefcemgp.canadacentral-01.azurewebsites.net/api/'
     }
 ]
 

@@ -63,7 +63,8 @@ function getAPIUrl(request: any) {
         || request.apiProvider == SwapProvider.OWLTO
         || request.apiProvider == SwapProvider.MOBULA
         || request.apiProvider == SwapProvider.DOTNET 
-        || request.apiProvider == SwapProvider.RAPIDDEX) {
+        || request.apiProvider == SwapProvider.RAPIDDEX
+        || request.apiProvider == SwapProvider.DOTNETPAYMENTAPI) {
         let apiConfig = CommonConfig[request.apiProvider];
         returnUrl = apiConfig.apiUrl + request.apiUrl;
     }

@@ -23,6 +23,7 @@ export enum SwapProvider {
     MOBULA = 3,
     DOTNET = 4,
     RAPIDDEX = 5,
+    DOTNETPAYMENTAPI = 6
 }
 
 export enum ActionType {

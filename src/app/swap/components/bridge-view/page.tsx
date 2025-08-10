@@ -141,7 +141,6 @@ export default function BridgeView(props: propsType) {
                 }
             }
             else if (activeTransactionData.transactiionAggregator == AggregatorProvider.RAPID_DEX) {
-                debugger;
                 // cheack Rapid Dex
                 let payLoad = new GetSignPayload();
                 payLoad.txnHash = activeTransactionData.transactionHash;

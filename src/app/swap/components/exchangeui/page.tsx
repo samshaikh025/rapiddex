@@ -107,7 +107,7 @@ export default function Exchangeui(props: propsType) {
             updateAmount(value);
             // Call your custom function here
             // e.g., fetchSuggestions(value);
-        }, 1200); // Wait 500ms after user stops typing
+        }, 500); // Wait 500ms after user stops typing
     };
 
     function updateAmount(amount) {

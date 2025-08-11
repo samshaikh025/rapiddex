@@ -1,6 +1,6 @@
 "use client"
 import { AggregatorProvider, DataSource, Keys, TransactionStatus } from "@/shared/Enum/Common.enum";
-import { BridgeMessage, Chains, PathShowViewModel, RequestTransaction, Tokens, TransactionRequestoDto } from "@/shared/Models/Common.model";
+import { BridgeMessage, Chains, ChatBotResponse, PathShowViewModel, RequestTransaction, SwapRequest, Tokens, TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useEffect, useRef, useState } from "react";
@@ -21,6 +21,7 @@ import { readContract, writeContract } from '@wagmi/core';
 import * as definedChains from "wagmi/chains";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import SubBridgeView from "../sub-bridge-view/page";
+import SwapChatBot from "../swap-chatbot/page";
 
 type propsType = {
     sourceChain: Chains,
@@ -52,6 +53,14 @@ export default function Exchangeui(props: propsType) {
     let walletDisconnected: boolean = useSelector((state: any) => state.WalletDisconnected);
     let currentTheme = useSelector((state: any) => state.SelectedTheme);
     let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
+    let [isAIMode, setAIMode] = useState<boolean>(false);
+    let [sourceChain, setSourceChain] = useState<Chains>(new Chains());
+    let [destChain, setDestChain] = useState<Chains>(new Chains());
+    let [sourceToken, setSourceToken] = useState<Tokens>(new Tokens());
+    let [destToken, setDestToken] = useState<Tokens>(new Tokens());
+    let [sourceTokenAmount, setSourceTokenAmount] = useState<number>(0);
+    let [destTokenAmount, setDestTokenAmount] = useState<number>(0);
+    let allAvailableChains = useSelector((state: any) => state.AvailableChains);
 
     const {
         switchChain,
@@ -115,8 +124,8 @@ export default function Exchangeui(props: propsType) {
             if (!utilityService.isNullOrEmpty(amount) && !isNaN(amount)) {
                 setSendAmount(Number(amount));
                 setequAmountUSD(null);
-                if (props.sourceTokenAmount > 0 && Number(amount) > 0) {
-                    let eq = (amount * props.sourceTokenAmount);
+                if (sourceTokenAmount > 0 && Number(amount) > 0) {
+                    let eq = (amount * sourceTokenAmount);
                     setequAmountUSD(Number(eq.toFixed(2)));
                     //setIsShowPathComponent(true);
                     //shwo validation message if balance is less than 1 USD
@@ -179,6 +188,11 @@ export default function Exchangeui(props: propsType) {
             setShowSubBridgeView(true);
             dispatch(SetActiveTransactionA(activeTransactiondata));
         }
+
+        setSourceChain(props.sourceChain);
+        setDestChain(props.destChain);
+        setSourceToken(props.sourceToken);
+        setDestToken(props.destToken);
     }, [])
 
 
@@ -215,7 +229,7 @@ export default function Exchangeui(props: propsType) {
             try {
                 // Check allowance
                 const allowance = await readContract(config, {
-                    address: props.sourceToken.address as `0x${string}`,
+                    address: sourceToken.address as `0x${string}`,
                     abi: tokenAbi,
                     functionName: 'allowance',
                     args: [walletData.address, SPENDER_ADDRESS],
@@ -226,11 +240,11 @@ export default function Exchangeui(props: propsType) {
                     console.log("Requesting token approval...");
 
                     const a = await writeContract(config, {
-                        address: props.sourceToken.address as `0x${string}`,
+                        address: sourceToken.address as `0x${string}`,
                         abi: tokenAbi,
                         functionName: 'approve',
                         args: [SPENDER_ADDRESS, amountToSend],
-                        chain: chainsTuple.find(a => a.id == props.sourceChain.chainId), // Add chain
+                        chain: chainsTuple.find(a => a.id == sourceChain.chainId), // Add chain
                         account: walletData.address as `0x${string}`, // Add account
                     });
 
@@ -271,7 +285,7 @@ export default function Exchangeui(props: propsType) {
         let totalGasCost = 0;
         let totalGasCostNative = 0;
 
-        let payableGasChain = allChains.find(a => a.id == props.sourceChain.chainId);
+        let payableGasChain = allChains.find(a => a.id == sourceChain.chainId);
         let payableGasToken = new Tokens();
 
         if (payableGasChain.nativeCurrency.symbol == "ETH" || payableGasChain.nativeCurrency.symbol == "BNB") {
@@ -346,21 +360,21 @@ export default function Exchangeui(props: propsType) {
         transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
         transactoinObj.transactionSubStatus = 0;
         transactoinObj.quoteDetail = JSON.stringify(selectedPath.entire);
-        transactoinObj.sourceChainId = props.sourceChain.chainId;
-        transactoinObj.sourceChainName = props.sourceChain.chainName;
-        transactoinObj.sourceChainLogoUri = props.sourceChain.logoURI;
-        transactoinObj.destinationChainId = props.destChain.chainId;
-        transactoinObj.destinationChainName = props.destChain.chainName;
-        transactoinObj.destinationChainLogoUri = props.destChain.logoURI;
-        transactoinObj.sourceTokenName = props.sourceToken.name;
-        transactoinObj.sourceTokenAddress = props.sourceToken.address;
-        transactoinObj.sourceTokenSymbol = props.sourceToken.symbol;
-        transactoinObj.sourceTokenLogoUri = props.sourceToken.logoURI
-        transactoinObj.destinationTokenName = props.destToken.name;
-        transactoinObj.destinationTokenAddress = props.destToken.address;
-        transactoinObj.destinationTokenSymbol = props.destToken.symbol;
-        transactoinObj.destinationTokenLogoUri = props.destToken.logoURI;
-        transactoinObj.isNativeToken = await utilityService.isNativeCurrency(props.sourceChain, props.sourceToken);
+        transactoinObj.sourceChainId = sourceChain.chainId;
+        transactoinObj.sourceChainName = sourceChain.chainName;
+        transactoinObj.sourceChainLogoUri = sourceChain.logoURI;
+        transactoinObj.destinationChainId = destChain.chainId;
+        transactoinObj.destinationChainName = destChain.chainName;
+        transactoinObj.destinationChainLogoUri = destChain.logoURI;
+        transactoinObj.sourceTokenName = sourceToken.name;
+        transactoinObj.sourceTokenAddress = sourceToken.address;
+        transactoinObj.sourceTokenSymbol = sourceToken.symbol;
+        transactoinObj.sourceTokenLogoUri = sourceToken.logoURI
+        transactoinObj.destinationTokenName = destToken.name;
+        transactoinObj.destinationTokenAddress = destToken.address;
+        transactoinObj.destinationTokenSymbol = destToken.symbol;
+        transactoinObj.destinationTokenLogoUri = destToken.logoURI;
+        transactoinObj.isNativeToken = await utilityService.isNativeCurrency(sourceChain, sourceToken);
         transactoinObj.transactiionAggregator = selectedPath.aggregator;
         transactoinObj.transactionAggregatorRequestId = selectedPath.aggergatorRequestId;
         transactoinObj.transactionAggregatorGasLimit = selectedPath.gasLimit;
@@ -388,14 +402,14 @@ export default function Exchangeui(props: propsType) {
         //setStartBridging(true);
         if (!utilityService.isNullOrEmpty(walletData.address)) {
 
-            let workingRpc = await utilityService.setupProviderForChain(props.sourceChain.chainId, props.sourceChain.rpcUrl);
+            let workingRpc = await utilityService.setupProviderForChain(sourceChain.chainId, sourceChain.rpcUrl);
 
             if (workingRpc != undefined && workingRpc != null) {
                 console.log(error);
-                if (walletData.chainId != props.sourceChain.chainId) {
+                if (walletData.chainId != sourceChain.chainId) {
                     console.log("Need switch chain");
                     try {
-                        await switchChain({ chainId: props.sourceChain.chainId }) // Call switchChain with only chainId
+                        await switchChain({ chainId: sourceChain.chainId }) // Call switchChain with only chainId
                         console.log("Chain Switched")
                     }
                     catch (error) {
@@ -406,12 +420,12 @@ export default function Exchangeui(props: propsType) {
                     console.log("No Need to switch chain")
                 }
 
-                let checkNativeCoin = await utilityService.checkCoinNative(props.sourceChain, props.sourceToken);
+                let checkNativeCoin = await utilityService.checkCoinNative(sourceChain, sourceToken);
                 // check balance
-                let balance = await utilityService.getBalance(checkNativeCoin, props.sourceToken, walletData.address, workingRpc);
+                let balance = await utilityService.getBalance(checkNativeCoin, sourceToken, walletData.address, workingRpc);
 
                 if (Number(balance) < Number(sendAmount)) {
-                    bridgeMessage.message = "You don't have enough " + props.sourceToken.symbol + " to complete the transaction.";
+                    bridgeMessage.message = "You don't have enough " + sourceToken.symbol + " to complete the transaction.";
                     setIsBridgeMessageVisible(true);
                     setIsBridgeMessage(bridgeMessage.message);
                     return false;
@@ -448,6 +462,36 @@ export default function Exchangeui(props: propsType) {
         }
     }, [walletDisconnected])
 
+    function toggleAIMode(status: boolean){
+        setAIMode(status);
+    }
+
+    async function receivedChatDetails(data: SwapRequest){
+        
+        if(allAvailableChains && allAvailableChains.length > 0){
+            
+            //getting source chain and token data
+            let sourceChainObj = allAvailableChains?.find(x => x.chainName.toLowerCase() == data.sourceChain.toLowerCase());
+            setSourceChain(sourceChainObj);
+            
+            let sourceTokenObjList = await cryptoService.GetAllAvailableCoinsRapidX(sourceChainObj);
+            let sourceTokenObj = sourceTokenObjList && sourceTokenObjList.length > 0 ? sourceTokenObjList.find(x => x.name?.toLowerCase() == data?.sourceToken?.toLowerCase()) : new Tokens();
+            setSourceToken(sourceTokenObj);
+            setSourceTokenAmount(sourceTokenObj?.price);
+
+            //getting destination token data
+            let destChainObj = allAvailableChains?.find(x => x.chainName.toLowerCase() == data.destChain.toLowerCase());
+            setDestChain(destChainObj);
+
+            let destTokenObjList = await cryptoService.GetAllAvailableCoinsRapidX(destChainObj);
+            let destTokenObj = destTokenObjList && destTokenObjList.length > 0 ? destTokenObjList.find(x => x.name?.toLowerCase() == data?.destToken?.toLowerCase()) : new Tokens();
+            setDestToken(destTokenObj);
+            setDestTokenAmount(destTokenObj?.price);
+
+            updateAmount(data.amount);
+        }
+    }
+
     return (
         <>
             {
@@ -466,9 +510,19 @@ export default function Exchangeui(props: propsType) {
                                     <div className="card-title">
                                         Exchange
                                     </div>
-                                    {/* <div className="card-action-wrapper">
-                                        <i className="fas fa-cog cursor-pointer"></i>
-                                    </div> */}
+                                    <div className="card-action-wrapper">
+                                        <>
+                                            <div className="theme-mode position-relative">
+                                                <input type="checkbox" className="checkbox" id="checkboxAIToggle" onChange={(e) => toggleAIMode(e.currentTarget.checked)} />
+                                                <label htmlFor="checkboxAIToggle" className="checkbox-label">
+                                                    {/* <i className="fa-solid fa-microchip"></i> */}
+                                                    <i className="fa-solid fa-gear fs-6"></i>
+                                                    <i className="fa-solid fa-bolt fs-6"></i>
+                                                    <span className="ball"></span>
+                                                </label>
+                                            </div>
+                                        </>
+                                    </div>
                                 </div>
                                 {
                                     showSubBridgeView &&
@@ -482,74 +536,86 @@ export default function Exchangeui(props: propsType) {
                                     </>
                                 }
 
-                                <div className="d-flex align-items-center gap-3 position-relative">
-                                    <div className="inner-card w-100 py-2 px-3" id="select-coin" onClick={() =>
-                                        props.openTokenUI(DataSource.From)}>
-                                        <label className="mb-2 fw-600">From</label>
-                                        <div className="d-flex align-items-center gap-3">
-                                            <div className="position-relative coin-wrapper coin-from">
-                                                {utilityService.isNullOrEmpty(props.sourceChain.logoURI) && <div className="coin"></div>}
-                                                {utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <div className="coin-small"></div>}
+                                {
+                                    (isAIMode == false) &&
+                                    <>
+                                        <div className="d-flex align-items-center gap-3 position-relative">
+                                            <div className="inner-card w-100 py-2 px-3" id="select-coin" onClick={() =>
+                                                props.openTokenUI(DataSource.From)}>
+                                                <label className="mb-2 fw-600">From</label>
+                                                <div className="d-flex align-items-center gap-3">
+                                                    <div className="position-relative coin-wrapper coin-from">
+                                                        {utilityService.isNullOrEmpty(sourceChain.logoURI) && <div className="coin"></div>}
+                                                        {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin-small"></div>}
 
-                                                {!utilityService.isNullOrEmpty(props.sourceChain.logoURI) && <img src={props.sourceChain.logoURI}
-                                                    className="coin" alt="coin" />}
-                                                {!utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <img src={props.sourceToken.logoURI}
-                                                    className="coin-small" alt="coin" />}
+                                                        {!utilityService.isNullOrEmpty(sourceChain.logoURI) && <img src={sourceChain.logoURI}
+                                                            className="coin" alt="coin" />}
+                                                        {!utilityService.isNullOrEmpty(sourceToken.logoURI) && <img src={sourceToken.logoURI}
+                                                            className="coin-small" alt="coin" />}
+                                                    </div>
+                                                    <div className="d-flex flex-column">
+                                                        <label className="coin-name d-block fw-600">{sourceChain.chainId > 0 ?
+                                                            sourceChain.chainName : 'Chain'}</label>
+                                                        <label className="coin-sub-name">{sourceToken.symbol != '' ? sourceToken.symbol :
+                                                            'Token'}</label>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="d-flex flex-column">
-                                                <label className="coin-name d-block fw-600">{props.sourceChain.chainId > 0 ?
-                                                    props.sourceChain.chainName : 'Chain'}</label>
-                                                <label className="coin-sub-name">{props.sourceToken.symbol != '' ? props.sourceToken.symbol :
-                                                    'Token'}</label>
+                                            <div className="change-btn position-absolute cursor-pointer inner-card d-flex align-items-center justify-content-center"
+                                                onClick={() => interChangeFromTo()}>
+                                                <i className="fas fa-exchange-alt"></i>
+                                            </div>
+                                            <div className="inner-card w-100 py-2 px-3" onClick={() => props.openTokenUI(DataSource.To)}>
+                                                <label className="mb-2 fw-600">To</label>
+                                                <div className="d-flex align-items-center gap-3">
+                                                    <div className="position-relative coin-wrapper coin-to">
+
+                                                        {utilityService.isNullOrEmpty(destChain.logoURI) && <div className="coin"></div>}
+                                                        {utilityService.isNullOrEmpty(destToken.logoURI) && <div className="coin-small"></div>}
+
+                                                        {!utilityService.isNullOrEmpty(destChain.logoURI) && <img src={destChain.logoURI}
+                                                            className="coin" alt="coin" />}
+                                                        {!utilityService.isNullOrEmpty(destToken.logoURI) && <img src={destToken.logoURI}
+                                                            className="coin-small" alt="coin" />}
+                                                    </div>
+                                                    <div className="d-flex flex-column ">
+                                                        <label className="coin-name d-block fw-600">{destChain.chainId > 0 ?
+                                                            destChain.chainName : 'Chain'}</label>
+                                                        <label className="coin-sub-name">{destToken.symbol != '' ? destToken.symbol :
+                                                            'Token'}</label>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="change-btn position-absolute cursor-pointer inner-card d-flex align-items-center justify-content-center"
-                                        onClick={() => interChangeFromTo()}>
-                                        <i className="fas fa-exchange-alt"></i>
-                                    </div>
-                                    <div className="inner-card w-100 py-2 px-3" onClick={() => props.openTokenUI(DataSource.To)}>
-                                        <label className="mb-2 fw-600">To</label>
-                                        <div className="d-flex align-items-center gap-3">
-                                            <div className="position-relative coin-wrapper coin-to">
+                                        <div className="inner-card w-100 py-2 px-3 mt-3">
+                                            <label className="mb-2 fw-600">Send</label>
+                                            <div className="d-flex align-items-center gap-3 pb-2">
+                                                <div className="position-relative coin-wrapper">
+                                                    {utilityService.isNullOrEmpty(sourceChain.logoURI) && <div className="coin"></div>}
+                                                    {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin-small"></div>}
 
-                                                {utilityService.isNullOrEmpty(props.destChain.logoURI) && <div className="coin"></div>}
-                                                {utilityService.isNullOrEmpty(props.destToken.logoURI) && <div className="coin-small"></div>}
-
-                                                {!utilityService.isNullOrEmpty(props.destChain.logoURI) && <img src={props.destChain.logoURI}
-                                                    className="coin" alt="coin" />}
-                                                {!utilityService.isNullOrEmpty(props.destToken.logoURI) && <img src={props.destToken.logoURI}
-                                                    className="coin-small" alt="coin" />}
-                                            </div>
-                                            <div className="d-flex flex-column ">
-                                                <label className="coin-name d-block fw-600">{props.destChain.chainId > 0 ?
-                                                    props.destChain.chainName : 'Chain'}</label>
-                                                <label className="coin-sub-name">{props.destToken.symbol != '' ? props.destToken.symbol :
-                                                    'Token'}</label>
+                                                    {!utilityService.isNullOrEmpty(sourceChain.logoURI) && <img src={sourceChain.logoURI}
+                                                        className="coin" alt="coin" />}
+                                                    {!utilityService.isNullOrEmpty(sourceToken.logoURI) && <img src={sourceToken.logoURI}
+                                                        className="coin-small" alt="coin" />}
+                                                </div>
+                                                <div className="d-flex flex-column">
+                                                    <input type="text" ref={amountTextBoxRef} className="transparent-input" onChange={(e) =>
+                                                        handleChange(e)} placeholder="0" />
+                                                    {(equAmountUSD != null && equAmountUSD > 0) && <label className="coin-sub-name">$ {equAmountUSD}</label>}
+                                                    {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                                <div className="inner-card w-100 py-2 px-3 mt-3">
-                                    <label className="mb-2 fw-600">Send</label>
-                                    <div className="d-flex align-items-center gap-3 pb-2">
-                                        <div className="position-relative coin-wrapper">
-                                            {utilityService.isNullOrEmpty(props.sourceChain.logoURI) && <div className="coin"></div>}
-                                            {utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <div className="coin-small"></div>}
-
-                                            {!utilityService.isNullOrEmpty(props.sourceChain.logoURI) && <img src={props.sourceChain.logoURI}
-                                                className="coin" alt="coin" />}
-                                            {!utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <img src={props.sourceToken.logoURI}
-                                                className="coin-small" alt="coin" />}
-                                        </div>
-                                        <div className="d-flex flex-column">
-                                            <input type="text" ref={amountTextBoxRef} className="transparent-input" onChange={(e) =>
-                                                handleChange(e)} placeholder="0" />
-                                            {(equAmountUSD != null && equAmountUSD > 0) && <label className="coin-sub-name">$ {equAmountUSD}</label>}
-                                            {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
-                                        </div>
-                                    </div>
-                                </div>
+                                    </>
+                                }
+                                
+                                {
+                                    (isAIMode == true) &&
+                                    <>
+                                        <SwapChatBot sendSwapChatDetail={(obj: SwapRequest)=> receivedChatDetails(obj)}/>
+                                    </>
+                                }
 
                                 {
                                     (totalAvailablePath > 0 && sendAmount != null && sendAmount > 0) &&
@@ -657,7 +723,7 @@ export default function Exchangeui(props: propsType) {
 
                                                         <div className="d-flex gap-3">
                                                             <div className="selcet-coin coin-wrapper">
-                                                                <img src={props.destChain.logoURI} className="coin" alt="" />
+                                                                <img src={destChain.logoURI} className="coin" alt="" />
                                                             </div>
                                                             <div className="d-flex flex-column w-100">
                                                                 <label className="coin-name d-flex gap-2 justify-content-between">
@@ -726,10 +792,10 @@ export default function Exchangeui(props: propsType) {
 
                     {(isShowPathComponent) &&
                         <Pathshow Amountpathshow={sendAmount}
-                            destChain={props.destChain}
-                            sourceChain={props.sourceChain}
-                            sourceToken={props.sourceToken}
-                            destToken={props.destToken}
+                            destChain={destChain}
+                            sourceChain={sourceChain}
+                            sourceToken={sourceToken}
+                            destToken={destToken}
                             sendInitData={(result: PathShowViewModel[]) => getInitData(result)}
                             sendSelectedPath={(result: PathShowViewModel) => getSelectedPath(result)}
                             isPathLoadingParent={(status: boolean) => setIsPathLoading(status)}

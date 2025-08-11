@@ -389,3 +389,17 @@ export class ZkProofResponse {
   verified: boolean;
   generationTime: number;
 }
+
+export class ChatBotResponse {
+  message:string;
+  object:SwapRequest;
+}
+
+export class SwapRequest {
+  sourceChain: string;
+  sourceToken: string;
+  destChain: string;
+  destToken: string;
+  amount: string;
+  allDone: number;
+}

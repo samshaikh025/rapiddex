@@ -103,6 +103,14 @@
     color: #f39c12;
 }
 
+.theme-mode .fa-gear {
+    color: #f1c40f;
+}
+
+.theme-mode .fa-bolt {
+    color: #f39c12;
+}
+
 .theme-mode .checkbox-label .ball {
     background-color: #fff;
     width: 22px;

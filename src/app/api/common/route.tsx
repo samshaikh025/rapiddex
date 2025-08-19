@@ -14,6 +14,10 @@ export async function POST(req: Request, res: NextApiResponse) {
         reqHeader['x-lifi-api-key'] = CommonConfig[request.apiProvider].apiKey;
     }
 
+    if (request.apiProvider == SwapProvider.MOBULA) {
+        reqHeader['Authorization'] = CommonConfig[request.apiProvider].apiKey;
+    }
+
     if (request.apiType == 'GET') {
         apiResponse = await fetch(request.apiUrl, {
             method: 'GET',
@@ -62,7 +66,7 @@ function getAPIUrl(request: any) {
     if (request.apiProvider == SwapProvider.LIFI
         || request.apiProvider == SwapProvider.OWLTO
         || request.apiProvider == SwapProvider.MOBULA
-        || request.apiProvider == SwapProvider.DOTNET 
+        || request.apiProvider == SwapProvider.DOTNET
         || request.apiProvider == SwapProvider.RAPIDDEX
         || request.apiProvider == SwapProvider.DOTNETPAYMENTAPI) {
         let apiConfig = CommonConfig[request.apiProvider];

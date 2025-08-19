@@ -84,7 +84,7 @@ export class UtilityService {
         return false;
     }
 
-    async getBalance(tokenIsNative, token: Tokens, userAddress: string, providerUrl: string): Promise<string> {
+    async getBalanceIne(tokenIsNative, token: Tokens, userAddress: string, providerUrl: string): Promise<string> {
         try {
             // Create a provider using the passed provider URL
             const provider = new ethers.JsonRpcProvider(providerUrl);
@@ -126,6 +126,91 @@ export class UtilityService {
             return '0';
         }
     }
+
+    async getBalanceInw(tokenIsNative, token: Tokens, userAddress: string, providerUrl: string): Promise<string> {
+        try {
+            // Create a provider using the passed provider URL
+            const provider = new ethers.JsonRpcProvider(providerUrl);
+
+            // Define the minimal ABI for balance and decimals
+            const tokenABI = [
+                "function balanceOf(address owner) view returns (uint256)",
+                "function decimals() view returns (uint8)"
+            ];
+
+
+            if (tokenIsNative == true) {
+                const balance = await provider.getBalance(userAddress);
+
+                const formattedBalance = ethers.formatUnits(balance, token.decimal);
+
+                console.log(`Balance: ${formattedBalance} tokens`);
+
+                return formattedBalance;
+
+
+
+            }
+
+            // Create a contract instance
+            const tokenContract = new ethers.Contract(token.address, tokenABI, provider);
+
+            // Fetch balance and decimals
+            const balance = await tokenContract.balanceOf(userAddress);
+            const decimals = await tokenContract.decimals();
+
+
+            return balance.toString();
+        } catch (error) {
+            console.error('Error fetching balance:', error);
+            return '0';
+        }
+    }
+
+    async getBalance(tokenIsNative, token: Tokens, userAddress: string, providerUrl: string): Promise<string[]> {
+        try {
+            // Create a provider using the passed provider URL
+            const provider = new ethers.JsonRpcProvider(providerUrl);
+
+            // Define the minimal ABI for balance and decimals
+            const tokenABI = [
+                "function balanceOf(address owner) view returns (uint256)",
+                "function decimals() view returns (uint8)"
+            ];
+
+
+            if (tokenIsNative == true) {
+                const balance = await provider.getBalance(userAddress);
+
+                const formattedBalance = ethers.formatUnits(balance, token.decimal);
+
+                console.log(`Balance: ${formattedBalance} tokens`);
+
+                return [balance.toString(), formattedBalance];
+
+
+
+            }
+
+            // Create a contract instance
+            const tokenContract = new ethers.Contract(token.address, tokenABI, provider);
+
+            // Fetch balance and decimals
+            const balance = await tokenContract.balanceOf(userAddress);
+            const decimals = await tokenContract.decimals();
+
+            // Convert balance to a human-readable format
+            const formattedBalance = ethers.formatUnits(balance, decimals);
+
+            console.log(`Balance: ${formattedBalance} tokens`);
+            return [balance, formattedBalance];
+        } catch (error) {
+            console.error('Error fetching balance:', error);
+            return ['0', '0'];
+        }
+    }
+
+
 
     async findWorkingRPC(chainId: number, rpcUrls: string[], timeout = 3000): Promise<string | null> {
         const checkRPC = async (rpcUrl: string): Promise<string | null> => {

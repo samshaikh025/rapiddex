@@ -14,7 +14,7 @@ export const CommonConfig = [
         apiUrl: 'https://owlto.finance/'
     },
     {
-        apiKey: '',
+        apiKey: '4ee7370b-89e7-4d74-8b87-38355f2fb37d',
         apiUrl: 'https://api.mobula.io/api/1/'
     },
     {

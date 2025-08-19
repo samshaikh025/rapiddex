@@ -26,6 +26,7 @@ export class CryptoService {
     utilityService = new UtilityService();
 
     apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
+    private readonly MOBULA_API_KEY = "4ee7370b-89e7-4d74-8b87-38355f2fb37d";
 
     async getAvailableChainList() {
         let ChainListAPIResponseData = [];
@@ -40,6 +41,7 @@ export class CryptoService {
     }
 
     async GetTokenData(token: Tokens) {
+        debugger;
         let amountUSD = 0;
         let TokenData: ResponseMobulaPricing;
         let query = token.address == '0x0000000000000000000000000000000000000000' ? 'symbol=' + token.symbol : 'asset=' + token.address;
@@ -47,12 +49,13 @@ export class CryptoService {
             apiType: 'GET',
             apiUrl: `market/data?${query}`,
             apiData: null,
-            apiProvider: SwapProvider.MOBULA
+            apiProvider: SwapProvider.MOBULA,
         }
         try {
             let tokenExec = await fetch(this.apiUrlENV + '/api/common', {
                 method: 'POST',
                 headers: {
+                    'Authorization': this.MOBULA_API_KEY || '',
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payLoad),
@@ -69,13 +72,7 @@ export class CryptoService {
     }
 
     async getBestPathFromChosenChains(
-        sourceChain: Chains,
-        destChain: Chains,
-        sourceToken: Tokens,
-        destToken: Tokens,
-        amount: number,
-        walletAddress: string
-    ) {
+        sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, p0: { signal: AbortSignal; }) {
         try {
 
             // Assign default wallet address if not provided
@@ -84,7 +81,7 @@ export class CryptoService {
             }
 
             // Set a 6-second timeout for each API call (reduced from 100 seconds)
-            const apiTimeout = 10000; // 6 seconds
+            const apiTimeout = 6000; // 6 seconds
 
             const withTimeout = (promise: Promise<any>, ms: number, apiName: string) => {
                 return Promise.race([

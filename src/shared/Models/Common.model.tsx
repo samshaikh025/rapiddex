@@ -37,6 +37,12 @@ export class Tokens {
   tokenIsNative?: boolean = false;
   tokenIsStable?: boolean = false;
   amount?: string = '';
+  balance?: number = 0;
+  isbalance?: boolean = false;
+  amountInUsd?: string = '0';
+
+  balanceUSD?: number;
+  isLoadingBalance?: boolean;
 }
 
 export class PathShowViewModel {

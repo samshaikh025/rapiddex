@@ -127,6 +127,7 @@ export default function SendUI(props: propsType) {
   }
 
   async function closeTokenUi(sourceTokenData: Tokens) {
+    debugger;
     if (sourceChain && sourceToken.address != sourceTokenData.address) {
       setSourceToken(sourceTokenData);
       fetchPriceOfTokens(sourceTokenData, destiationToken);
@@ -159,7 +160,7 @@ export default function SendUI(props: propsType) {
 
         let checkNativeCoin = await utilityService.checkCoinNative(sourceChain, sourceToken);
         // check balance
-        let balance = await utilityService.getBalance(checkNativeCoin, sourceToken, walletData.address, workingRpc);
+        let balance = await utilityService.getBalanceIne(checkNativeCoin, sourceToken, walletData.address, workingRpc);
 
         if (Number(balance) < Number(sendAmount)) {
           bridgeMessage.message = "You don't have enough " + sourceToken.symbol + " to complete the transaction.";
@@ -378,6 +379,7 @@ export default function SendUI(props: propsType) {
   // }
 
   async function fetchPriceOfTokens(sourceToken: Tokens, destinationToken: Tokens) {
+    debugger;
     let sourceTokenPriceUsdc = (await cryptoService.GetTokenData(sourceToken))?.data?.price;
     let destinationTokenPriceUsdc = (await cryptoService.GetTokenData(destinationToken))?.data?.price;
 

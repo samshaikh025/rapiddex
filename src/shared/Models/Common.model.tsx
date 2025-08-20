@@ -67,6 +67,8 @@ export class PathShowViewModel {
   isMultiChain: boolean;
   sourceTransactionData: RapidQuoteTransactionDto;
   destinationTransactionData: RapidQuoteTransactionDto;
+  suggestedPath: number;
+  declaration: string;  
 }
 
 export class RapidQuoteTransactionDto {
@@ -397,9 +399,27 @@ export class ChatBotResponse {
 
 export class SwapRequest {
   sourceChain: string;
-  sourceToken: string;
+  sourceTokenAddress: string;
   destChain: string;
-  destToken: string;
+  destTokenAddress: string;
   amount: string;
   allDone: number;
+}
+
+export class AISuggestedRouteParams {
+  pathId: number;
+  aggregator: string;
+  gasafee: string;
+  estTime: string;
+  toAmountUsd: string; 
+}
+
+export class BestPathFromGPTOss{
+  pathId: number;
+  aggregator: string;
+  gasafee: string;
+  estTime: string;
+  toAmountUsd: string;
+  suggestedPath: number;
+  declaration: string;  
 }

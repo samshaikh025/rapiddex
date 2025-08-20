@@ -7,12 +7,14 @@ import React, { useState, useEffect, useRef } from 'react';
 
 type PropsType = {
     sendSwapChatDetail: (swapData: SwapRequest)=> void;
+    messageFromAssistant: string;
+    resetDataOnTyeping:  ()=> void;
 };
 
 export default function SwapChatBot(props: PropsType) {
 
     const [messages, setMessages] = useState([
-        { role: "assistant", content: "Hi! Let's start your swap. You can tell me everything in one sentence, like: 'I need to swap 0.005 ETH from Arbitrum to USDC on BSC'." }
+        { role: "assistant", content: "Hi there! 👋 Let's get your swap started. What's your source chain name?" }
     ]);
     const [input, setInput] = useState("");
     const chatEndRef = useRef<HTMLDivElement>(null);
@@ -23,11 +25,24 @@ export default function SwapChatBot(props: PropsType) {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    async function sendMessage() {
+    //if source or dest token is not supported
+    useEffect(()=>{
+        if(props.messageFromAssistant){
+            sendMessage("assistant");
+        }
+    }, [props.messageFromAssistant])
 
-        if (!input.trim()) return;
+    async function sendMessage(role: string) {
 
-        const newMessages = [...messages, { role: "user", content: input }];
+        let newMessages;
+
+        if(role == "user"){
+            if (!input.trim()) return;
+            newMessages = [...messages, { role: "user", content: input }];
+        }else if(role == "assistant"){
+            newMessages = [...messages, { role: "assistant", content: props.messageFromAssistant }];
+        }
+        
         setMessages(newMessages);
         setInput("");
 
@@ -35,7 +50,7 @@ export default function SwapChatBot(props: PropsType) {
         const message = data?.message + " " + GetSwapDetail(data?.object) ;
         setMessages(prev => [...prev, { role: "assistant", content: message }]);
 
-        if(data.object.allDone == 1){
+        if(data && data.object && data.object.allDone == 1){
             props.sendSwapChatDetail(data.object);
         }
     }
@@ -46,7 +61,7 @@ export default function SwapChatBot(props: PropsType) {
         try{
             const { allDone, ...rest } = data;
             result = Object.entries(rest)
-            .map(([key, value]) => `${key}: ${value}`)
+            .map(([key, value]) => `${key}: ${value == '' ? ' - ' : value}`)
             .join(' ');
         }catch{
             result = "";
@@ -68,7 +83,7 @@ export default function SwapChatBot(props: PropsType) {
     
             if(res.status == 200) {
                 const apiResponse = await res.json();
-                response = (apiResponse && apiResponse.Data) ? JSON.parse(apiResponse.Data) : new ChatBotResponse();
+                response = (apiResponse && apiResponse.Data) ? apiResponse.Data : new ChatBotResponse();
             } 
             setShowSearchingLoader(false);
         }
@@ -182,11 +197,14 @@ export default function SwapChatBot(props: PropsType) {
                         padding: "6px 10px",
                     }}
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={(e) => {
+                        setInput(e.target.value);
+                    }}
                     onKeyDown={(e) => {
+                        props.resetDataOnTyeping();
                         if (e.key === "Enter") {
                             e.preventDefault();
-                            sendMessage(); // Call your function
+                            sendMessage("user"); // Call your function
                         }
                     }}
                     placeholder="Type..."
@@ -194,7 +212,7 @@ export default function SwapChatBot(props: PropsType) {
 
                 {/* Send Icon Button */}
                 <button
-                    onClick={() => sendMessage()}
+                    onClick={() => sendMessage("user")}
                     className="btn btn-primary"
                     style={{
                         width: "50px",

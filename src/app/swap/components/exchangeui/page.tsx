@@ -85,6 +85,7 @@ export default function Exchangeui(props: propsType) {
     let [showSubBridgeView, setShowSubBridgeView] = useState<boolean>(false);
     let [showMinOneUSDAmountErr, setShowMinOneUSDAmountErr] = useState<boolean>(false);
     let cryptoService = new CryptoService();
+    let [messageFromAssistant, setMessageFromAssistant] = useState<string>('');
 
     const getAllChains = (): Chain[] => {
         return Object.values(definedChains).filter((chain) => chain.id !== undefined) as Chain[];
@@ -113,19 +114,19 @@ export default function Exchangeui(props: propsType) {
         // Set a new timeout
         typingTimeoutRef.current = setTimeout(() => {
             console.log("User stopped typing. Final input value:", value);
-            updateAmount(value);
+            updateAmount(value, sourceTokenAmount);
             // Call your custom function here
             // e.g., fetchSuggestions(value);
         }, 500); // Wait 500ms after user stops typing
     };
 
-    function updateAmount(amount) {
+    function updateAmount(amount, sourceTokenValue) {
         try {
             if (!utilityService.isNullOrEmpty(amount) && !isNaN(amount)) {
                 setSendAmount(Number(amount));
                 setequAmountUSD(null);
-                if (sourceTokenAmount > 0 && Number(amount) > 0) {
-                    let eq = (amount * sourceTokenAmount);
+                if (sourceTokenValue > 0 && Number(amount) > 0) {
+                    let eq = (amount * sourceTokenValue);
                     setequAmountUSD(Number(eq.toFixed(2)));
                     //setIsShowPathComponent(true);
                     //shwo validation message if balance is less than 1 USD
@@ -138,6 +139,9 @@ export default function Exchangeui(props: propsType) {
                         setShowMinOneUSDAmountErr(false);
                         setIsShowPathComponent(true);
                     }
+                    console.log("amount", amount);
+                    console.log("eq amount", Number(eq.toFixed(2)));
+                    console.log("source token amount ", sourceTokenValue)
 
                 }
             } else {
@@ -188,12 +192,15 @@ export default function Exchangeui(props: propsType) {
             setShowSubBridgeView(true);
             dispatch(SetActiveTransactionA(activeTransactiondata));
         }
+    }, [])
 
+    useEffect(() => {
         setSourceChain(props.sourceChain);
         setDestChain(props.destChain);
         setSourceToken(props.sourceToken);
         setDestToken(props.destToken);
-    }, [])
+        setSourceTokenAmount(props.sourceTokenAmount);
+    }, [props.sourceChain, props.destChain, props.sourceToken, props.destToken, props.sourceTokenAmount])
 
 
     async function getAllowance() {
@@ -464,6 +471,29 @@ export default function Exchangeui(props: propsType) {
 
     function toggleAIMode(status: boolean){
         setAIMode(status);
+        clearData();        
+    }
+
+    function clearData(){
+        setMessageFromAssistant("");
+        setSourceChain(new Chains());
+        setSourceToken(new Tokens());
+        setSourceTokenAmount(0);
+        
+        setDestChain(new Chains());
+        setDestToken(new Tokens());
+        setDestTokenAmount(0);
+
+        setSendAmount(null);
+        setequAmountUSD(null);
+
+        setTotalAvailablePath(0);
+        setSelectedPath(new PathShowViewModel());
+        setIsBridgeMessageVisible(false);
+        setIsBridgeMessage("");
+
+        setIsPathShow(false);
+        setIsShowPathComponent(false);
     }
 
     async function receivedChatDetails(data: SwapRequest){
@@ -475,20 +505,31 @@ export default function Exchangeui(props: propsType) {
             setSourceChain(sourceChainObj);
             
             let sourceTokenObjList = await cryptoService.GetAllAvailableCoinsRapidX(sourceChainObj);
-            let sourceTokenObj = sourceTokenObjList && sourceTokenObjList.length > 0 ? sourceTokenObjList.find(x => x.name?.toLowerCase() == data?.sourceToken?.toLowerCase()) : new Tokens();
-            setSourceToken(sourceTokenObj);
-            setSourceTokenAmount(sourceTokenObj?.price);
+            let sourceTokenObj = sourceTokenObjList && sourceTokenObjList.length > 0 ? sourceTokenObjList.find(x => x.address == data?.sourceTokenAddress) : new Tokens();
+            if(sourceTokenObj){
+                setSourceToken(sourceTokenObj);
+                setSourceTokenAmount(sourceTokenObj?.price);
+            }else{
+                setMessageFromAssistant("Source Token Is Not Supported By Chain.");
+                return;
+            }
+            
 
             //getting destination token data
             let destChainObj = allAvailableChains?.find(x => x.chainName.toLowerCase() == data.destChain.toLowerCase());
             setDestChain(destChainObj);
 
             let destTokenObjList = await cryptoService.GetAllAvailableCoinsRapidX(destChainObj);
-            let destTokenObj = destTokenObjList && destTokenObjList.length > 0 ? destTokenObjList.find(x => x.name?.toLowerCase() == data?.destToken?.toLowerCase()) : new Tokens();
-            setDestToken(destTokenObj);
-            setDestTokenAmount(destTokenObj?.price);
+            let destTokenObj = destTokenObjList && destTokenObjList.length > 0 ? destTokenObjList.find(x => x.address == data?.destTokenAddress) : new Tokens();
+            if(destTokenObj){
+                setDestToken(destTokenObj);
+                setDestTokenAmount(destTokenObj?.price);
+            }else{
+                setMessageFromAssistant("Destination Token Is Not Supported By Chain.");
+                return;
+            }
 
-            updateAmount(data.amount);
+            updateAmount(data.amount, sourceTokenObj?.price);
         }
     }
 
@@ -613,7 +654,7 @@ export default function Exchangeui(props: propsType) {
                                 {
                                     (isAIMode == true) &&
                                     <>
-                                        <SwapChatBot sendSwapChatDetail={(obj: SwapRequest)=> receivedChatDetails(obj)}/>
+                                        <SwapChatBot  messageFromAssistant={messageFromAssistant} sendSwapChatDetail={(obj: SwapRequest)=> receivedChatDetails(obj)} resetDataOnTyeping={()=>clearData()}/>
                                     </>
                                 }
 
@@ -732,7 +773,12 @@ export default function Exchangeui(props: propsType) {
                                                                         <span className="d-block coin-sub-name" >$ {selectedPath.toAmountUsd}</span>
                                                                     </label>
                                                                     <p className="faster fw-600 px-2 py-1 text-capitalize">
-                                                                        {selectedPath?.aggregatorOrderType}
+                                                                        {"AI #" + selectedPath?.suggestedPath}
+                                                                        <i
+                                                                            className="fa fa-info-circle ms-2 text-muted"
+                                                                            title={selectedPath?.declaration || ""}
+                                                                            style={{ cursor: "pointer" }}
+                                                                        ></i>
                                                                     </p>
                                                                 </label>
                                                             </div>

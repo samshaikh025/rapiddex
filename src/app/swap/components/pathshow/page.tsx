@@ -1,12 +1,13 @@
 "use client"
 import React, { useState, useEffect, useRef } from 'react';
-import { BridgeMessage, Chains, PathShowViewModel, Tokens } from '@/shared/Models/Common.model';
+import { AISuggestedRouteParams, BestPathFromGPTOss, BridgeMessage, Chains, ChatBotResponse, PathShowViewModel, Tokens } from '@/shared/Models/Common.model';
 import { CryptoService } from '@/shared/Services/CryptoService';
 import Skeleton from 'react-loading-skeleton';
 import { useSelector } from 'react-redux';
 import { UtilityService } from '@/shared/Services/UtilityService';
-import { Keys } from '@/shared/Enum/Common.enum';
+import { Keys, SwapProvider } from '@/shared/Enum/Common.enum';
 import { SharedService } from '@/shared/Services/SharedService';
+import { CommonConfig } from '@/shared/Const/Common.const';
 
 type PropsType = {
   Amountpathshow: number;
@@ -107,10 +108,11 @@ export default function Pathshow(props: PropsType) {
       console.log("result len : ", result.length);
       if (result && result.length > 0 && routeAmount == pathShowInvokedForAmount.current) {
         //result = result.slice(0,2);
-        result.forEach((item, index) => {
-          item.pathId = index + 1;
-          item.fromAmountUsd = String(props.amountInUsd);
-        });
+        // result.forEach((item, index) => {
+        //   item.pathId = index + 1;
+        //   item.fromAmountUsd = String(props.amountInUsd);
+        // });
+
         setPathShowSpinner(false);
         props.isPathLoadingParent(false);
         //call time out for realod path
@@ -148,6 +150,7 @@ export default function Pathshow(props: PropsType) {
       clearInterval(pathReloadIntervalId.current);
     };
   }, [])
+
   return (
     <>
       <div className="col-lg-5 col-md-12 col-sm-12 col-12 d-none d-lg-block">
@@ -254,7 +257,12 @@ export default function Pathshow(props: PropsType) {
                             </div>
                             <div className="d-block align-items-center gap-2 flex-wrap">
                               <label className="best-return fw-600 px-2 py-1 text-capitalize">
-                                {pathshow?.aggregatorOrderType}
+                                {"AI #" + pathshow?.suggestedPath}
+                                <i
+                                  className="fa fa-info-circle ms-2 text-muted"
+                                  title={pathshow?.declaration || ""}
+                                  style={{ cursor: "pointer" }}
+                                ></i>
                               </label>
                               {/* <label className="faster fw-600 px-2 py-1">
                                   {pathshow.aggregatorOrderType}
@@ -316,7 +324,12 @@ export default function Pathshow(props: PropsType) {
                           <span className="d-block coin-sub-name" >$ {pathshow.toAmountUsd}</span>
                         </label>
                         <p className="faster fw-600 px-2 py-1 text-capitalize">
-                          {pathshow?.aggregatorOrderType}
+                          {"AI #" + pathshow?.suggestedPath}
+                          <i
+                            className="fa fa-info-circle ms-2 text-muted"
+                            title={pathshow?.declaration || ""}
+                            style={{ cursor: "pointer" }}
+                          ></i>
                         </p>
                       </label>
                     </div>

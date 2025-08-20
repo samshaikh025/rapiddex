@@ -1,13 +1,15 @@
 
 import { useSelector } from "react-redux";
 import { AggregatorProvider, Keys, SwapProvider } from "../Enum/Common.enum";
-import { Chains, Tokens, DLNChainResponse, ResponseMobulaPricing, PathShowViewModel, RapidQuoteTransactionDto } from '../Models/Common.model';
+import { Chains, Tokens, DLNChainResponse, ResponseMobulaPricing, PathShowViewModel, RapidQuoteTransactionDto, AISuggestedRouteParams, BestPathFromGPTOss } from '../Models/Common.model';
 import { RequestLifiPath, ResponseLifiPath } from "../Models/Lifi";
 import { RequestOwltoDTC, RequestOwltoPath, ResponseOwltoDTC, ResponseOwltoPath } from "../Models/Owlto";
 import { RequestRangoPath, ResponseRangoPath } from "../Models/Rango";
 import { SharedService } from "./SharedService";
 import { UtilityService } from "./UtilityService";
 import { RequestRapidXPath, ResponseRapidXPath } from "../Models/RapidX";
+import { CommonConfig } from "../Const/Common.const";
+import { json } from "stream/consumers";
 export class CryptoService {
 
     AvailableChains: Chains[] = [];
@@ -142,9 +144,8 @@ export class CryptoService {
                     result.status === 'fulfilled' && result.value !== null)
                 .map(result => result.value);
 
-
             // Return successful paths
-            return viewModels.length > 0 ? viewModels : [];
+            return viewModels.length > 0 ? await this.AISuggestedPath(viewModels) : [];
 
 
         } catch (error) {
@@ -948,4 +949,68 @@ export class CryptoService {
         }
         return allAvailableChains;
     }
+
+    async AISuggestedPath(result: PathShowViewModel[]) {
+        let sortedRoutes: PathShowViewModel[] = [];
+
+        const inputParam = result.map((res, index) => {
+            return {
+                pathId: index + 1, // index starts from 0, so +1 for human-friendly numbering
+                aggregator: res.aggregator,
+                gasafee: res.gasafee,
+                estTime: res.estTime,
+                toAmountUsd: res.toAmountUsd
+            } as AISuggestedRouteParams;
+        });
+
+        const data = await this.getAISuggestedRoutes(inputParam);
+
+        if (data && data.length > 0) {
+
+            for (let i = 0; i < data.length; i++) {
+
+                let object = {
+                    ...result[i],
+                    pathId : i +1,
+                    suggestedPath: data[i].suggestedPath,
+                    declaration: data[i].declaration
+                } as PathShowViewModel;
+
+                sortedRoutes.push(object);
+            }
+            sortedRoutes.sort((a, b) => a.suggestedPath - b.suggestedPath);
+            sortedRoutes.forEach((item)=>{
+                console.log('path id '+ item.pathId, 'suggested id'+ item.suggestedPath, 'dec :'+item.declaration)
+            })
+        } else {
+            result.forEach((res, index) => {
+                res.pathId = index + 1 // index starts from 0, so +1 for human-friendly numbering
+            });
+        }
+        return sortedRoutes;
+    }
+    
+      async getAISuggestedRoutes(messages): Promise<BestPathFromGPTOss[]> {
+    
+        let apiConfig = CommonConfig[SwapProvider.RAPIDDEX];
+        let response : BestPathFromGPTOss[]= [];
+        
+        try {
+          const res = await fetch(apiConfig?.apiUrl + "aisuggestedroutes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(messages)
+          });
+    
+          if (res.status == 200) {
+            const apiResponse = await res.json();
+            response = (apiResponse && apiResponse.Data) ? apiResponse.Data : [];
+          }
+        }
+        catch {
+          console.log("error while fetching data from groq");
+        }
+        return response;
+      }
+    
 }

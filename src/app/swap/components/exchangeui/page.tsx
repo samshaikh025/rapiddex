@@ -429,7 +429,7 @@ export default function Exchangeui(props: propsType) {
 
                 let checkNativeCoin = await utilityService.checkCoinNative(sourceChain, sourceToken);
                 // check balance
-                let balance = await utilityService.getBalance(checkNativeCoin, sourceToken, walletData.address, workingRpc);
+                let balance = await utilityService.getBalanceIne(checkNativeCoin, sourceToken, walletData.address, workingRpc);
 
                 if (Number(balance) < Number(sendAmount)) {
                     bridgeMessage.message = "You don't have enough " + sourceToken.symbol + " to complete the transaction.";
@@ -703,7 +703,7 @@ export default function Exchangeui(props: propsType) {
                                     <>
                                         <div className="inner-card w-100 py-3 px-3 mt-3">
                                             <div className="">
-                                                {isPathShow &&
+                                                {/* {isPathShow &&
                                                     <>
                                                         <div className="d-flex gap-3">
                                                             <div className="selcet-coin coin-wrapper">
@@ -737,31 +737,15 @@ export default function Exchangeui(props: propsType) {
                                                             </div>
                                                         </div>
                                                     </>
-                                                }
+                                                } */}
                                                 {
                                                     (!isPathShow && totalAvailablePath == 0) &&
                                                     <><span>No Routes Availabe</span></>
                                                 }
 
-                                                {
+                                                {/* {
                                                     (!isPathShow && totalAvailablePath > 0) &&
                                                     <>
-                                                        {/* <div className="selcet-coin coin-wrapper">
-                                                            <img src="https://movricons.s3.ap-south-1.amazonaws.com/CCTP.svg" className="coin" alt="" />
-                                                        </div>
-                                                        <div className="d-flex flex-column">
-                                                            <label className="coin-name d-block fw-600">{selectedPath.aggregator} <span className="pl-2 fw-400">~ {selectedPath.estTime} mins </span> <label className="faster fw-600 px-2 py-1">
-                                                                faster
-                                                            </label></label>
-                                                            <div className="mt-0.5 d-flex items-center text-sm">
-                                                                <p className="m-0 flex p-0 font-medium primary-text">Est. Output:
-                                                                    <span className="">
-                                                                        <span><span className="px-1 fw-400">{selectedPath.receivedAmount} </span>
-                                                                        </span>
-                                                                        USDC</span>
-                                                                </p><span className="">&nbsp;</span><p className="m-0 p-0 font-medium primary-text"><span>Gas Fees: </span> <span className="fw-400">${selectedPath.gasafee}</span></p></div>
-                                                        </div> */}
-
                                                         <div className="d-flex gap-3">
                                                             <div className="selcet-coin coin-wrapper">
                                                                 <img src={destChain.logoURI} className="coin" alt="" />
@@ -773,12 +757,23 @@ export default function Exchangeui(props: propsType) {
                                                                         <span className="d-block coin-sub-name" >$ {selectedPath.toAmountUsd}</span>
                                                                     </label>
                                                                     <p className="faster fw-600 px-2 py-1 text-capitalize">
-                                                                        {"AI #" + selectedPath?.suggestedPath}
-                                                                        <i
-                                                                            className="fa fa-info-circle ms-2 text-muted"
-                                                                            title={selectedPath?.declaration || ""}
-                                                                            style={{ cursor: "pointer" }}
-                                                                        ></i>
+                                                                        {
+                                                                            !utilityService.isNullOrEmpty(selectedPath?.suggestedPath) &&
+                                                                            <>
+                                                                                {"AI #" + selectedPath?.suggestedPath}
+                                                                                <i
+                                                                                    className="fa fa-info-circle ms-2 text-muted"
+                                                                                    title={selectedPath?.declaration || ""}
+                                                                                    style={{ cursor: "pointer" }}
+                                                                                ></i>
+                                                                            </>
+                                                                        }
+                                                                        {
+                                                                            utilityService.isNullOrEmpty(selectedPath?.suggestedPath) &&
+                                                                            <>
+                                                                                {"AI #" + selectedPath?.aggregatorOrderType}
+                                                                            </>
+                                                                        }
                                                                     </p>
                                                                 </label>
                                                             </div>
@@ -805,7 +800,7 @@ export default function Exchangeui(props: propsType) {
                                                         </div>
                                                     </>
 
-                                                }
+                                                } */}
                                             </div>
                                         </div>
                                     </>

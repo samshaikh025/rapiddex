@@ -256,17 +256,28 @@ export default function Pathshow(props: PropsType) {
                               </div>
                             </div>
                             <div className="d-block align-items-center gap-2 flex-wrap">
-                              <label className="best-return fw-600 px-2 py-1 text-capitalize">
-                                {"AI #" + pathshow?.suggestedPath}
-                                <i
-                                  className="fa fa-info-circle ms-2 text-muted"
-                                  title={pathshow?.declaration || ""}
-                                  style={{ cursor: "pointer" }}
-                                ></i>
-                              </label>
-                              {/* <label className="faster fw-600 px-2 py-1">
-                                  {pathshow.aggregatorOrderType}
-                                </label> */}
+                              {
+                                !utilityService.isNullOrEmpty(pathshow?.suggestedPath) &&
+                                <>
+                                  <label className="best-return fw-600 px-2 py-1 text-capitalize">
+                                    {"AI #" + pathshow?.suggestedPath}
+                                    <i
+                                      className="fa fa-info-circle ms-2 text-muted"
+                                      title={pathshow?.declaration || ""}
+                                      style={{ cursor: "pointer" }}
+                                    ></i>
+                                  </label>
+                                </>
+                              }
+                              {
+                                utilityService.isNullOrEmpty(pathshow?.suggestedPath) &&
+                                <>
+                                  <label className="faster fw-600 px-2 py-1">
+                                    {pathshow.aggregatorOrderType}
+                                  </label>
+                                </>
+                              }
+                              
                             </div>
                           </div>
 
@@ -324,12 +335,23 @@ export default function Pathshow(props: PropsType) {
                           <span className="d-block coin-sub-name" >$ {pathshow.toAmountUsd}</span>
                         </label>
                         <p className="faster fw-600 px-2 py-1 text-capitalize">
-                          {"AI #" + pathshow?.suggestedPath}
-                          <i
-                            className="fa fa-info-circle ms-2 text-muted"
-                            title={pathshow?.declaration || ""}
-                            style={{ cursor: "pointer" }}
-                          ></i>
+                          {
+                            !utilityService.isNullOrEmpty(pathshow?.suggestedPath) &&
+                            <>
+                              {"AI #" + pathshow?.suggestedPath}
+                              <i
+                                className="fa fa-info-circle ms-2 text-muted"
+                                title={pathshow?.declaration || ""}
+                                style={{ cursor: "pointer" }}
+                              ></i>
+                            </>
+                          }
+                          {
+                            utilityService.isNullOrEmpty(pathshow?.suggestedPath) &&
+                            <>
+                              {pathshow.aggregatorOrderType}
+                            </>
+                          }
                         </p>
                       </label>
                     </div>

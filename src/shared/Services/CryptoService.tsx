@@ -74,7 +74,7 @@ export class CryptoService {
     }
 
     async getBestPathFromChosenChains(
-        sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, p0: { signal: AbortSignal; }) {
+        sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string) {
         try {
 
             // Assign default wallet address if not provided
@@ -980,9 +980,10 @@ export class CryptoService {
                 console.log('path id '+ item.pathId, 'suggested id'+ item.suggestedPath, 'dec :'+item.declaration)
             })
         } else {
-            result.forEach((res, index) => {
-                res.pathId = index + 1 // index starts from 0, so +1 for human-friendly numbering
-            });
+            sortedRoutes = result.map((res, index) => ({
+                ...res,              // copy all existing properties
+                pathId: index + 1    // add or overwrite pathId
+            }));
         }
         return sortedRoutes;
     }
@@ -1001,7 +1002,7 @@ export class CryptoService {
     
           if (res.status == 200) {
             const apiResponse = await res.json();
-            response = (apiResponse && apiResponse.Data) ? apiResponse.Data : [];
+            response = (apiResponse && apiResponse.Data?.length > 0) ? apiResponse.Data : [];
           }
         }
         catch {

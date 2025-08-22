@@ -47,7 +47,8 @@ export default function SwapChatBot(props: PropsType) {
         setInput("");
 
         const data = await askSwapBot(newMessages);
-        const message = data?.message + " " + GetSwapDetail(data?.object) ;
+        const message = data?.message; //+ " " + GetSwapDetail(data?.object) ;
+        console.log("msg: ", message);
         setMessages(prev => [...prev, { role: "assistant", content: message }]);
 
         if(data && data.object && data.object.allDone == 1){

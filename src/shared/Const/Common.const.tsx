@@ -20,7 +20,7 @@ export const CommonConfig = [
     {
         apiKey: '',
          //apiUrl: 'http://localhost:5159/api/'
-        apiUrl: 'https://rapidapione-gwb7grhmhgebg6dv.canadacentral-01.azurewebsites.net/'
+        apiUrl: 'https://rapidapione-gwb7grhmhgebg6dv.canadacentral-01.azurewebsites.net/api/'
     },
     {
         apiKey: '',

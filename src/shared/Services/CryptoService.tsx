@@ -74,7 +74,7 @@ export class CryptoService {
     }
 
     async getBestPathFromChosenChains(
-        sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string) {
+        sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, isAIMode: boolean) {
         try {
 
             // Assign default wallet address if not provided
@@ -142,7 +142,12 @@ export class CryptoService {
                 .map(result => result.value);
 
             // Return successful paths
-            return viewModels.length > 0 ? await this.AISuggestedPath(viewModels) : [];
+            if(isAIMode){
+                return viewModels.length > 0 ? await this.AISuggestedPath(viewModels) : [];
+            }else
+            {
+                return viewModels;
+            }
 
 
         } catch (error) {

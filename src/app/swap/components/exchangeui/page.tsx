@@ -699,7 +699,7 @@ export default function Exchangeui(props: propsType) {
                                     </>
                                 }
                                 {
-                                    sendAmount != null && sendAmount > 0 &&
+                                    (sendAmount != null && sendAmount > 0 && !isPathShow && totalAvailablePath == 0) &&
                                     <>
                                         <div className="inner-card w-100 py-3 px-3 mt-3">
                                             <div className="">
@@ -841,6 +841,7 @@ export default function Exchangeui(props: propsType) {
                             sendSelectedPath={(result: PathShowViewModel) => getSelectedPath(result)}
                             isPathLoadingParent={(status: boolean) => setIsPathLoading(status)}
                             amountInUsd={equAmountUSD}
+                            isAIMode = {isAIMode}
                         />
                     }
                 </>

@@ -19,6 +19,7 @@ type PropsType = {
   sendSelectedPath: (data: PathShowViewModel) => void;
   isPathLoadingParent: (status: boolean) => void;
   amountInUsd: number;
+  isAIMode: boolean
 };
 
 export default function Pathshow(props: PropsType) {
@@ -101,7 +102,8 @@ export default function Pathshow(props: PropsType) {
       props.sourceToken,
       props.destToken,
       props.Amountpathshow,
-      walletAddress
+      walletAddress,
+      props.isAIMode
     ).then((result) => {
       console.log("Result recived for : ", routeAmount);
       console.log("current props : ", pathShowInvokedForAmount.current);

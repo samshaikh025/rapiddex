@@ -131,25 +131,23 @@ export default function Pathshow(props: PropsType) {
   }
 
   useEffect(() => {
-    console.log("Path Show Called");
-
-    if(props.Amountpathshow){
-      pathShowInvokedForAmount.current = props.Amountpathshow;
-      console.log("Props changed : ", props.Amountpathshow);
-      fetchData(props.Amountpathshow);
-    }
-
     // Cleanup function to clear the interval
     return () => {
       // Abort on unmount
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
-        console.log("aborted API : Amount is : ", props.Amountpathshow);
       }
       clearInterval(pathReloadIntervalId.current);
-      console.log("PathShow Hide destory");
     };
   }, [])
+
+  useEffect(() => {
+    if (props.Amountpathshow && props.Amountpathshow > 0) {
+      pathShowInvokedForAmount.current = props.Amountpathshow;
+      console.log("Props changed : ", props.Amountpathshow);
+      fetchData(props.Amountpathshow);
+    }
+  }, [props.Amountpathshow])
 
   return (
     <>

@@ -74,6 +74,7 @@ export class CryptoService {
 
     async getBestPathFromChosenChains(
         sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, amount: number, walletAddress: string, isAIMode: boolean) {
+        let allRoutes : PathShowViewModel[] = [];    
         try {
 
             // Assign default wallet address if not provided
@@ -140,14 +141,21 @@ export class CryptoService {
                     result.status === 'fulfilled' && result.value !== null)
                 .map(result => result.value);
 
-            // Return successful paths
-            if(isAIMode){
-                return viewModels.length > 0 ? await this.AISuggestedPath(viewModels) : [];
-            }else
-            {
-                return viewModels;
-            }
+            if(viewModels.length > 0){
+                //add index to path
+                allRoutes = viewModels.map((res, index) => ({
+                ...res,              // copy all existing properties
+                pathId: index + 1    // add or overwrite pathId
+                }));
 
+                //check for isAI mode //if then call API and get result
+                if(isAIMode){
+                    allRoutes = await this.AISuggestedPath(allRoutes);
+                }
+
+            }
+            
+            return allRoutes;
 
         } catch (error) {
             console.error("Error in getBestPathFromChosenChains:", error);
@@ -952,11 +960,11 @@ export class CryptoService {
     }
 
     async AISuggestedPath(result: PathShowViewModel[]) {
-        let sortedRoutes: PathShowViewModel[] = [];
+        let finalRoutes: PathShowViewModel[] = [];
 
         const inputParam = result.map((res, index) => {
             return {
-                pathId: index + 1, // index starts from 0, so +1 for human-friendly numbering
+                pathId: res.pathId, // index starts from 0, so +1 for human-friendly numbering
                 aggregator: res.aggregator,
                 gasafee: res.gasafee,
                 estTime: res.estTime,
@@ -972,24 +980,17 @@ export class CryptoService {
 
                 let object = {
                     ...result[i],
-                    pathId : i +1,
                     suggestedPath: data[i].suggestedPath,
                     declaration: data[i].declaration
                 } as PathShowViewModel;
 
-                sortedRoutes.push(object);
+                finalRoutes.push(object);
             }
-            sortedRoutes.sort((a, b) => a.suggestedPath - b.suggestedPath);
-            sortedRoutes.forEach((item)=>{
-                console.log('path id '+ item.pathId, 'suggested id'+ item.suggestedPath, 'dec :'+item.declaration)
-            })
+            finalRoutes.sort((a, b) => a.suggestedPath - b.suggestedPath);
         } else {
-            sortedRoutes = result.map((res, index) => ({
-                ...res,              // copy all existing properties
-                pathId: index + 1    // add or overwrite pathId
-            }));
+            finalRoutes = [...result];
         }
-        return sortedRoutes;
+        return finalRoutes;
     }
     
       async getAISuggestedRoutes(messages): Promise<BestPathFromGPTOss[]> {

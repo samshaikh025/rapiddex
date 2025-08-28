@@ -39,43 +39,27 @@ export default function Pathshow(props: PropsType) {
   let sharedService = SharedService.getSharedServiceInstance();
   let currentTheme = useSelector((state: any) => state.SelectedTheme);
   let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   function fetchData(sendAmt: number) {
     if (pathReloadIntervalId.current != null) {
       clearInterval(pathReloadIntervalId.current);
       pathReloadIntervalId.current = null;
     }
-    if (!isNaN(props.Amountpathshow) && props.Amountpathshow > 0) {
-      try {
-        walletAddress = !utilityService.isNullOrEmpty(walletData.address) ? walletData.address : '';
-        //pathShowInvokedForAmount.current = props.Amountpathshow;
-        if ((props.amountInUsd < 0.95)) {
-          props.sendInitData([]);
-          setCurrentSelectedPath(new PathShowViewModel());
-          setAvailablePaths([]);
-        }
-        props.isPathLoadingParent(true);
-        setPathShowSpinner(true);
-        setIsShowPathShowTimer(false);
-        getAllPathForAmount(sendAmt);
-      } catch (error) {
-        props.sendInitData([]);
-        setPathShowSpinner(false);
-        props.isPathLoadingParent(false);
-        console.error('Error fetching path data:', error);
-      }
-    } else {
+    try {
+      walletAddress = !utilityService.isNullOrEmpty(walletData.address) ? walletData.address : '';
+      //pathShowInvokedForAmount.current = props.Amountpathshow;
+      props.isPathLoadingParent(true);
+      setPathShowSpinner(true);
+      setIsShowPathShowTimer(false);
+      getAllPathForAmount(sendAmt);
+    } catch (error) {
       props.sendInitData([]);
-      setCurrentSelectedPath(new PathShowViewModel());
-      setAvailablePaths([]);
+      setPathShowSpinner(false);
+      props.isPathLoadingParent(false);
+      console.error('Error fetching path data:', error);
     }
   };
-
-  useEffect(() => {
-    pathShowInvokedForAmount.current = props.Amountpathshow;
-    console.log("Props changed : ", props.Amountpathshow);
-    fetchData(props.Amountpathshow);
-  }, [props.Amountpathshow]);
 
   useEffect(() => {
     if (walletData.isReconnected == false) {
@@ -93,8 +77,14 @@ export default function Pathshow(props: PropsType) {
   function getAllPathForAmount(amt: number) {
 
     let routeAmount = amt;
-    //console.log("Props Amount : ", pathShowInvokedForAmount.current);
-    //console.log("Temp Props : ", routeAmount);
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new controller
+    abortControllerRef.current = new AbortController();
+    const { signal } = abortControllerRef.current;
 
     cryptoService.getBestPathFromChosenChains(
       props.sourceChain,
@@ -105,16 +95,10 @@ export default function Pathshow(props: PropsType) {
       walletAddress,
       props.isAIMode
     ).then((result) => {
-      console.log("Result recived for : ", routeAmount);
-      console.log("current props : ", pathShowInvokedForAmount.current);
-      console.log("result len : ", result.length);
-      if (result && result.length > 0 && routeAmount == pathShowInvokedForAmount.current) {
-        //result = result.slice(0,2);
-        // result.forEach((item, index) => {
-        //   item.pathId = index + 1;
-        //   item.fromAmountUsd = String(props.amountInUsd);
-        // });
-
+      if(signal.aborted){
+        return;
+      }
+      else if (result && result.length > 0) {
         setPathShowSpinner(false);
         props.isPathLoadingParent(false);
         //call time out for realod path
@@ -122,7 +106,7 @@ export default function Pathshow(props: PropsType) {
         props.sendInitData(result);
         setCurrentSelectedPath(result[0]);
         setAvailablePaths(result);
-      } else if (result && result.length == 0 && routeAmount == pathShowInvokedForAmount.current) {
+      } else if (result && result.length == 0) {
         setPathShowSpinner(false);
         props.isPathLoadingParent(false);
         props.sendInitData([]);
@@ -147,9 +131,23 @@ export default function Pathshow(props: PropsType) {
   }
 
   useEffect(() => {
+    console.log("Path Show Called");
+
+    if(props.Amountpathshow){
+      pathShowInvokedForAmount.current = props.Amountpathshow;
+      console.log("Props changed : ", props.Amountpathshow);
+      fetchData(props.Amountpathshow);
+    }
+
     // Cleanup function to clear the interval
     return () => {
+      // Abort on unmount
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        console.log("aborted API : Amount is : ", props.Amountpathshow);
+      }
       clearInterval(pathReloadIntervalId.current);
+      console.log("PathShow Hide destory");
     };
   }, [])
 

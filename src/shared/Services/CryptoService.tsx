@@ -43,7 +43,6 @@ export class CryptoService {
     }
 
     async GetTokenData(token: Tokens) {
-        debugger;
         let amountUSD = 0;
         let TokenData: ResponseMobulaPricing;
         let query = token.address == '0x0000000000000000000000000000000000000000' ? 'symbol=' + token.symbol : 'asset=' + token.address;

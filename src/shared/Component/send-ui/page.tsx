@@ -127,7 +127,6 @@ export default function SendUI(props: propsType) {
   }
 
   async function closeTokenUi(sourceTokenData: Tokens) {
-    debugger;
     if (sourceChain && sourceToken.address != sourceTokenData.address) {
       setSourceToken(sourceTokenData);
       fetchPriceOfTokens(sourceTokenData, destiationToken);
@@ -379,7 +378,6 @@ export default function SendUI(props: propsType) {
   // }
 
   async function fetchPriceOfTokens(sourceToken: Tokens, destinationToken: Tokens) {
-    debugger;
     let sourceTokenPriceUsdc = (await cryptoService.GetTokenData(sourceToken))?.data?.price;
     let destinationTokenPriceUsdc = (await cryptoService.GetTokenData(destinationToken))?.data?.price;
 

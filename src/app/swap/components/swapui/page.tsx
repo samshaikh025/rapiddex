@@ -65,7 +65,6 @@ export default function Swapui(props: propsType) {
     }
 
     async function CloseTokenUI(token: Tokens) {
-        debugger;
         if (dataSource == DataSource.From) {
             setSourceToken(token);
             setShowExchangeUI(true);  // Show UI immediately

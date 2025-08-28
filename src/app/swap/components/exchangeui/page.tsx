@@ -84,6 +84,7 @@ export default function Exchangeui(props: propsType) {
     let [startBridging, setStartBridging] = useState<boolean>(false);
     let [showSubBridgeView, setShowSubBridgeView] = useState<boolean>(false);
     let [showMinOneUSDAmountErr, setShowMinOneUSDAmountErr] = useState<boolean>(false);
+    let [showNoRouteFoundErr, setShowNoRouteFoundErr] = useState<boolean>(false);
     let cryptoService = new CryptoService();
     let [messageFromAssistant, setMessageFromAssistant] = useState<string>('');
 
@@ -106,6 +107,20 @@ export default function Exchangeui(props: propsType) {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
 
+        setSendAmount(null);
+        setequAmountUSD(null);
+        setShowMinOneUSDAmountErr(false);
+        setTotalAvailablePath(0);
+        setSelectedPath(new PathShowViewModel());
+        
+        setIsBridgeMessageVisible(false);
+        setIsBridgeMessage("");
+        setShowNoRouteFoundErr(false);
+
+        // Immediately hide Pathshow while typing
+        setIsPathShow(false);
+        setIsShowPathComponent(false);
+
         // Clear the previous timeout
         if (typingTimeoutRef.current) {
             clearTimeout(typingTimeoutRef.current);
@@ -115,17 +130,14 @@ export default function Exchangeui(props: propsType) {
         typingTimeoutRef.current = setTimeout(() => {
             console.log("User stopped typing. Final input value:", value);
             updateAmount(value, sourceTokenAmount);
-            // Call your custom function here
-            // e.g., fetchSuggestions(value);
         }, 500); // Wait 500ms after user stops typing
     };
 
     function updateAmount(amount, sourceTokenValue) {
         try {
-            if (!utilityService.isNullOrEmpty(amount) && !isNaN(amount)) {
-                setSendAmount(Number(amount));
-                setequAmountUSD(null);
-                if (sourceTokenValue > 0 && Number(amount) > 0) {
+            // setIsShowPathComponent(false);
+
+            if (!utilityService.isNullOrEmpty(amount) && !isNaN(amount) && sourceTokenValue > 0 && Number(amount) > 0) {
                     let eq = (amount * sourceTokenValue);
                     setequAmountUSD(Number(eq.toFixed(2)));
                     //setIsShowPathComponent(true);
@@ -133,28 +145,13 @@ export default function Exchangeui(props: propsType) {
 
                     if (eq < 0.95) {
                         setShowMinOneUSDAmountErr(true);
-                        //setIsShowPathComponent(false);
+                        return;
                     }
                     else {
-                        setShowMinOneUSDAmountErr(false);
+                        setSendAmount(Number(amount));
                         setIsShowPathComponent(true);
                     }
-                    console.log("amount", amount);
-                    console.log("eq amount", Number(eq.toFixed(2)));
-                    console.log("source token amount ", sourceTokenValue)
-
-                }
-            } else {
-                setSendAmount(null);
-                setequAmountUSD(null);
-                setShowMinOneUSDAmountErr(false);
-                //setIsShowPathComponent(false);
-            }
-            setTotalAvailablePath(0);
-            setSelectedPath(new PathShowViewModel());
-            setIsBridgeMessageVisible(false);
-            setIsBridgeMessage("");
-
+            } 
         } catch (error) {
 
         }
@@ -175,6 +172,7 @@ export default function Exchangeui(props: propsType) {
         } else {
             setIsShowPathComponent(false);
             setSelectedPath(new PathShowViewModel());
+            setShowNoRouteFoundErr(true);
         }
     }
 
@@ -489,6 +487,8 @@ export default function Exchangeui(props: propsType) {
 
         setTotalAvailablePath(0);
         setSelectedPath(new PathShowViewModel());
+        setShowMinOneUSDAmountErr(false);
+        setShowNoRouteFoundErr(false);
         setIsBridgeMessageVisible(false);
         setIsBridgeMessage("");
 
@@ -699,11 +699,21 @@ export default function Exchangeui(props: propsType) {
                                     </>
                                 }
                                 {
-                                    (sendAmount != null && sendAmount > 0 && !isPathShow && totalAvailablePath == 0) &&
+                                    showNoRouteFoundErr &&
+                                    <>
+                                        <div className="inner-card w-100 py-2 px-3 mt-2">
+                                            <div className="d-flex align-items-center gap-3">
+                                                <span>No Routes Found.</span>
+                                            </div>
+                                        </div>
+                                    </>
+                                }
+                                {
+                                    (sendAmount != null && sendAmount > 0 && isShowPathComponent) &&
                                     <>
                                         <div className="inner-card w-100 py-3 px-3 mt-3">
                                             <div className="">
-                                                {/* {isPathShow &&
+                                                { (isPathShow) &&
                                                     <>
                                                         <div className="d-flex gap-3">
                                                             <div className="selcet-coin coin-wrapper">
@@ -737,14 +747,9 @@ export default function Exchangeui(props: propsType) {
                                                             </div>
                                                         </div>
                                                     </>
-                                                } */}
-                                                {
-                                                    (!isPathShow && totalAvailablePath == 0) &&
-                                                    <><span>No Routes Availabe</span></>
                                                 }
-
-                                                {/* {
-                                                    (!isPathShow && totalAvailablePath > 0) &&
+                                                {
+                                                    ( !isPathShow && totalAvailablePath > 0) &&
                                                     <>
                                                         <div className="d-flex gap-3">
                                                             <div className="selcet-coin coin-wrapper">
@@ -771,7 +776,7 @@ export default function Exchangeui(props: propsType) {
                                                                         {
                                                                             utilityService.isNullOrEmpty(selectedPath?.suggestedPath) &&
                                                                             <>
-                                                                                {"AI #" + selectedPath?.aggregatorOrderType}
+                                                                                {selectedPath?.aggregatorOrderType}
                                                                             </>
                                                                         }
                                                                     </p>
@@ -800,7 +805,7 @@ export default function Exchangeui(props: propsType) {
                                                         </div>
                                                     </>
 
-                                                } */}
+                                                }
                                             </div>
                                         </div>
                                     </>

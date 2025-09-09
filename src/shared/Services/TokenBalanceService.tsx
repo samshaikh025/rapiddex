@@ -416,7 +416,7 @@ export class TokenBalanceService {
         const cachedEntry = this.cache.get(cacheKey);
         if (cachedEntry && this.isCacheValid(cachedEntry)) {
             console.log('Returning cached balances');
-            return this.filterTokensFromCache(cachedEntry.data, tokens);
+            return this.tokensFromCache(cachedEntry.data, []);
         }
 
         // Check if there's already a pending request
@@ -424,7 +424,7 @@ export class TokenBalanceService {
         if (pendingRequest) {
             console.log('Returning pending request');
             const result = await pendingRequest;
-            return this.filterTokensFromCache(result, tokens);
+            return this.tokensFromCache(result, []);
         }
 
         // Create new request
@@ -434,7 +434,7 @@ export class TokenBalanceService {
         try {
             const balances = await requestPromise;
             this.pendingRequests.delete(cacheKey);
-            return this.filterTokensFromCache(balances, tokens);
+            return this.tokensFromCache(balances, []);
         } catch (error) {
             this.pendingRequests.delete(cacheKey);
             throw error;
@@ -635,6 +635,24 @@ export class TokenBalanceService {
         });
 
         return found;
+    }
+
+    private tokensFromCache(
+        cachedBalances: TokenBalance[],
+        requestedTokens: Tokens[]
+    ): TokenBalance[] {
+        if (!requestedTokens || requestedTokens.length === 0) {
+            return cachedBalances.map(cachedBalance => ({
+                ...cachedBalance,
+                token: {
+                    ...cachedBalance.token,
+                    address: this.normalizeAddressForSystem(cachedBalance.token.address),
+                    balance: cachedBalance.balance,
+                    balanceUSD: cachedBalance.balanceUSD
+                }
+            }));
+        }
+
     }
 
     /**

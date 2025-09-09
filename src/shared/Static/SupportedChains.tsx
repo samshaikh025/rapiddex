@@ -13,7 +13,7 @@ export const SupportedChains = [
         "nativeToken": {
             address: "0x0000000000000000000000000000000000000000",
             symbol: "ETH",
-            logoURI: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+            logoURI: "https://metacore.mobula.io/d90e937d915ab0c865ff6e335361386c56524d4d33fb66f2f04defe1500082eb.png",
             name: "Ether",
             decimal: 18,
             price: 0,
@@ -21,7 +21,8 @@ export const SupportedChains = [
             tokenIsNative: true,
             tokenIsStable: false,
             amount: ""
-        }
+        },
+        "logoURI": "https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/ethereum.svg"
     },
     {
         "name": "BNB Smart Chain Mainnet",
@@ -34,7 +35,7 @@ export const SupportedChains = [
         "nativeToken": {
             address: "0x0000000000000000000000000000000000000000",
             symbol: "BNB",
-            logoURI: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+            logoURI: "https://coin-images.coingecko.com/coins/images/825/large/bnb-icon2_2x.png?1696501970",
             name: "Binance Coin",
             decimal: 18,
             price: 0,
@@ -42,7 +43,8 @@ export const SupportedChains = [
             tokenIsNative: true,
             tokenIsStable: false,
             amount: ""
-        }
+        },
+        "logoURI": "https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/bsc.svg"
     },
     {
         "name": "Arbitrum One Mainnet",
@@ -55,7 +57,7 @@ export const SupportedChains = [
         "nativeToken": {
             address: "0x0000000000000000000000000000000000000000",
             symbol: "ETH",
-            logoURI: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+            logoURI: "https://metacore.mobula.io/d90e937d915ab0c865ff6e335361386c56524d4d33fb66f2f04defe1500082eb.png",
             name: "Ether",
             decimal: 18,
             price: 0,
@@ -63,7 +65,8 @@ export const SupportedChains = [
             tokenIsNative: true,
             tokenIsStable: false,
             amount: ""
-        }
+        },
+        "logoURI": "https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/arbitrum.svg"
     },
     {
         "name": "Optimism Mainnet",
@@ -76,7 +79,7 @@ export const SupportedChains = [
         "nativeToken": {
             address: "0x0000000000000000000000000000000000000000",
             symbol: "ETH",
-            logoURI: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+            logoURI: "https://metacore.mobula.io/d90e937d915ab0c865ff6e335361386c56524d4d33fb66f2f04defe1500082eb.png",
             name: "Ether",
             decimal: 18,
             price: 0,
@@ -84,7 +87,8 @@ export const SupportedChains = [
             tokenIsNative: true,
             tokenIsStable: false,
             amount: ""
-        }
+        },
+        "logoURI": "https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/optimism.svg"
     },
     {
         "name": "Base Mainnet",
@@ -97,14 +101,21 @@ export const SupportedChains = [
         "nativeToken": {
             address: "0x0000000000000000000000000000000000000000",
             symbol: "ETH",
-            logoURI: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+            logoURI: "https://metacore.mobula.io/d90e937d915ab0c865ff6e335361386c56524d4d33fb66f2f04defe1500082eb.png",
             name: "Ether",
             decimal: 18,
             price: 0,
             chainId: 8453,
             tokenIsNative: true,
             tokenIsStable: false,
+
+
             amount: ""
-        }
+        },
+        "logoURI": "https://raw.githubusercontent.com/lifinance/types/main/src/assets/icons/chains/base.svg"
+
+
     }
+
+
 ]

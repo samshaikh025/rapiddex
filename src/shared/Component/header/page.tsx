@@ -17,6 +17,8 @@ import { SupportedLang } from "@/shared/Const/Common.const";
 import Link from 'next/link';
 import { useSearchParams } from "next/navigation";
 
+import EmbeddedWallet from '@/shared/Component/embeddedwallet/page';
+
 export default function Header() {
 
   const { open } = useWeb3Modal();
@@ -36,7 +38,31 @@ export default function Header() {
   let [showMenu, setShowMenu] = useState<boolean>(true);
   let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
 
+  // Embedded Wallet State
+  const [isWalletOpen, setIsWalletOpen] = useState(false);
+
   const searchParams = useSearchParams();
+
+  // Wallet Functions
+  const openWallet = () => {
+    if (!utilityService.isNullOrEmpty(walletData.address)) {
+      setIsWalletOpen(true);
+    }
+  };
+
+  const closeWallet = () => {
+    setIsWalletOpen(false);
+  };
+
+  const handleWalletButtonClick = () => {
+    if (!utilityService.isNullOrEmpty(walletData.address)) {
+      debugger;
+      closeWallet();
+      openWallet();
+    } else {
+      open(); // Open WalletConnect modal for new connections
+    }
+  };
 
   function toggleTheme(status: boolean) {
     let mode = status == false ? 'light' : 'dark';
@@ -77,6 +103,8 @@ export default function Header() {
     onDisconnect() {
       console.log('Disconnected!');
       clearWalletData();
+      // Close embedded wallet when disconnecting
+      setIsWalletOpen(false);
     }
   });
 
@@ -105,7 +133,6 @@ export default function Header() {
     }
   }, [openModalStatus])
 
-
   function diconnectWallet() {
     disconnect();
     clearWalletData();
@@ -128,8 +155,16 @@ export default function Header() {
     dispatch(SetSelectedLanguageA(lang));
     sharedService.setData(Keys.SELECTED_LANG, lang);
   }
+
   return (
     <div>
+      {/* Embedded Wallet Component */}
+      <EmbeddedWallet
+        isOpen={isWalletOpen}
+        onClose={closeWallet}
+        walletAddress={walletData.address}
+        className="embedded-wallet"
+      />
 
       {/* Desktop */}
       <div className="d-none d-md-block">
@@ -173,107 +208,34 @@ export default function Header() {
                   {
                     utilityService.isNullOrEmpty(walletData.address) &&
                     <>
-                      <button className="btn primary-btn border-radius-half btn-primary-bgColor" onClick={() => open()}>
+                      <button className="btn primary-btn border-radius-half btn-primary-bgColor" onClick={handleWalletButtonClick}>
                         {utilityService.Translate(selectedLang, 'CONNECT_WALLET')}</button>
                     </>
                   }
                   {
                     !utilityService.isNullOrEmpty(walletData.address) &&
                     <>
-                      {/* button for small screen */}
-                      <button className="btn primary-btn dropdown-toggle d-flex d-lg-none header-btn border-radius-half btn-primary-bgColor" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWalletData" aria-controls="offcanvasWalletData">
-                        <div className="position-relative coin-wrapper">
+                      {/* Connected wallet button - opens embedded wallet directly */}
+                      <button className="btn primary-btn header-btn border-radius-half btn-primary-bgColor d-flex align-items-center"
+                        type="button"
+                        onClick={handleWalletButtonClick}>
+                        <div className="position-relative coin-wrapper me-2">
                           {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
                             className="coin" alt="coin" />}
                           {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
                             className="coin-small" alt="coin" />}
                         </div>
-                        {walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}
+                        <span>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</span>
+                        <i className="fas fa-chevron-down ms-2 small"></i>
                       </button>
-
-                      {/* button for large screen */}
-                      <button className="btn primary-btn dropdown-toggle d-none d-lg-flex header-btn border-radius-half btn-primary-bgColor" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div className="position-relative coin-wrapper">
-                          {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
-                            className="coin" alt="coin" />}
-                          {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
-                            className="coin-small" alt="coin" />}
-                        </div>
-                        {walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}
-                      </button>
-                      <ul className="dropdown-menu dropdown-menu-right">
-                        <div className="d-flex align-items-center user-profile">
-                          <div className="position-relative coin-wrapper">
-                            {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
-                              className="coin" alt="coin" />}
-                            {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
-                              className="coin-small" alt="coin" />}
-                          </div>
-                          <div className="d-flex align-items-center">
-                            <div>
-                              <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
-                              <a href="#">
-                                <span>{walletData.chainName}</span>
-                              </a>
-                            </div>
-                            <i className="fa-regular fa-clipboard px-2" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
-                          </div>
-                        </div>
-                        <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
-                        <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()}>View On Block Explorer</a></li>
-                        <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()}>Diconnect</a></li>
-                      </ul>
                     </>
                   }
-
                 </div>
-                {/* {
-              showMenu &&
-              <>
-                <div className="dropdown">
-                  <button className="btn primary-btn dropdown-toggle w-48 border-radius-half" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i className="fas fa-bars"></i>
-                  </button>
-                  <ul className="dropdown-menu dropdown-menu-right">
-                    <div className="d-flex align-items-center user-profile">
-                      <img src="assets/images/avatar.svg" alt="avatar" />
-                      <div className="d-flex flex-column">
-                        <label>John Carter</label>
-                        <a href="#">
-                          <span>View Profile</span>
-                        </a>
-                      </div>
-                    </div>
-
-                    <li className="mobile-menu">
-                      <Link href="/swap" className="dropdown-item active">Swap</Link>
-                    </li>
-                    <li className="mobile-menu">
-                      <Link href="/send" className="dropdown-item">Send</Link>
-                    </li>
-                    <li className="mobile-menu"><a href="/loans" className="dropdown-item">Loans</a></li>
-                    <li className="mobile-menu"><a href="/liquidity" className="dropdown-item">Liquidity</a></li>
-                    <li className="mobile-menu"><a href="/stck" className="dropdown-item">Stak</a></li>
-                    <li><a href="#" className="dropdown-item">Action</a></li>
-                    <li><a href="#" className="dropdown-item">Another action</a></li>
-                    <li><a href="#" className="dropdown-item">Something else here</a></li>
-                    {
-                      (SupportedLanguage && SupportedLanguage.length > 0) &&
-                      <>
-                        {
-                          SupportedLanguage.map((item, index) => (
-                            <li key={index}><a className="dropdown-item" onClick={() => changeLanguage(item)}>{item}</a></li>
-                          ))
-                        }
-                      </>
-                    }
-                  </ul>
-                </div>
-              </>
-            } */}
               </div>
             </div>
           </div>
+
+          {/* Keep existing mobile offcanvas with embedded wallet integration */}
           <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasWalletData" data-bs-backdrop="true" aria-labelledby="offcanvasWalletDataLabel" style={{ height: '50%' }}>
             <div className="offcanvas-header cms-header">
               <h5 className="offcanvas-title primary-text" id="offcanvasWalletDataLabel">Wallet Detail</h5>
@@ -301,23 +263,25 @@ export default function Header() {
                       <i className="fa-regular fa-clipboard px-2 py-1" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
                     </div>
                   </div>
+
+                  {/* Added Open Wallet option for mobile */}
+                  <li>
+                    <button className="dropdown-item" onClick={handleWalletButtonClick} data-bs-dismiss="offcanvas">
+                      <i className="fas fa-wallet me-2"></i>Open Wallet
+                    </button>
+                  </li>
                   <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
                   <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()} data-bs-dismiss="offcanvas">View On Block Explorer</a></li>
-                  <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()} data-bs-dismiss="offcanvas">Diconnect</a></li>
+                  <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()} data-bs-dismiss="offcanvas">Disconnect</a></li>
                 </ul>
               </div>
             </div>
           </div>
         </section>
-
       </div>
-
 
       {/* Mobile */}
       <div className="d-block d-md-none">
-
-
-
         <section className="header">
           <div className="container">
             <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
@@ -358,15 +322,17 @@ export default function Header() {
                   {
                     utilityService.isNullOrEmpty(walletData.address) &&
                     <>
-                      <button className="btn primary-btn border-radius-half btn-primary-bgColor" onClick={() => open()}>
+                      <button className="btn primary-btn border-radius-half btn-primary-bgColor" onClick={handleWalletButtonClick}>
                         {utilityService.Translate(selectedLang, 'CONNECT_WALLET')}</button>
                     </>
                   }
                   {
                     !utilityService.isNullOrEmpty(walletData.address) &&
                     <>
-                      {/* button for small screen */}
-                      <button className="btn primary-btn dropdown-toggle d-flex d-lg-none header-btn border-radius-half btn-primary-bgColor" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWalletData" aria-controls="offcanvasWalletData">
+                      {/* Mobile wallet button - opens embedded wallet directly */}
+                      <button className="btn primary-btn dropdown-toggle d-flex d-lg-none header-btn border-radius-half btn-primary-bgColor"
+                        type="button"
+                        onClick={handleWalletButtonClick}>
                         <div className="position-relative coin-wrapper">
                           {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
                             className="coin" alt="coin" />}
@@ -375,90 +341,14 @@ export default function Header() {
                         </div>
                         {walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}
                       </button>
-
-                      {/* button for large screen */}
-                      <button className="btn primary-btn dropdown-toggle d-none d-lg-flex header-btn border-radius-half btn-primary-bgColor" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div className="position-relative coin-wrapper">
-                          {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
-                            className="coin" alt="coin" />}
-                          {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
-                            className="coin-small" alt="coin" />}
-                        </div>
-                        {walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}
-                      </button>
-                      <ul className="dropdown-menu dropdown-menu-right">
-                        <div className="d-flex align-items-center user-profile">
-                          <div className="position-relative coin-wrapper">
-                            {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
-                              className="coin" alt="coin" />}
-                            {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
-                              className="coin-small" alt="coin" />}
-                          </div>
-                          <div className="d-flex align-items-center">
-                            <div>
-                              <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
-                              <a href="#">
-                                <span>{walletData.chainName}</span>
-                              </a>
-                            </div>
-                            <i className="fa-regular fa-clipboard px-2" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
-                          </div>
-                        </div>
-                        <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
-                        <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()}>View On Block Explorer</a></li>
-                        <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()}>Diconnect</a></li>
-                      </ul>
                     </>
                   }
-
                 </div>
-                {/* {
-              showMenu &&
-              <>
-                <div className="dropdown">
-                  <button className="btn primary-btn dropdown-toggle w-48 border-radius-half" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i className="fas fa-bars"></i>
-                  </button>
-                  <ul className="dropdown-menu dropdown-menu-right">
-                    <div className="d-flex align-items-center user-profile">
-                      <img src="assets/images/avatar.svg" alt="avatar" />
-                      <div className="d-flex flex-column">
-                        <label>John Carter</label>
-                        <a href="#">
-                          <span>View Profile</span>
-                        </a>
-                      </div>
-                    </div>
-
-                    <li className="mobile-menu">
-                      <Link href="/swap" className="dropdown-item active">Swap</Link>
-                    </li>
-                    <li className="mobile-menu">
-                      <Link href="/send" className="dropdown-item">Send</Link>
-                    </li>
-                    <li className="mobile-menu"><a href="/loans" className="dropdown-item">Loans</a></li>
-                    <li className="mobile-menu"><a href="/liquidity" className="dropdown-item">Liquidity</a></li>
-                    <li className="mobile-menu"><a href="/stck" className="dropdown-item">Stak</a></li>
-                    <li><a href="#" className="dropdown-item">Action</a></li>
-                    <li><a href="#" className="dropdown-item">Another action</a></li>
-                    <li><a href="#" className="dropdown-item">Something else here</a></li>
-                    {
-                      (SupportedLanguage && SupportedLanguage.length > 0) &&
-                      <>
-                        {
-                          SupportedLanguage.map((item, index) => (
-                            <li key={index}><a className="dropdown-item" onClick={() => changeLanguage(item)}>{item}</a></li>
-                          ))
-                        }
-                      </>
-                    }
-                  </ul>
-                </div>
-              </>
-            } */}
               </div>
             </div>
           </div>
+
+          {/* Mobile offcanvas - same as above */}
           <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasWalletData" data-bs-backdrop="true" aria-labelledby="offcanvasWalletDataLabel" style={{ height: '50%' }}>
             <div className="offcanvas-header cms-header">
               <h5 className="offcanvas-title primary-text" id="offcanvasWalletDataLabel">Wallet Detail</h5>
@@ -486,9 +376,15 @@ export default function Header() {
                       <i className="fa-regular fa-clipboard px-2 py-1" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
                     </div>
                   </div>
+
+                  <li>
+                    <button className="dropdown-item" onClick={handleWalletButtonClick} data-bs-dismiss="offcanvas">
+                      <i className="fas fa-wallet me-2"></i>Open Wallet
+                    </button>
+                  </li>
                   <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
                   <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()} data-bs-dismiss="offcanvas">View On Block Explorer</a></li>
-                  <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()} data-bs-dismiss="offcanvas">Diconnect</a></li>
+                  <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()} data-bs-dismiss="offcanvas">Disconnect</a></li>
                 </ul>
               </div>
             </div>
@@ -496,8 +392,5 @@ export default function Header() {
         </section>
       </div>
     </div>
-
-
-
   )
 }

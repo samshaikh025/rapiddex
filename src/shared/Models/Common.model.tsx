@@ -45,6 +45,34 @@ export class Tokens {
   isLoadingBalance?: boolean;
 }
 
+export interface WalletView {
+  main: 'main';
+  tokenDetail: 'tokenDetail';
+  history: 'history';
+  nfts: 'nfts';
+}
+
+export interface TokenBalance {
+  token: Tokens;
+  balance: number;
+  balanceRaw: string;
+  balanceUSD: number;
+  price: number;
+  chainId: number;
+  lastUpdated: number;
+}
+
+export interface EmbeddedWalletState {
+  currentView: keyof WalletView;
+  activeTab: 'crypto' | 'nfts';
+  tokenBalances: TokenBalance[];
+  selectedToken: TokenBalance | null;
+  loading: boolean;
+  totalBalance: number;
+  refreshing: boolean;
+  currentChain: Chains | null;
+}
+
 export class PathShowViewModel {
   pathId: number;
   estTime: string;
@@ -74,7 +102,7 @@ export class PathShowViewModel {
   sourceTransactionData: RapidQuoteTransactionDto;
   destinationTransactionData: RapidQuoteTransactionDto;
   suggestedPath: number;
-  declaration: string;  
+  declaration: string;
 }
 
 export class RapidQuoteTransactionDto {
@@ -399,8 +427,8 @@ export class ZkProofResponse {
 }
 
 export class ChatBotResponse {
-  message:string;
-  object:SwapRequest;
+  message: string;
+  object: SwapRequest;
 }
 
 export class SwapRequest {
@@ -417,15 +445,15 @@ export class AISuggestedRouteParams {
   aggregator: string;
   gasafee: string;
   estTime: string;
-  toAmountUsd: string; 
+  toAmountUsd: string;
 }
 
-export class BestPathFromGPTOss{
+export class BestPathFromGPTOss {
   pathId: number;
   aggregator: string;
   gasafee: string;
   estTime: string;
   toAmountUsd: string;
   suggestedPath: number;
-  declaration: string;  
+  declaration: string;
 }

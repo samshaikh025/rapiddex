@@ -573,6 +573,7 @@ button.swap-btn {
     0% {
         width: 0%;
     }
+
     100% {
         width: 100%;
     }
@@ -666,6 +667,7 @@ button.swap-btn {
     from {
         stroke-dashoffset: 0px;
     }
+
     to {
         stroke-dashoffset: 113px;
     }

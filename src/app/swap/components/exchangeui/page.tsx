@@ -3,7 +3,7 @@ import { AggregatorProvider, DataSource, Keys, TransactionStatus } from "@/share
 import { BridgeMessage, Chains, ChatBotResponse, PathShowViewModel, RequestTransaction, SwapRequest, Tokens, TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useSwitchAccount, useSwitchChain, useSendTransaction, useConnections, useReadContract, useWriteContract } from "wagmi";
 import Pathshow from "../pathshow/page";
 import { UtilityService } from "@/shared/Services/UtilityService";
@@ -22,6 +22,7 @@ import * as definedChains from "wagmi/chains";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import SubBridgeView from "../sub-bridge-view/page";
 import SwapChatBot from "../swap-chatbot/page";
+import { TokenBalanceService } from "@/shared/Services/TokenBalanceService";
 
 type propsType = {
     sourceChain: Chains,
@@ -45,7 +46,7 @@ export default function Exchangeui(props: propsType) {
     let [isPathShow, setIsPathShow] = useState<boolean>(false);
     let [isShowPathComponent, setIsShowPathComponent] = useState<boolean>(false);
     let [selectedPath, setSelectedPath] = useState<PathShowViewModel>(new PathShowViewModel());
-    let amountTextBoxRef = useRef<HTMLInputElement>(null);
+
     let dispatch = useDispatch();
     const { open } = useWeb3Modal();
     let account = useAccount();
@@ -104,6 +105,109 @@ export default function Exchangeui(props: propsType) {
     const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    const [showSelectSourceErr, setshowSelectSourceErr] = useState<boolean>(false);
+    const [showSelectDestinationErr, setshowSelectDestinationErr] = useState<boolean>(false);
+    const [showBalanceErr, setBalanceErr] = useState<boolean>(false);
+
+    // Token balance state
+    const [sourceTokenBalance, setSourceTokenBalance] = useState<any>(null);
+    const [balanceLoading, setBalanceLoading] = useState<boolean>(false);
+    const amountTextBoxRef = useRef<HTMLInputElement>(null);
+    const currentAmountRef = useRef<number | null>(null);
+    const prevFetchKeyRef = useRef<string>('');
+    const isMountedRef = useRef<boolean>(true);
+
+    // Services - using useMemo to ensure singleton instance
+    const tokenBalanceService = useMemo(() => TokenBalanceService.getInstance(), []);
+
+    // Create a unique key for fetch parameters
+    const fetchParamsKey = useMemo(() => {
+        if (!walletData.address || !props.sourceToken?.address || !props.sourceChain?.chainId) {
+            return '';
+        }
+        return `${walletData.address}_${props.sourceToken.address}_${props.sourceChain.chainId}`;
+    }, [walletData.address, props.sourceToken?.address, props.sourceChain?.chainId]);
+
+    // Function to fetch token balance
+    const fetchTokenBalance = useCallback(async () => {
+        if (!walletData.address || !props.sourceToken || !props.sourceChain ||
+            props.sourceChain.chainId <= 0 || !props.sourceToken.address) {
+            setSourceTokenBalance(null);
+            return;
+        }
+
+        // Prevent duplicate fetches
+        if (prevFetchKeyRef.current === fetchParamsKey && sourceTokenBalance !== null) {
+            console.log('Skipping duplicate fetch for:', fetchParamsKey);
+            return;
+        }
+
+        console.log('Fetching balance for:', fetchParamsKey);
+        setBalanceLoading(true);
+
+        try {
+            const balance = await tokenBalanceService.getSingleTokenBalance(
+                walletData.address,
+                props.sourceChain,
+                props.sourceToken
+            );
+
+            // Only update state if component is still mounted
+            if (isMountedRef.current) {
+                console.log('Fetched balance:', balance);
+                setSourceTokenBalance(balance);
+                prevFetchKeyRef.current = fetchParamsKey;
+            }
+        } catch (error) {
+            console.error('Error fetching balance:', error);
+            if (isMountedRef.current) {
+                setSourceTokenBalance(null);
+            }
+        } finally {
+            if (isMountedRef.current) {
+                setBalanceLoading(false);
+            }
+        }
+    }, [walletData.address, props.sourceToken, props.sourceChain, fetchParamsKey, tokenBalanceService, sourceTokenBalance]);
+
+    // Effect to fetch balance when parameters change
+    useEffect(() => {
+        if (fetchParamsKey && fetchParamsKey !== prevFetchKeyRef.current) {
+            fetchTokenBalance();
+        }
+    }, [fetchParamsKey, fetchTokenBalance]);
+
+    const isNativeToken = useCallback((token: Tokens): boolean => {
+        if (!token) return false;
+        return token.tokenIsNative ||
+            token.address === '0x0000000000000000000000000000000000000000' ||
+            token.address.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+    }, []);
+
+    // Handle percentage button clicks
+    const handlePercentageClick = useCallback((percentage: number) => {
+
+        debugger;
+        if (!sourceTokenBalance || sourceTokenBalance.balance === 0) return;
+
+        let adjustedBalance = sourceTokenBalance.balance;
+
+        // Check if it's a native token
+        const isNative = isNativeToken(props.sourceToken);
+
+        if (isNative && percentage === 1) {
+            // Leave 0.001 for gas if it's native token and max is selected
+            adjustedBalance = Math.max(0, sourceTokenBalance.balance - 0.001);
+        }
+
+        const newAmount = (adjustedBalance * percentage).toFixed(6);
+
+        if (amountTextBoxRef.current) {
+            amountTextBoxRef.current.value = newAmount;
+            updateAmount(newAmount, props.sourceToken.price);
+        }
+    }, [sourceTokenBalance, props.sourceToken, isNativeToken]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
 
@@ -112,7 +216,7 @@ export default function Exchangeui(props: propsType) {
         setShowMinOneUSDAmountErr(false);
         setTotalAvailablePath(0);
         setSelectedPath(new PathShowViewModel());
-        
+
         setIsBridgeMessageVisible(false);
         setIsBridgeMessage("");
         setShowNoRouteFoundErr(false);
@@ -129,29 +233,76 @@ export default function Exchangeui(props: propsType) {
         // Set a new timeout
         typingTimeoutRef.current = setTimeout(() => {
             console.log("User stopped typing. Final input value:", value);
-            updateAmount(value, sourceTokenAmount);
+            updateAmount(value, props.sourceToken.price);
         }, 500); // Wait 500ms after user stops typing
     };
+
+    const formatBalance = useCallback((value: number): string => {
+        if (value === 0) return '0';
+        if (value < 0.0001) return '< 0.0001';
+        if (value < 1) return value.toFixed(6);
+        if (value < 1000) return value.toFixed(4);
+        return value.toLocaleString(undefined, { maximumFractionDigits: 4 });
+    }, []);
 
     function updateAmount(amount, sourceTokenValue) {
         try {
             // setIsShowPathComponent(false);
 
             if (!utilityService.isNullOrEmpty(amount) && !isNaN(amount) && sourceTokenValue > 0 && Number(amount) > 0) {
-                    let eq = (amount * sourceTokenValue);
-                    setequAmountUSD(Number(eq.toFixed(2)));
-                    //setIsShowPathComponent(true);
-                    //shwo validation message if balance is less than 1 USD
 
-                    if (eq < 0.95) {
-                        setShowMinOneUSDAmountErr(true);
-                        return;
+                let numAmount = Number(amount);
+                let eq = (amount * sourceTokenValue);
+                setequAmountUSD(Number(eq.toFixed(2)));
+                //setIsShowPathComponent(true);
+                //shwo validation message if balance is less than 1 USD
+
+
+                if (props.sourceChain.chainId == 0 || props.sourceToken.address == '') {
+                    setshowSelectSourceErr(true);
+                    setIsShowPathComponent(false);
+                    return false;
+                }
+
+                if (props.destChain.chainId == 0 || props.destToken.address == '') {
+                    setshowSelectDestinationErr(true);
+                    setIsShowPathComponent(false);
+                    return false;
+                }
+
+                if (eq < 0.95) {
+                    currentAmountRef.current = null;
+                    setShowMinOneUSDAmountErr(true);
+                    return;
+                }
+                else {
+                    currentAmountRef.current = numAmount;
+                    setSendAmount(numAmount);
+
+                    setShowMinOneUSDAmountErr(false);
+                    setshowSelectSourceErr(false);
+                    setshowSelectDestinationErr(false);
+                    if (numAmount > sourceTokenBalance.balance) {
+                        setBalanceErr(true);
+                        setIsShowPathComponent(false);
                     }
                     else {
-                        setSendAmount(Number(amount));
                         setIsShowPathComponent(true);
+                        setBalanceErr(false);
                     }
-            } 
+
+                }
+            }
+            else {
+                setSendAmount(null);
+                currentAmountRef.current = null;
+                setequAmountUSD(null);
+                setShowMinOneUSDAmountErr(false);
+                setshowSelectSourceErr(false);
+                setshowSelectDestinationErr(false);
+                setIsShowPathComponent(false);
+                setBalanceErr(false);
+            }
         } catch (error) {
 
         }
@@ -160,9 +311,39 @@ export default function Exchangeui(props: propsType) {
     function interChangeFromTo() {
         setSendAmount(null);
         setequAmountUSD(null);
-        amountTextBoxRef.current.value = '';
+        currentAmountRef.current = null;
+        if (amountTextBoxRef.current) {
+            amountTextBoxRef.current.value = '';
+        }
+        prevFetchKeyRef.current = '';
+
+        setshowSelectSourceErr(false);
+        setshowSelectDestinationErr(false);
+        setBalanceErr(false);
+
         props.interChangeData();
     }
+
+    useEffect(() => {
+        // Reset amount-related states
+        setSendAmount(null);
+        currentAmountRef.current = null;
+        setequAmountUSD(null);
+        setIsShowPathComponent(false);
+        setTotalAvailablePath(0);
+        setSelectedPath(new PathShowViewModel());
+        setShowMinOneUSDAmountErr(false);
+        setshowSelectSourceErr(false);
+        setshowSelectDestinationErr(false);
+        setBalanceErr(false);
+
+        if (amountTextBoxRef.current) {
+            amountTextBoxRef.current.value = '';
+        }
+
+        // Clear balance for new token selection
+        prevFetchKeyRef.current = '';
+    }, [props.sourceChain?.chainId, props.destChain?.chainId, props.sourceToken?.address, props.destToken?.address]);
 
     function getInitData(data: PathShowViewModel[]) {
         setTotalAvailablePath(data.length);
@@ -451,6 +632,7 @@ export default function Exchangeui(props: propsType) {
     function closeBridBridgeView() {
         setStartBridging(false);
         setSendAmount(null);
+        currentAmountRef.current = null;
         setequAmountUSD(null);
         setIsShowPathComponent(false);
         openOrCloseSubBridBridgeView();
@@ -464,20 +646,21 @@ export default function Exchangeui(props: propsType) {
     useEffect(() => {
         if (walletDisconnected) {
             setShowSubBridgeView(false);
+            prevFetchKeyRef.current = '';
         }
     }, [walletDisconnected])
 
-    function toggleAIMode(status: boolean){
+    function toggleAIMode(status: boolean) {
         setAIMode(status);
-        clearData();        
+        clearData();
     }
 
-    function clearData(){
+    function clearData() {
         setMessageFromAssistant("");
         setSourceChain(new Chains());
         setSourceToken(new Tokens());
         setSourceTokenAmount(0);
-        
+
         setDestChain(new Chains());
         setDestToken(new Tokens());
         setDestTokenAmount(0);
@@ -496,24 +679,24 @@ export default function Exchangeui(props: propsType) {
         setIsShowPathComponent(false);
     }
 
-    async function receivedChatDetails(data: SwapRequest){
-        
-        if(allAvailableChains && allAvailableChains.length > 0){
-            
+    async function receivedChatDetails(data: SwapRequest) {
+
+        if (allAvailableChains && allAvailableChains.length > 0) {
+
             //getting source chain and token data
             let sourceChainObj = allAvailableChains?.find(x => x.chainName.toLowerCase() == data.sourceChain.toLowerCase());
             setSourceChain(sourceChainObj);
-            
+
             let sourceTokenObjList = await cryptoService.GetAllAvailableCoinsRapidX(sourceChainObj);
             let sourceTokenObj = sourceTokenObjList && sourceTokenObjList.length > 0 ? sourceTokenObjList.find(x => x.address == data?.sourceTokenAddress) : new Tokens();
-            if(sourceTokenObj){
+            if (sourceTokenObj) {
                 setSourceToken(sourceTokenObj);
                 setSourceTokenAmount(sourceTokenObj?.price);
-            }else{
+            } else {
                 setMessageFromAssistant("Source Token Is Not Supported By Chain.");
                 return;
             }
-            
+
 
             //getting destination token data
             let destChainObj = allAvailableChains?.find(x => x.chainName.toLowerCase() == data.destChain.toLowerCase());
@@ -521,10 +704,10 @@ export default function Exchangeui(props: propsType) {
 
             let destTokenObjList = await cryptoService.GetAllAvailableCoinsRapidX(destChainObj);
             let destTokenObj = destTokenObjList && destTokenObjList.length > 0 ? destTokenObjList.find(x => x.address == data?.destTokenAddress) : new Tokens();
-            if(destTokenObj){
+            if (destTokenObj) {
                 setDestToken(destTokenObj);
                 setDestTokenAmount(destTokenObj?.price);
-            }else{
+            } else {
                 setMessageFromAssistant("Destination Token Is Not Supported By Chain.");
                 return;
             }
@@ -628,33 +811,147 @@ export default function Exchangeui(props: propsType) {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="inner-card w-100 py-2 px-3 mt-3">
-                                            <label className="mb-2 fw-600">Send</label>
-                                            <div className="d-flex align-items-center gap-3 pb-2">
-                                                <div className="position-relative coin-wrapper">
-                                                    {utilityService.isNullOrEmpty(sourceChain.logoURI) && <div className="coin"></div>}
-                                                    {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin-small"></div>}
 
-                                                    {!utilityService.isNullOrEmpty(sourceChain.logoURI) && <img src={sourceChain.logoURI}
+                                        {/* Enhanced Send Section with Balance and Percentage Buttons */}
+                                        <div className="inner-card w-100 py-2 px-3 mt-3">
+                                            <div className="d-flex justify-content-between align-items-center mb-2">
+                                                <label className="fw-600">Send</label>
+
+                                                {/* Percentage buttons moved to right side */}
+                                                {walletData.address && sourceTokenBalance && sourceTokenBalance.balance > 0 && (
+                                                    <div className="d-flex gap-1 ms-3 justify-content-end">
+                                                        <button
+                                                            type="button"
+                                                            className="py-1 px-2"
+                                                            onClick={() => handlePercentageClick(0.25)}
+                                                            style={{
+                                                                fontSize: '0.7rem',
+                                                                borderRadius: '6px',
+                                                                border: 'none',
+                                                                backgroundColor: '#f5f5f5',
+                                                                color: '#888',
+                                                                minHeight: '24px',
+                                                                minWidth: '32px',
+                                                                fontWeight: '500',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            25%
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="py-1 px-2"
+                                                            onClick={() => handlePercentageClick(0.5)}
+                                                            style={{
+                                                                fontSize: '0.7rem',
+                                                                borderRadius: '6px',
+                                                                border: 'none',
+                                                                backgroundColor: '#f5f5f5',
+                                                                color: '#888',
+                                                                minHeight: '24px',
+                                                                minWidth: '32px',
+                                                                fontWeight: '500',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            50%
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="py-1 px-2"
+                                                            onClick={() => handlePercentageClick(0.75)}
+                                                            style={{
+                                                                fontSize: '0.7rem',
+                                                                borderRadius: '6px',
+                                                                border: 'none',
+                                                                backgroundColor: '#f5f5f5',
+                                                                color: '#888',
+                                                                minHeight: '24px',
+                                                                minWidth: '32px',
+                                                                fontWeight: '500',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            75%
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="py-1 px-2"
+                                                            onClick={() => handlePercentageClick(1)}
+                                                            style={{
+                                                                fontSize: '0.7rem',
+                                                                borderRadius: '6px',
+                                                                border: 'none',
+                                                                backgroundColor: '#f5f5f5',
+                                                                color: '#888',
+                                                                minHeight: '24px',
+                                                                minWidth: '36px',
+                                                                fontWeight: '500',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            Max
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="d-flex align-items-start gap-3 pb-2">
+                                                <div className="position-relative coin-wrapper">
+                                                    {utilityService.isNullOrEmpty(props.sourceChain.logoURI) && <div className="coin"></div>}
+                                                    {utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <div className="coin-small"></div>}
+
+                                                    {!utilityService.isNullOrEmpty(props.sourceChain.logoURI) && <img src={props.sourceChain.logoURI}
                                                         className="coin" alt="coin" />}
-                                                    {!utilityService.isNullOrEmpty(sourceToken.logoURI) && <img src={sourceToken.logoURI}
+                                                    {!utilityService.isNullOrEmpty(props.sourceToken.logoURI) && <img src={props.sourceToken.logoURI}
                                                         className="coin-small" alt="coin" />}
                                                 </div>
-                                                <div className="d-flex flex-column">
-                                                    <input type="text" ref={amountTextBoxRef} className="transparent-input" onChange={(e) =>
-                                                        handleChange(e)} placeholder="0" />
-                                                    {(equAmountUSD != null && equAmountUSD > 0) && <label className="coin-sub-name">$ {equAmountUSD}</label>}
-                                                    {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
+                                                <div className="d-flex flex-column flex-grow-1">
+                                                    <div className="d-flex align-items-center justify-content-between">
+                                                        <div className="flex-grow-1">
+                                                            <input
+                                                                type="text"
+                                                                ref={amountTextBoxRef}
+                                                                className="transparent-input"
+                                                                onChange={handleChange}
+                                                                placeholder="0"
+                                                            />
+                                                            {(equAmountUSD != null && equAmountUSD > 0) && <label className="coin-sub-name">$ {equAmountUSD}</label>}
+                                                            {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
+
+                                            {/* Balance display with loading state */}
+                                            {walletData.address && (
+                                                <div className="d-flex align-items-center gap-1 justify-content-end">
+                                                    {balanceLoading ? (
+                                                        <span className="small text-muted">
+                                                            <i className="fas fa-spinner fa-spin me-1"></i>
+                                                            Loading balance...
+                                                        </span>
+                                                    ) : sourceTokenBalance && sourceTokenBalance.balance > 0 ? (
+                                                        <span className="small text-muted">
+                                                            Balance: {formatBalance(sourceTokenBalance.balance)} {props.sourceToken?.symbol || ''}
+                                                            {sourceTokenBalance.balanceUSD > 0 && ` ≈ $ ${sourceTokenBalance.balanceUSD.toFixed(2)}`}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="small text-muted">
+
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
+
                                     </>
                                 }
-                                
+
                                 {
                                     (isAIMode == true) &&
                                     <>
-                                        <SwapChatBot  messageFromAssistant={messageFromAssistant} sendSwapChatDetail={(obj: SwapRequest)=> receivedChatDetails(obj)} resetDataOnTyeping={()=>clearData()}/>
+                                        <SwapChatBot messageFromAssistant={messageFromAssistant} sendSwapChatDetail={(obj: SwapRequest) => receivedChatDetails(obj)} resetDataOnTyeping={() => clearData()} />
                                     </>
                                 }
 
@@ -698,6 +995,37 @@ export default function Exchangeui(props: propsType) {
 
                                     </>
                                 }
+
+                                {
+                                    showSelectSourceErr &&
+                                    <>
+                                        <div className="inner-card w-100 py-2 px-3 mt-2">
+                                            <div className="d-flex align-items-center gap-3">
+                                                <span>Please select source.</span>
+                                            </div>
+                                        </div>
+                                    </>
+                                }
+                                {
+                                    showSelectDestinationErr &&
+                                    <>
+                                        <div className="inner-card w-100 py-2 px-3 mt-2">
+                                            <div className="d-flex align-items-center gap-3">
+                                                <span>Please select destination.</span>
+                                            </div>
+                                        </div>
+                                    </>
+                                }
+                                {
+                                    showBalanceErr &&
+                                    <>
+                                        <div className="inner-card w-100 py-2 px-3 mt-2">
+                                            <div className="d-flex align-items-center gap-3">
+                                                <span>You do not have enough balance.</span>
+                                            </div>
+                                        </div>
+                                    </>
+                                }
                                 {
                                     showNoRouteFoundErr &&
                                     <>
@@ -713,7 +1041,7 @@ export default function Exchangeui(props: propsType) {
                                     <>
                                         <div className="inner-card w-100 py-3 px-3 mt-3">
                                             <div className="">
-                                                { (isPathShow) &&
+                                                {(isPathShow) &&
                                                     <>
                                                         <div className="d-flex gap-3">
                                                             <div className="selcet-coin coin-wrapper">
@@ -749,7 +1077,7 @@ export default function Exchangeui(props: propsType) {
                                                     </>
                                                 }
                                                 {
-                                                    ( !isPathShow && totalAvailablePath > 0) &&
+                                                    (!isPathShow && totalAvailablePath > 0) &&
                                                     <>
                                                         <div className="d-flex gap-3">
                                                             <div className="selcet-coin coin-wrapper">
@@ -846,7 +1174,7 @@ export default function Exchangeui(props: propsType) {
                             sendSelectedPath={(result: PathShowViewModel) => getSelectedPath(result)}
                             isPathLoadingParent={(status: boolean) => setIsPathLoading(status)}
                             amountInUsd={equAmountUSD}
-                            isAIMode = {isAIMode}
+                            isAIMode={isAIMode}
                         />
                     }
                 </>

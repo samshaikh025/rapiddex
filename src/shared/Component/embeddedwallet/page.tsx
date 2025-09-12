@@ -1,14 +1,18 @@
 'use client'
 import React, { useState, useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useAccount, useDisconnect } from 'wagmi';
+import { TokenBalanceService } from '@/shared/Services/TokenBalanceService';
+import { UtilityService } from '@/shared/Services/UtilityService';
+import { Chains, Tokens, TransactionRequestoDto, WalletConnectData } from '@/shared/Models/Common.model';
+import { SupportedChains } from '@/shared/Static/SupportedChains';
+
+import { SharedService } from "@/shared/Services/SharedService";
+import { Keys } from '@/shared/Enum/Common.enum';
+import { OpenWalletModalA, SetActiveTransactionA, SetWalletDataA, SetWalletDisconnectedA } from '@/app/redux-store/action/action-redux';
 
 interface TokenBalance {
-    token: {
-        symbol: string;
-        name: string;
-        address: string;
-        logoURI?: string;
-        decimal: number;
-    };
+    token: Tokens;
     balance: number;
     balanceRaw: string;
     balanceUSD: number;
@@ -25,122 +29,60 @@ interface EmbeddedWalletProps {
 }
 
 export default function EmbeddedWallet({ isOpen, onClose, walletAddress, className = '' }: EmbeddedWalletProps) {
+    const account = useAccount();
+    const walletData: WalletConnectData = useSelector((state: any) => state.WalletData);
+    const selectedLang = useSelector((state: any) => state.SelectedLanguage);
+
     const [currentView, setCurrentView] = useState<'main' | 'tokenDetail' | 'qr'>('main');
     const [activeTab, setActiveTab] = useState<'tokens' | 'nfts' | 'pools' | 'activity'>('tokens');
+    const [allTokenBalances, setAllTokenBalances] = useState<TokenBalance[]>([]);
     const [selectedToken, setSelectedToken] = useState<TokenBalance | null>(null);
-    const [isMobile, setIsMobile] = useState(false);
-    const [totalBalance] = useState(29.57);
+    const [loading, setLoading] = useState(false);
+    const [totalBalance, setTotalBalance] = useState(0);
+    const [refreshing, setRefreshing] = useState(false);
+    const [currentChain, setCurrentChain] = useState<any>(null);
+    const [isChainSupported, setIsChainSupported] = useState(true);
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [showChainSelector, setShowChainSelector] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [showToast, setShowToast] = useState(false);
-    const [refreshing, setRefreshing] = useState(false);
-    const [isFavorite, setIsFavorite] = useState(false);
 
+    const tokenBalanceService = TokenBalanceService.getInstance();
+    const utilityService = new UtilityService();
     const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
-    // Mock data for demonstration
-    const mockTokens: TokenBalance[] = [
-        {
-            token: {
-                symbol: 'SOLVBTC',
-                name: 'Solv Protocol SolvBTC',
-                address: '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c',
-                decimal: 18,
-                logoURI: 'https://coin-images.coingecko.com/coins/images/1/large/bitcoin.png'
-            },
-            balance: 0.0001,
-            balanceRaw: '100000000000000',
-            balanceUSD: 11.19,
-            price: 111900,
-            chainId: 56,
-            lastUpdated: Date.now()
-        },
-        {
-            token: {
-                symbol: 'SLISBNB',
-                name: 'Lista Staked BNB',
-                address: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
-                decimal: 18,
-                logoURI: 'https://coin-images.coingecko.com/coins/images/825/large/bnb-icon2_2x.png'
-            },
-            balance: 0.0108,
-            balanceRaw: '10800000000000000',
-            balanceUSD: 9.75,
-            price: 902.78,
-            chainId: 56,
-            lastUpdated: Date.now()
-        },
-        {
-            token: {
-                symbol: 'BTCB',
-                name: 'Binance Bitcoin',
-                address: '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c',
-                decimal: 18,
-                logoURI: 'https://coin-images.coingecko.com/coins/images/14108/large/Binance-bitcoin.png'
-            },
-            balance: 0.0001,
-            balanceRaw: '100000000000000',
-            balanceUSD: 2.51,
-            price: 25100,
-            chainId: 56,
-            lastUpdated: Date.now()
-        },
-        {
-            token: {
-                symbol: 'REX',
-                name: 'REVOX',
-                address: '0x8f0528ce5ef7b51152a59745befdd91d97091d2f',
-                decimal: 18
-            },
-            balance: 41.30,
-            balanceRaw: '41300000000000000000',
-            balanceUSD: 2.44,
-            price: 0.059,
-            chainId: 56,
-            lastUpdated: Date.now()
-        },
-        {
-            token: {
-                symbol: 'BNB',
-                name: 'BNB',
-                address: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
-                decimal: 18,
-                logoURI: 'https://coin-images.coingecko.com/coins/images/825/large/bnb-icon2_2x.png'
-            },
-            balance: 0.0021,
-            balanceRaw: '2100000000000000',
-            balanceUSD: 1.86,
-            price: 885.71,
-            chainId: 56,
-            lastUpdated: Date.now()
-        },
-        {
-            token: {
-                symbol: 'CHEEMS',
-                name: 'Cheems Token',
-                address: '0x33a51b4037c5c5f24b33ad3b16c62b1aa43bc8be',
-                decimal: 18
-            },
-            balance: 1502827.194,
-            balanceRaw: '1502827194000000000000000',
-            balanceUSD: 1.74,
-            price: 0.00000116,
-            chainId: 56,
-            lastUpdated: Date.now()
-        }
-    ];
+    // Use passed walletAddress or fall back to Redux walletData
+    const activeWalletAddress = walletAddress || walletData.address;
 
-    const activeWalletAddress = walletAddress || '0x6539...B53f';
+    const { disconnect, isSuccess } = useDisconnect();
 
-    // Detect mobile screen size
+    let sharedService = SharedService.getSharedServiceInstance();
+
+    let dispatch = useDispatch();
+
+    // Check if connected chain is supported and set current chain
     useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth <= 768);
-        };
+        if (walletData.chainId) {
+            const supportedChain = SupportedChains.find((chain: any) => chain.chainId === walletData.chainId);
 
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
+            if (supportedChain) {
+                setCurrentChain(supportedChain);
+                setIsChainSupported(true);
+            } else {
+                setCurrentChain(null);
+                setIsChainSupported(false);
+                setAllTokenBalances([]);
+                setTotalBalance(0);
+            }
+        }
+    }, [walletData.chainId]);
+
+    // Load all token balances when wallet or chain changes
+    useEffect(() => {
+        if (activeWalletAddress && currentChain && isChainSupported && isOpen) {
+            loadAllTokenBalances();
+        }
+    }, [activeWalletAddress, currentChain, isChainSupported, isOpen]);
 
     // Reset view when wallet closes
     useEffect(() => {
@@ -151,58 +93,118 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
         }
     }, [isOpen]);
 
-    // Add click outside handler for desktop
+    // Add click outside handler
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (!isMobile) {
-                const walletElement = document.querySelector('.wallet-container');
-                if (walletElement && !walletElement.contains(event.target as Node) && isOpen) {
-                    onClose();
-                }
+            const walletElement = document.querySelector('.wallet-container');
+            if (walletElement && !walletElement.contains(event.target as Node) && isOpen) {
+                onClose();
             }
         };
 
-        if (isOpen && !isMobile) {
+        if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isOpen, onClose, isMobile]);
+    }, [isOpen, onClose]);
+
+    const loadAllTokenBalances = async () => {
+        if (!activeWalletAddress || !currentChain) return;
+
+        setLoading(true);
+        try {
+            // Create chain object for TokenBalanceService
+            const chainForService = new Chains();
+            chainForService.chainId = currentChain.chainId;
+            chainForService.chainName = currentChain.name;
+            chainForService.rpcUrl = currentChain.supportedRPC;
+
+            // First, get the native token
+            const nativeToken = new Tokens();
+            nativeToken.address = currentChain.nativeToken.address;
+            nativeToken.symbol = currentChain.nativeToken.symbol;
+            nativeToken.name = currentChain.nativeToken.name;
+            nativeToken.tokenIsNative = currentChain.nativeToken.tokenIsNative;
+            nativeToken.decimal = currentChain.nativeToken.decimal;
+            nativeToken.chainId = currentChain.chainId;
+            nativeToken.logoURI = currentChain.nativeToken.logoURI;
+
+            // Fetch all tokens including native
+            const allTokens = await tokenBalanceService.getTokenBalances(
+                activeWalletAddress,
+                chainForService,
+                [nativeToken] // Pass native token to ensure it's included
+            );
+
+            if (allTokens.length > 0) {
+                // Sort tokens by balance (highest first)
+                const sortedTokens = allTokens.sort((a, b) => b.balanceUSD - a.balanceUSD);
+                setAllTokenBalances(sortedTokens);
+
+                // Calculate total balance
+                const total = sortedTokens.reduce((sum, token) => sum + (token.balanceUSD || 0), 0);
+                setTotalBalance(total);
+            } else {
+                // If no tokens returned, try to get at least the native token
+                const nativeBalance = await tokenBalanceService.getSingleTokenBalance(
+                    activeWalletAddress,
+                    chainForService,
+                    nativeToken
+                );
+
+                if (nativeBalance) {
+                    setAllTokenBalances([nativeBalance]);
+                    setTotalBalance(nativeBalance.balanceUSD || 0);
+                } else {
+                    setAllTokenBalances([]);
+                    setTotalBalance(0);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading token balances:', error);
+            setAllTokenBalances([]);
+            setTotalBalance(0);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const refreshBalance = async () => {
+        if (!activeWalletAddress || !currentChain) return;
+        setRefreshing(true);
+        tokenBalanceService.clearCache(activeWalletAddress, currentChain.chainId);
+        setTimeout(async () => {
+            await loadAllTokenBalances();
+            setRefreshing(false);
+            displayToast('Balance updated!');
+        }, 2000);
+    };
+
+    const switchChain = async (newChain: any) => {
+        if (newChain.chainId === currentChain?.chainId) return;
+        setCurrentChain(newChain);
+        setIsChainSupported(true);
+        setLoading(true);
+        setAllTokenBalances([]);
+        setTotalBalance(0);
+        setShowChainSelector(false);
+        displayToast(`Switched to ${newChain.name}`);
+    };
 
     const generateQRCode = () => {
-        if (qrCanvasRef.current && activeWalletAddress) {
-            const canvas = qrCanvasRef.current;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                canvas.width = 200;
-                canvas.height = 200;
-
-                // Create a simple QR-like pattern
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, 200, 200);
-
-                ctx.fillStyle = '#000000';
-                const size = 8;
-                for (let x = 0; x < 200; x += size) {
-                    for (let y = 0; y < 200; y += size) {
-                        if (Math.random() > 0.5) {
-                            ctx.fillRect(x, y, size - 1, size - 1);
-                        }
-                    }
-                }
-
-                // Add corner squares
-                ctx.fillRect(20, 20, 40, 40);
-                ctx.fillRect(140, 20, 40, 40);
-                ctx.fillRect(20, 140, 40, 40);
-
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(30, 30, 20, 20);
-                ctx.fillRect(150, 30, 20, 20);
-                ctx.fillRect(30, 150, 20, 20);
-            }
+        if (qrCanvasRef.current && typeof window !== 'undefined' && activeWalletAddress) {
+            import('qrious').then(({ default: QRious }) => {
+                new QRious({
+                    element: qrCanvasRef.current,
+                    value: activeWalletAddress,
+                    size: 200,
+                    foreground: '#000',
+                    background: '#fff'
+                });
+            }).catch(console.error);
         }
     };
 
@@ -222,17 +224,11 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
         setCurrentView('qr');
     };
 
-    const refreshBalance = async () => {
-        setRefreshing(true);
-        setTimeout(() => {
-            setRefreshing(false);
-            displayToast('Balance updated!');
-        }, 2000);
-    };
-
-    const toggleFavorite = () => {
-        setIsFavorite(!isFavorite);
-        displayToast(isFavorite ? 'Removed from favorites' : 'Added to favorites');
+    const openBlockExplorer = () => {
+        if (currentChain && walletData.blockExplorer) {
+            const url = `${walletData.blockExplorer.url}/address/${activeWalletAddress}`;
+            window.open(url, '_blank');
+        }
     };
 
     const displayToast = (message: string) => {
@@ -255,422 +251,324 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
         return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
-    if (!isOpen) return null;
+    const formatPercentage = (value: number): string => {
+        const prefix = value >= 0 ? '+' : '';
+        return `${prefix}${value.toFixed(2)}%`;
+    };
 
-    // Mobile Layout
-    if (isMobile) {
-        return (
-            <>
-                <div className="mobile-backdrop" onClick={onClose}></div>
+    const toggleFavorite = () => {
+        setIsFavorite(!isFavorite);
+        displayToast(isFavorite ? 'Removed from favorites' : 'Added to favorites');
+    };
 
-                <div className="mobile-wallet">
-                    <div className="mobile-handle"></div>
-
-                    {currentView === 'main' && (
-                        <div className="mobile-content">
-                            <div className="mobile-header">
-                                <div className="mobile-wallet-info">
-                                    <div className="mobile-avatar"></div>
-                                    <div className="mobile-address-info">
-                                        <span className="mobile-address">{activeWalletAddress}</span>
-                                        <span className="mobile-network">BNB Smart Chain Mainnet</span>
-                                    </div>
-                                </div>
-                                <button className="mobile-close" onClick={onClose}>×</button>
-                            </div>
-
-                            <div className="mobile-balance-section">
-                                <div className="mobile-balance-header">
-                                    <span className="mobile-balance-label">PORTFOLIO BALANCE</span>
-                                    <div className="mobile-balance-actions">
-                                        <button onClick={refreshBalance} className={refreshing ? 'spinning' : ''}>
-                                            🔄
-                                        </button>
-                                        <button onClick={toggleFavorite}>
-                                            {isFavorite ? '⭐' : '☆'}
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="mobile-balance-amount">${totalBalance}</div>
-                                <div className="mobile-balance-change">⬆ $4.67 (0.82%)</div>
-                            </div>
-
-                            <div className="mobile-actions">
-                                <button className="mobile-action-btn">
-                                    <div className="mobile-action-icon">⬆</div>
-                                    <span>Send</span>
-                                </button>
-                                <button className="mobile-action-btn" onClick={openQRView}>
-                                    <div className="mobile-action-icon">⬇</div>
-                                    <span>Receive</span>
-                                </button>
-                                <button className="mobile-action-btn">
-                                    <div className="mobile-action-icon">⇄</div>
-                                    <span>Swap</span>
-                                </button>
-                                <button className="mobile-action-btn">
-                                    <div className="mobile-action-icon">↗</div>
-                                    <span>Explorer</span>
-                                </button>
-                            </div>
-
-                            <div className="mobile-tabs">
-                                <button
-                                    className={`mobile-tab ${activeTab === 'tokens' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('tokens')}
-                                >
-                                    💰 Tokens
-                                </button>
-                                <button
-                                    className={`mobile-tab ${activeTab === 'nfts' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('nfts')}
-                                >
-                                    🖼 NFTs
-                                </button>
-                                <button
-                                    className={`mobile-tab ${activeTab === 'pools' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('pools')}
-                                >
-                                    💧 Pools
-                                </button>
-                                <button
-                                    className={`mobile-tab ${activeTab === 'activity' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('activity')}
-                                >
-                                    📜 Activity
-                                </button>
-                            </div>
-
-                            {activeTab === 'tokens' && (
-                                <div className="mobile-token-list">
-                                    {mockTokens.map((token, index) => (
-                                        <div
-                                            key={index}
-                                            className="mobile-token-item"
-                                            onClick={() => { setSelectedToken(token); setCurrentView('tokenDetail'); }}
-                                        >
-                                            <div className="mobile-token-icon">
-                                                {token.token.logoURI ? (
-                                                    <img src={token.token.logoURI} alt={token.token.symbol} />
-                                                ) : (
-                                                    <div className="token-placeholder">
-                                                        {token.token.symbol.substring(0, 2)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="mobile-token-info">
-                                                <div className="mobile-token-name">{token.token.symbol}</div>
-                                                <div className="mobile-token-network">{token.token.name}</div>
-                                            </div>
-                                            <div className="mobile-token-balance">
-                                                <div className="mobile-token-amount">{formatBalance(token.balance)}</div>
-                                                <div className="mobile-token-value">
-                                                    <span>{formatUSD(token.balanceUSD)}</span>
-                                                    <span className="mobile-token-change">+0.00%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {activeTab === 'nfts' && (
-                                <div className="mobile-empty-state">
-                                    <div>🖼</div>
-                                    <p>No NFTs found</p>
-                                </div>
-                            )}
-
-                            {activeTab === 'pools' && (
-                                <div className="mobile-empty-state">
-                                    <div>💧</div>
-                                    <p>No liquidity pools</p>
-                                </div>
-                            )}
-
-                            {activeTab === 'activity' && (
-                                <div className="mobile-activity-list">
-                                    <div className="mobile-activity-item">
-                                        <div className="mobile-activity-icon send">⬆</div>
-                                        <div className="mobile-activity-details">
-                                            <span className="mobile-activity-type">Sent</span>
-                                            <span className="mobile-activity-time">2 hours ago</span>
-                                        </div>
-                                        <div className="mobile-activity-amount negative">-0.005 ETH</div>
-                                    </div>
-                                    <div className="mobile-activity-item">
-                                        <div className="mobile-activity-icon receive">⬇</div>
-                                        <div className="mobile-activity-details">
-                                            <span className="mobile-activity-type">Received</span>
-                                            <span className="mobile-activity-time">1 day ago</span>
-                                        </div>
-                                        <div className="mobile-activity-amount positive">+0.001 ETH</div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {currentView === 'qr' && (
-                        <div className="mobile-content">
-                            <div className="mobile-header">
-                                <button className="mobile-back" onClick={() => setCurrentView('main')}>← Back</button>
-                                <span className="mobile-title">Wallet Address</span>
-                                <div></div>
-                            </div>
-
-                            <div className="mobile-qr-content">
-                                <div className="mobile-qr-container">
-                                    <canvas ref={qrCanvasRef}></canvas>
-                                </div>
-                                <div className="mobile-address-display">{activeWalletAddress}</div>
-                                <button className="mobile-copy-btn" onClick={copyAddress}>
-                                    📋 Copy Address
-                                </button>
-                                <button className="mobile-share-btn" onClick={() => {
-                                    if (navigator.share) {
-                                        navigator.share({
-                                            title: 'My Wallet Address',
-                                            text: activeWalletAddress || ''
-                                        });
-                                    } else {
-                                        copyAddress();
-                                    }
-                                }}>
-                                    📤 Share Address
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {currentView === 'tokenDetail' && selectedToken && (
-                        <div className="mobile-content">
-                            <div className="mobile-header">
-                                <button className="mobile-back" onClick={() => setCurrentView('main')}>← Back</button>
-                                <span className="mobile-title">{selectedToken.token.symbol}</span>
-                                <button className="mobile-more">⋯</button>
-                            </div>
-
-                            <div className="mobile-token-detail">
-                                <div className="mobile-detail-icon">
-                                    {selectedToken.token.logoURI ? (
-                                        <img src={selectedToken.token.logoURI} alt={selectedToken.token.symbol} />
-                                    ) : (
-                                        <div className="token-placeholder large">
-                                            {selectedToken.token.symbol.substring(0, 2)}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="mobile-detail-balance">
-                                    {formatBalance(selectedToken.balance)} {selectedToken.token.symbol}
-                                </div>
-                                <div className="mobile-detail-value">{formatUSD(selectedToken.balanceUSD)}</div>
-
-                                <div className="mobile-chart-placeholder">
-                                    <div className="chart-icon">📈</div>
-                                    <span>Price Chart</span>
-                                </div>
-
-                                <div className="mobile-token-stats">
-                                    <div className="mobile-stat-item">
-                                        <span className="mobile-stat-label">Price</span>
-                                        <span className="mobile-stat-value">{formatUSD(selectedToken.price)}</span>
-                                    </div>
-                                    <div className="mobile-stat-item">
-                                        <span className="mobile-stat-label">24h Change</span>
-                                        <span className="mobile-stat-value positive">+0.00%</span>
-                                    </div>
-                                </div>
-
-                                <div className="mobile-detail-actions">
-                                    <button className="mobile-detail-btn primary">
-                                        ⬆ Send
-                                    </button>
-                                    <button className="mobile-detail-btn secondary">
-                                        ⇄ Swap
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </>
-        );
+    function diconnectWallet() {
+        disconnect();
+        clearWalletData();
     }
 
-    // Desktop Layout
+    function clearWalletData() {
+        sharedService.removeData(Keys.WALLET_CONNECT_DATA);
+        sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+        dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
+        dispatch(SetWalletDataA(new WalletConnectData()));
+        dispatch(SetWalletDisconnectedA(true));
+        dispatch(OpenWalletModalA(false))
+    }
+
+
+    if (!isOpen) return null;
+
     return (
         <>
-            <div className="desktop-wallet-wrapper">
+            {/* Modern Wallet Container */}
+            <div className="wallet-wrapper">
                 <div className="wallet-container">
-                    {currentView === 'main' && (
-                        <div className="desktop-content">
-                            <div className="desktop-header">
-                                <div className="desktop-wallet-address" onClick={openQRView}>
-                                    <div className="desktop-avatar"></div>
-                                    <span>{activeWalletAddress}</span>
+
+                    {/* Main View */}
+                    <div className={`wallet-view ${currentView === 'main' ? 'active' : ''}`}>
+                        {/* Header */}
+                        <div className="wallet-header">
+                            <div className="wallet-address" onClick={openQRView}>
+                                <div className="address-avatar">
+                                    <div className="avatar-gradient"></div>
                                 </div>
-                                <div className="desktop-header-actions">
-                                    <button className="desktop-chain-btn">
-                                        <span>🟡</span>
-                                        <span>BNB Smart Chain</span>
-                                        <span>▼</span>
-                                    </button>
-                                    <button className="desktop-close" onClick={onClose}>×</button>
-                                </div>
+                                <span className="address-text">
+                                    {activeWalletAddress?.substring(0, 6)}...{activeWalletAddress?.substring(activeWalletAddress.length - 4)}
+                                </span>
                             </div>
 
-                            <div className="desktop-balance-section">
-                                <div className="desktop-balance-header">
-                                    <span>Portfolio Balance</span>
-                                    <div className="desktop-balance-actions">
-                                        <button onClick={refreshBalance} className={refreshing ? 'spinning' : ''}>
-                                            🔄
-                                        </button>
-                                        <button onClick={toggleFavorite}>
-                                            {isFavorite ? '⭐' : '☆'}
-                                        </button>
+                            <div className="header-actions">
+                                <button className="chain-selector" onClick={() => setShowChainSelector(!showChainSelector)}>
+                                    {currentChain?.logoURI ? (
+                                        <img src={currentChain.logoURI} alt="" className="chain-icon" />
+                                    ) : (
+                                        <div className="chain-icon-placeholder"></div>
+                                    )}
+                                    {/* <span className="chain-name">{currentChain?.name || 'Select'}</span> */}
+                                    <i className="fas fa-chevron-down"></i>
+                                </button>
+
+                                <button className="icon-button" onClick={onClose}>
+                                    <i className="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Chain Selector Dropdown */}
+                        {showChainSelector && (
+                            <div className="chain-dropdown">
+                                {SupportedChains.map((chain: any) => (
+                                    <div
+                                        key={chain.chainId}
+                                        className={`chain-option ${currentChain?.chainId === chain.chainId ? 'active' : ''}`}
+                                        onClick={() => switchChain(chain)}
+                                    >
+                                        {chain.logoURI && (
+                                            <img src={chain.logoURI} alt="" className="chain-icon" />
+                                        )}
+                                        <span>{chain.name}</span>
+                                        {currentChain?.chainId === chain.chainId && (
+                                            <i className="fas fa-check"></i>
+                                        )}
                                     </div>
-                                </div>
-                                <div className="desktop-balance-amount">${totalBalance}</div>
-                                <div className="desktop-balance-change">⬆ $4.67 (0.82%)</div>
+                                ))}
+                            </div>
+                        )}
 
-                                <div className="desktop-actions">
-                                    <button className="desktop-action-btn">
-                                        <div>⬆</div>
-                                        <span>Send</span>
+                        {/* Balance Section */}
+                        <div className="balance-section">
+                            <div className="total-balance">
+                                <div className="balance-header">
+                                    <span className="balance-label">Portfolio Balance</span>
+                                    <button className="icon-button-sm" onClick={refreshBalance}>
+                                        <i className={`fas fa-sync-alt ${refreshing ? 'spinning' : ''}`}></i>
                                     </button>
-                                    <button className="desktop-action-btn" onClick={openQRView}>
-                                        <div>⬇</div>
-                                        <span>Receive</span>
+                                    <button className="icon-button-sm" onClick={toggleFavorite}>
+                                        <i className={`${isFavorite ? 'fas' : 'far'} fa-star`}></i>
                                     </button>
-                                    <button className="desktop-action-btn">
-                                        <div>⇄</div>
-                                        <span>Swap</span>
-                                    </button>
-                                    <button className="desktop-action-btn">
-                                        <div>↗</div>
-                                        <span>Explorer</span>
-                                    </button>
+                                </div>
+                                <div className="balance-amount">
+                                    {formatUSD(totalBalance)}
+                                </div>
+                                <div className="balance-change positive">
+                                    <i className="fas fa-arrow-up"></i>
+                                    <span>$4.67 (0.82%)</span>
                                 </div>
                             </div>
 
-                            <div className="desktop-tabs">
-                                <button
-                                    className={`desktop-tab ${activeTab === 'tokens' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('tokens')}
-                                >
-                                    💰 Tokens
-                                </button>
-                                <button
-                                    className={`desktop-tab ${activeTab === 'nfts' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('nfts')}
-                                >
-                                    🖼 NFTs
-                                </button>
-                                <button
-                                    className={`desktop-tab ${activeTab === 'pools' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('pools')}
-                                >
-                                    💧 Pools
-                                </button>
-                                <button
-                                    className={`desktop-tab ${activeTab === 'activity' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('activity')}
-                                >
-                                    📜 Activity
-                                </button>
-                            </div>
+                            {/* Action Buttons */}
+                            <div className="action-buttons">
+                                <button className="action-btn" onClick={openQRView}>
+                                    <div className="action-icon">
 
-                            {activeTab === 'tokens' && (
-                                <div className="desktop-token-list">
-                                    {mockTokens.map((token, index) => (
+                                        <i className="fas fa-qrcode"></i>
+                                    </div>
+                                    <span>Qr Code</span>
+                                </button>
+                                <button className="action-btn" onClick={() => window.location.href = "/transaction-history"}>
+                                    <div className="action-icon">
+                                        <i className="fas fa-history"></i>
+
+                                    </div>
+                                    <span>Transaction</span>
+                                </button>
+
+                                <button className="action-btn" onClick={openBlockExplorer}>
+                                    <div className="action-icon">
+                                        <i className="fas fa-external-link-alt"></i>
+                                    </div>
+                                    <span>Explorer</span>
+                                </button>
+                                <button className="action-btn" onClick={() => diconnectWallet()}>
+                                    <div className="action-icon">
+
+                                        <i className="fa-solid fa-power-off"></i>
+                                    </div>
+                                    <span>Disconnet</span>
+                                </button>
+
+                            </div>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="wallet-tabs">
+                            <button
+                                className={`tab ${activeTab === 'tokens' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('tokens')}
+                            >
+                                <i className="fas fa-coins"></i>
+                                <span>Tokens</span>
+                            </button>
+                            {/* <button
+                                className={`tab ${activeTab === 'nfts' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('nfts')}
+                            >
+                                <i className="fas fa-images"></i>
+                                <span>NFTs</span>
+                            </button>
+                            <button
+                                className={`tab ${activeTab === 'pools' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('pools')}
+                            >
+                                <i className="fas fa-water"></i>
+                                <span>Pools</span>
+                            </button> */}
+                            <button
+                                className={`tab ${activeTab === 'activity' ? 'active' : ''}`}
+                                onClick={() => window.location.href = "/transaction-history"}
+                            >
+                                <i className="fas fa-history"></i>
+                                <span>Activity</span>
+                            </button>
+                        </div>
+
+                        {/* Token List */}
+                        <div className={`tab-content ${activeTab === 'tokens' ? 'active' : ''}`}>
+                            {loading ? (
+                                <div className="loading-state">
+                                    <div className="skeleton-loader"></div>
+                                    <div className="skeleton-loader"></div>
+                                    <div className="skeleton-loader"></div>
+                                </div>
+                            ) : allTokenBalances.length > 0 ? (
+                                <div className="token-list">
+                                    {allTokenBalances.map((tokenBalance, index) => (
                                         <div
-                                            key={index}
-                                            className="desktop-token-item"
-                                            onClick={() => { setSelectedToken(token); setCurrentView('tokenDetail'); }}
+                                            key={`${tokenBalance.token.address}-${index}`}
+                                            className="token-item"
+                                            onClick={() => { setSelectedToken(tokenBalance); setCurrentView('tokenDetail'); }}
                                         >
-                                            <div className="desktop-token-left">
-                                                <div className="desktop-token-icon">
-                                                    {token.token.logoURI ? (
-                                                        <img src={token.token.logoURI} alt={token.token.symbol} />
+                                            <div className="token-info">
+                                                <div className="token-icon">
+                                                    {tokenBalance.token.logoURI ? (
+                                                        <img src={tokenBalance.token.logoURI} alt="" />
                                                     ) : (
-                                                        <div className="token-placeholder">
-                                                            {token.token.symbol.substring(0, 2)}
+                                                        <div className="token-icon-placeholder">
+                                                            {tokenBalance.token.symbol?.substring(0, 2)}
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div>
-                                                    <div className="desktop-token-name">{token.token.symbol}</div>
-                                                    <div className="desktop-token-network">{token.token.name}</div>
+                                                <div className="token-details">
+                                                    <div className="token-name">{tokenBalance.token.symbol}</div>
+                                                    <div className="token-network">{tokenBalance.token.name || currentChain?.name}</div>
                                                 </div>
                                             </div>
-                                            <div className="desktop-token-right">
-                                                <div className="desktop-token-amount">{formatBalance(token.balance)}</div>
-                                                <div className="desktop-token-value">
-                                                    <span>{formatUSD(token.balanceUSD)}</span>
-                                                    <span className="desktop-token-change">+0.00%</span>
+                                            <div className="token-balance">
+                                                <div className="token-amount">{formatBalance(tokenBalance.balance)}</div>
+                                                <div className="token-value">
+                                                    <span>{formatUSD(tokenBalance.balanceUSD)}</span>
+                                                    <span className={`token-change ${tokenBalance.price > 0 ? 'positive' : 'negative'}`}>
+                                                        {formatPercentage(0)}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                            )}
-
-                            {activeTab === 'nfts' && (
-                                <div className="desktop-empty-state">
-                                    <div>🖼</div>
-                                    <p>No NFTs found</p>
-                                </div>
-                            )}
-
-                            {activeTab === 'pools' && (
-                                <div className="desktop-empty-state">
-                                    <div>💧</div>
-                                    <p>No liquidity pools</p>
-                                </div>
-                            )}
-
-                            {activeTab === 'activity' && (
-                                <div className="desktop-activity-list">
-                                    <div className="desktop-activity-item">
-                                        <div className="desktop-activity-icon send">⬆</div>
-                                        <div className="desktop-activity-details">
-                                            <span className="desktop-activity-type">Sent</span>
-                                            <span className="desktop-activity-time">2 hours ago</span>
-                                        </div>
-                                        <div className="desktop-activity-amount negative">-0.005 ETH</div>
-                                    </div>
-                                    <div className="desktop-activity-item">
-                                        <div className="desktop-activity-icon receive">⬇</div>
-                                        <div className="desktop-activity-details">
-                                            <span className="desktop-activity-type">Received</span>
-                                            <span className="desktop-activity-time">1 day ago</span>
-                                        </div>
-                                        <div className="desktop-activity-amount positive">+0.001 ETH</div>
-                                    </div>
+                            ) : (
+                                <div className="empty-state">
+                                    <i className="fas fa-coins"></i>
+                                    <p>No tokens found</p>
                                 </div>
                             )}
                         </div>
-                    )}
 
-                    {currentView === 'qr' && (
-                        <div className="desktop-content">
-                            <div className="desktop-header">
-                                <button className="desktop-back" onClick={() => setCurrentView('main')}>← Back</button>
-                                <span className="desktop-title">Wallet Address</span>
-                                <button className="desktop-close" onClick={onClose}>×</button>
+                        {/* NFTs Tab */}
+                        <div className={`tab-content ${activeTab === 'nfts' ? 'active' : ''}`}>
+                            <div className="nft-grid">
+                                <div className="nft-item">
+                                    <div className="nft-image">
+                                        <div className="nft-placeholder">
+                                            <i className="fas fa-image"></i>
+                                        </div>
+                                    </div>
+                                    <div className="nft-info">
+                                        <span className="nft-name">CryptoPunk #1234</span>
+                                        <span className="nft-price">45.2 ETH</span>
+                                    </div>
+                                </div>
+                                <div className="nft-item">
+                                    <div className="nft-image">
+                                        <div className="nft-placeholder">
+                                            <i className="fas fa-image"></i>
+                                        </div>
+                                    </div>
+                                    <div className="nft-info">
+                                        <span className="nft-name">Bored Ape #5678</span>
+                                        <span className="nft-price">28.1 ETH</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="desktop-qr-content">
-                                <div className="desktop-qr-container">
+                        </div>
+
+                        {/* Pools Tab */}
+                        <div className={`tab-content ${activeTab === 'pools' ? 'active' : ''}`}>
+                            <div className="empty-state">
+                                <i className="fas fa-water"></i>
+                                <p>No liquidity positions</p>
+                            </div>
+                        </div>
+
+                        {/* Activity Tab */}
+                        <div className={`tab-content ${activeTab === 'activity' ? 'active' : ''}`}>
+                            <div className="activity-list">
+                                <div className="activity-item">
+                                    <div className="activity-icon send">
+                                        <i className="fas fa-arrow-up"></i>
+                                    </div>
+                                    <div className="activity-details">
+                                        <span className="activity-type">Sent</span>
+                                        <span className="activity-time">2 hours ago</span>
+                                    </div>
+                                    <div className="activity-amount negative">
+                                        -0.005 ETH
+                                    </div>
+                                </div>
+                                <div className="activity-item">
+                                    <div className="activity-icon receive">
+                                        <i className="fas fa-arrow-down"></i>
+                                    </div>
+                                    <div className="activity-details">
+                                        <span className="activity-type">Received</span>
+                                        <span className="activity-time">1 day ago</span>
+                                    </div>
+                                    <div className="activity-amount positive">
+                                        +0.001 ETH
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* QR Code View */}
+                    <div className={`wallet-view qr-view ${currentView === 'qr' ? 'active' : ''}`}>
+                        <div className="detail-header">
+                            <button className="back-button" onClick={() => setCurrentView('main')}>
+                                <i className="fas fa-arrow-left"></i>
+                            </button>
+                            <div className="detail-title">
+                                <span>Wallet Address</span>
+                                <span className="detail-network">Scan or Copy</span>
+                            </div>
+                            <button className="icon-button" onClick={() => setCurrentView('main')}>
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div className="detail-content">
+                            <div className="qr-section">
+                                <div className="qr-container inline">
                                     <canvas ref={qrCanvasRef}></canvas>
                                 </div>
-                                <div className="desktop-address-display">{activeWalletAddress}</div>
-                                <div className="desktop-qr-actions">
-                                    <button className="desktop-copy-btn" onClick={copyAddress}>
-                                        📋 Copy Address
+                                <div className="address-display inline">
+                                    <span>{activeWalletAddress}</span>
+                                </div>
+                                <div className="qr-actions">
+                                    <button className="primary-button full-width" onClick={copyAddress}>
+                                        <i className="fas fa-copy"></i>
+                                        Copy Address
                                     </button>
-                                    <button className="desktop-share-btn" onClick={() => {
+                                    <button className="secondary-button full-width" onClick={() => {
                                         if (navigator.share) {
                                             navigator.share({
                                                 title: 'My Wallet Address',
@@ -680,710 +578,104 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                                             copyAddress();
                                         }
                                     }}>
-                                        📤 Share Address
+                                        <i className="fas fa-share"></i>
+                                        Share Address
                                     </button>
                                 </div>
                             </div>
                         </div>
-                    )}
+                    </div>
 
-                    {currentView === 'tokenDetail' && selectedToken && (
-                        <div className="desktop-content">
-                            <div className="desktop-header">
-                                <button className="desktop-back" onClick={() => setCurrentView('main')}>← Back</button>
-                                <span className="desktop-title">{selectedToken.token.symbol}</span>
-                                <button className="desktop-more">⋯</button>
-                            </div>
-                            <div className="desktop-token-detail">
-                                <div className="desktop-detail-icon">
-                                    {selectedToken.token.logoURI ? (
-                                        <img src={selectedToken.token.logoURI} alt={selectedToken.token.symbol} />
-                                    ) : (
-                                        <div className="token-placeholder large">
-                                            {selectedToken.token.symbol.substring(0, 2)}
+                    {/* Token Detail View */}
+                    <div className={`wallet-view token-detail-view ${currentView === 'tokenDetail' ? 'active' : ''}`}>
+                        {selectedToken && (
+                            <>
+                                <div className="detail-header">
+                                    <button className="back-button" onClick={() => setCurrentView('main')}>
+                                        <i className="fas fa-arrow-left"></i>
+                                    </button>
+                                    <div className="detail-title">
+                                        <span>{selectedToken.token.symbol}</span>
+                                        <span className="detail-network">{currentChain?.name}</span>
+                                    </div>
+                                    <button className="icon-button">
+                                        <i className="fas fa-ellipsis-v"></i>
+                                    </button>
+                                </div>
+
+                                <div className="detail-content">
+                                    <div className="token-detail-balance">
+                                        <div className="detail-token-icon">
+                                            {selectedToken.token.logoURI ? (
+                                                <img src={selectedToken.token.logoURI} alt="" />
+                                            ) : (
+                                                <div className="token-icon-placeholder large">
+                                                    {selectedToken.token.symbol?.substring(0, 2)}
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                                <div className="desktop-detail-balance">
-                                    {formatBalance(selectedToken.balance)} {selectedToken.token.symbol}
-                                </div>
-                                <div className="desktop-detail-value">{formatUSD(selectedToken.balanceUSD)}</div>
+                                        <div className="detail-balance-amount">
+                                            {formatBalance(selectedToken.balance)} {selectedToken.token.symbol}
+                                        </div>
+                                        <div className="detail-balance-value">
+                                            {formatUSD(selectedToken.balanceUSD)}
+                                        </div>
+                                    </div>
 
-                                <div className="desktop-chart-placeholder">
-                                    <div className="chart-icon">📈</div>
-                                    <span>Price Chart</span>
-                                </div>
+                                    <div className="price-chart">
+                                        <div className="chart-placeholder">
+                                            <i className="fas fa-chart-line"></i>
+                                            <span>Price Chart</span>
+                                        </div>
+                                    </div>
 
-                                <div className="desktop-token-stats">
-                                    <div className="desktop-stat-item">
-                                        <span className="desktop-stat-label">Price</span>
-                                        <span className="desktop-stat-value">{formatUSD(selectedToken.price)}</span>
+                                    <div className="token-stats">
+                                        <div className="stat-item">
+                                            <span className="stat-label">Price</span>
+                                            <span className="stat-value">{formatUSD(selectedToken.price)}</span>
+                                        </div>
+                                        <div className="stat-item">
+                                            <span className="stat-label">24h Change</span>
+                                            <span className="stat-value positive">+0.00%</span>
+                                        </div>
+                                        <div className="stat-item">
+                                            <span className="stat-label">Market Cap</span>
+                                            <span className="stat-value">$555.2B</span>
+                                        </div>
+                                        <div className="stat-item">
+                                            <span className="stat-label">Volume</span>
+                                            <span className="stat-value">$12.4B</span>
+                                        </div>
                                     </div>
-                                    <div className="desktop-stat-item">
-                                        <span className="desktop-stat-label">24h Change</span>
-                                        <span className="desktop-stat-value positive">+0.00%</span>
-                                    </div>
-                                    <div className="desktop-stat-item">
-                                        <span className="desktop-stat-label">Market Cap</span>
-                                        <span className="desktop-stat-value">$555.2B</span>
-                                    </div>
-                                    <div className="desktop-stat-item">
-                                        <span className="desktop-stat-label">Volume</span>
-                                        <span className="desktop-stat-value">$12.4B</span>
-                                    </div>
-                                </div>
 
-                                <div className="desktop-detail-actions">
-                                    <button className="desktop-detail-btn primary">
-                                        ⬆ Send
-                                    </button>
-                                    <button className="desktop-detail-btn secondary">
-                                        ⇄ Swap
-                                    </button>
+                                    <div className="detail-actions">
+                                        <button className="primary-button">
+                                            <i className="fas fa-paper-plane"></i>
+                                            Send
+                                        </button>
+                                        <button className="secondary-button">
+                                            <i className="fas fa-exchange-alt"></i>
+                                            Swap
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    )}
+                            </>
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            {/* Toast */}
-            {showToast && (
-                <div className="toast">
-                    ✅ {toastMessage}
-                </div>
-            )}
-
-            <style jsx>{`
-                /* Mobile Styles */
-                .mobile-backdrop {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.5);
-                    z-index: 9998;
-                    animation: fadeIn 0.3s ease;
-                }
-
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-
-                .mobile-wallet {
-                    position: fixed;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    background: white;
-                    border-radius: 20px 20px 0 0;
-                    z-index: 9999;
-                    max-height: 85vh;
-                    overflow: hidden;
-                    animation: slideUpMobile 0.3s ease-out;
-                }
-
-                @keyframes slideUpMobile {
-                    from { transform: translateY(100%); }
-                    to { transform: translateY(0); }
-                }
-
-                .mobile-handle {
-                    width: 40px;
-                    height: 4px;
-                    background: #ddd;
-                    border-radius: 2px;
-                    margin: 12px auto 8px;
-                }
-
-                .mobile-content {
-                    display: flex;
-                    flex-direction: column;
-                    height: calc(85vh - 24px);
-                    overflow: hidden;
-                }
-
-                .mobile-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 16px 20px;
-                    border-bottom: 1px solid #f0f0f0;
-                    background: white;
-                    position: sticky;
-                    top: 0;
-                    z-index: 10;
-                }
-
-                .mobile-wallet-info {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    flex: 1;
-                }
-
-                .mobile-avatar {
-                    width: 32px;
-                    height: 32px;
-                    background: linear-gradient(135deg, #667eea, #764ba2);
-                    border-radius: 50%;
-                }
-
-                .mobile-address-info {
-                    display: flex;
-                    flex-direction: column;
-                    flex: 1;
-                    min-width: 0;
-                }
-
-                .mobile-address {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #333;
-                    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-                }
-
-                .mobile-network {
-                    font-size: 12px;
-                    color: #666;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-
-                .mobile-close, .mobile-back, .mobile-more {
-                    width: 32px;
-                    height: 32px;
-                    border: none;
-                    background: #f5f5f5;
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    font-size: 16px;
-                    color: #666;
-                    transition: background 0.2s;
-                }
-
-                .mobile-close:hover, .mobile-back:hover, .mobile-more:hover {
-                    background: #e9ecef;
-                }
-
-                .mobile-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #333;
-                    flex: 1;
-                    text-align: center;
-                }
-
-                .mobile-balance-section {
-                    padding: 24px 20px;
-                    text-align: center;
-                    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-                }
-
-                .mobile-balance-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 8px;
-                }
-
-                .mobile-balance-label {
-                    font-size: 11px;
-                    color: #666;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
-
-                .mobile-balance-actions {
-                    display: flex;
-                    gap: 8px;
-                }
-
-                .mobile-balance-actions button {
-                    width: 28px;
-                    height: 28px;
-                    border: none;
-                    background: transparent;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    transition: background 0.2s;
-                }
-
-                .mobile-balance-actions button:hover {
-                    background: #f0f0f0;
-                }
-
-                .mobile-balance-actions button.spinning {
-                    animation: spin 1s linear infinite;
-                }
-
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-
-                .mobile-balance-amount {
-                    font-size: 36px;
-                    font-weight: 700;
-                    color: #333;
-                    margin-bottom: 8px;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                }
-
-                .mobile-balance-change {
-                    font-size: 14px;
-                    color: #22c55e;
-                    font-weight: 500;
-                    background: #f0f9ff;
-                    padding: 4px 8px;
-                    border-radius: 6px;
-                    display: inline-block;
-                }
-
-                .mobile-actions {
-                    display: flex;
-                    justify-content: space-around;
-                    padding: 20px;
-                    background: #fafafa;
-                    border-bottom: 1px solid #f0f0f0;
-                }
-
-                .mobile-action-btn {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 8px;
-                    border: none;
-                    background: none;
-                    cursor: pointer;
-                    padding: 8px;
-                    transition: transform 0.2s;
-                }
-
-                .mobile-action-btn:active {
-                    transform: scale(0.95);
-                }
-
-                .mobile-action-icon {
-                    width: 44px;
-                    height: 44px;
-                    background: white;
-                    border-radius: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 18px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    transition: all 0.2s;
-                }
-
-                .mobile-action-btn:hover .mobile-action-icon {
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    background: linear-gradient(135deg, #667eea, #764ba2);
-                    color: white;
-                }
-
-                .mobile-action-btn span {
-                    font-size: 12px;
-                    color: #666;
-                    font-weight: 500;
-                }
-
-                .mobile-tabs {
-                    display: flex;
-                    background: #fafafa;
-                    border-bottom: 1px solid #f0f0f0;
-                    position: sticky;
-                    top: 73px;
-                    z-index: 9;
-                }
-
-                .mobile-tab {
-                    flex: 1;
-                    padding: 16px 4px;
-                    border: none;
-                    background: none;
-                    font-size: 12px;
-                    font-weight: 500;
-                    color: #999;
-                    position: relative;
-                    cursor: pointer;
-                    transition: color 0.2s;
-                }
-
-                .mobile-tab:active {
-                    background: #f0f0f0;
-                }
-
-                .mobile-tab.active {
-                    color: #667eea;
-                }
-
-                .mobile-tab.active::after {
-                    content: '';
-                    position: absolute;
-                    bottom: 0;
-                    left: 20%;
-                    right: 20%;
-                    height: 2px;
-                    background: #667eea;
-                }
-
-                .mobile-token-list {
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 16px 20px;
-                    -webkit-overflow-scrolling: touch;
-                }
-
-                .mobile-token-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    padding: 12px 0;
-                    border-bottom: 1px solid #f5f5f5;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                }
-
-                .mobile-token-item:last-child {
-                    border-bottom: none;
-                }
-
-                .mobile-token-item:active {
-                    background: #f8f9fa;
-                }
-
-                .mobile-token-icon {
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
-                    overflow: hidden;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    flex-shrink: 0;
-                }
-
-                .mobile-token-icon img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
-
-                .token-placeholder {
-                    width: 100%;
-                    height: 100%;
-                    background: linear-gradient(135deg, #667eea, #764ba2);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-weight: 600;
-                    font-size: 14px;
-                }
-
-                .token-placeholder.large {
-                    font-size: 20px;
-                }
-
-                .mobile-token-info {
-                    flex: 1;
-                    min-width: 0;
-                }
-
-                .mobile-token-name {
-                    font-size: 15px;
-                    font-weight: 600;
-                    color: #333;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-
-                .mobile-token-network {
-                    font-size: 12px;
-                    color: #666;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-
-                .mobile-token-balance {
-                    text-align: right;
-                    flex-shrink: 0;
-                    max-width: 40%;
-                }
-
-                .mobile-token-amount {
-                    font-size: 15px;
-                    font-weight: 600;
-                    color: #333;
-                    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-
-                .mobile-token-value {
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-end;
-                    gap: 6px;
-                    font-size: 12px;
-                    color: #666;
-                }
-
-                .mobile-token-change {
-                    font-size: 11px;
-                    color: #22c55e;
-                    font-weight: 500;
-                }
-
-                .mobile-empty-state {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    color: #999;
-                    gap: 12px;
-                    padding: 48px 20px;
-                }
-
-                .mobile-empty-state div {
-                    font-size: 48px;
-                    opacity: 0.3;
-                }
-
-                .mobile-activity-list {
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 16px 20px;
-                }
-
-                .mobile-activity-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    padding: 12px 0;
-                    border-bottom: 1px solid #f5f5f5;
-                }
-
-                .mobile-activity-item:last-child {
-                    border-bottom: none;
-                }
-
-                .mobile-activity-icon {
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-size: 16px;
-                    font-weight: 600;
-                }
-
-                .mobile-activity-icon.send {
-                    background: #ef5350;
-                }
-
-                .mobile-activity-icon.receive {
-                    background: #66bb6a;
-                }
-
-                .mobile-activity-details {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                }
-
-                .mobile-activity-type {
-                    font-size: 14px;
-                    font-weight: 500;
-                    color: #333;
-                }
-
-                .mobile-activity-time {
-                    font-size: 12px;
-                    color: #999;
-                }
-
-                .mobile-activity-amount {
-                    font-size: 14px;
-                    font-weight: 600;
-                    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-                }
-
-                .mobile-activity-amount.positive {
-                    color: #22c55e;
-                }
-
-                .mobile-activity-amount.negative {
-                    color: #ef5350;
-                }
-
-                .mobile-qr-content, .mobile-token-detail {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 32px 20px;
-                    gap: 24px;
-                    overflow-y: auto;
-                }
-
-                .mobile-qr-container {
-                    padding: 20px;
-                    background: white;
-                    border-radius: 12px;
-                    border: 2px solid #f0f0f0;
-                }
-
-                .mobile-address-display {
-                    padding: 12px 16px;
-                    background: #f5f5f5;
-                    border-radius: 8px;
-                    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-                    font-size: 12px;
-                    word-break: break-all;
-                    text-align: center;
-                    max-width: 100%;
-                    color: #333;
-                }
-
-                .mobile-copy-btn, .mobile-share-btn, .mobile-detail-btn {
-                    width: 100%;
-                    padding: 16px;
-                    border-radius: 12px;
-                    border: none;
-                    font-size: 16px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                }
-
-                .mobile-copy-btn, .mobile-detail-btn.primary {
-                    background: linear-gradient(135deg, #667eea, #764ba2);
-                    color: white;
-                }
-
-                .mobile-copy-btn:active, .mobile-detail-btn.primary:active {
-                    transform: scale(0.98);
-                }
-
-                .mobile-share-btn, .mobile-detail-btn.secondary {
-                    background: white;
-                    color: #667eea;
-                    border: 1px solid #667eea;
-                }
-
-                .mobile-share-btn:active, .mobile-detail-btn.secondary:active {
-                    background: #f0f4ff;
-                }
-
-                .mobile-detail-icon {
-                    width: 64px;
-                    height: 64px;
-                    border-radius: 50%;
-                    overflow: hidden;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-
-                .mobile-detail-icon img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
-
-                .mobile-detail-balance {
-                    font-size: 24px;
-                    font-weight: 600;
-                    color: #333;
-                    text-align: center;
-                    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-                }
-
-                .mobile-detail-value {
-                    font-size: 18px;
-                    color: #666;
-                    text-align: center;
-                }
-
-                .mobile-chart-placeholder {
-                    width: 100%;
-                    height: 140px;
-                    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-                    border-radius: 12px;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    color: #999;
-                    gap: 8px;
-                }
-
-                .chart-icon {
-                    font-size: 32px;
-                    opacity: 0.5;
-                }
-
-                .mobile-token-stats {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 12px;
-                    width: 100%;
-                }
-
-                .mobile-stat-item {
-                    padding: 16px;
-                    background: #f8f9fa;
-                    border-radius: 12px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 4px;
-                }
-
-                .mobile-stat-label {
-                    font-size: 12px;
-                    color: #999;
-                    font-weight: 500;
-                }
-
-                .mobile-stat-value {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #333;
-                }
-
-                .mobile-stat-value.positive {
-                    color: #22c55e;
-                }
-
-                .mobile-detail-actions {
-                    display: flex;
-                    gap: 12px;
-                    width: 100%;
-                }
-
-                /* Desktop Styles */
-                .desktop-wallet-wrapper {
+                {/* Toast */}
+                {showToast && (
+                    <div className="toast-notification">
+                        <i className="fas fa-check-circle"></i>
+                        <span>{toastMessage}</span>
+                    </div>
+                )}
+            </div >
+
+            {/* Styles */}
+            < style jsx > {`
+                .wallet-wrapper {
                     position: fixed;
                     top: 0;
                     right: 0;
@@ -1401,27 +693,39 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     width: 440px;
                     max-width: calc(100vw - 40px);
                     max-height: calc(100vh - 90px);
-                    background: white;
+                    background: #ffffff;
                     border-radius: 24px;
                     overflow: hidden;
                     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+                    display: flex;
+                    flex-direction: column;
                     pointer-events: auto;
-                    animation: slideInDesktop 0.3s ease;
                 }
 
-                @keyframes slideInDesktop {
+                .wallet-view {
+                    display: none;
+                    flex-direction: column;
+                    height: 100%;
+                    animation: slideOut 0.3s ease;
+                }
+
+                .wallet-view.active {
+                    display: flex;
+                    animation: slideIn 0.3s ease;
+                }
+
+                @keyframes slideIn {
                     from { transform: translateX(100%); opacity: 0; }
                     to { transform: translateX(0); opacity: 1; }
                 }
 
-                .desktop-content {
-                    display: flex;
-                    flex-direction: column;
-                    height: 100%;
-                    max-height: calc(100vh - 90px);
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(-100%); opacity: 0; }
                 }
 
-                .desktop-header {
+                /* Header */
+                .wallet-header {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
@@ -1429,7 +733,7 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     border-bottom: 1px solid #f0f0f0;
                 }
 
-                .desktop-wallet-address {
+                .wallet-address {
                     display: flex;
                     align-items: center;
                     gap: 12px;
@@ -1439,31 +743,37 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     transition: background 0.2s;
                 }
 
-                .desktop-wallet-address:hover {
+                .wallet-address:hover {
                     background: #f8f9fa;
                 }
 
-                .desktop-avatar {
+                .address-avatar {
                     width: 32px;
                     height: 32px;
-                    background: linear-gradient(135deg, #667eea, #764ba2);
                     border-radius: 50%;
+                    overflow: hidden;
                 }
 
-                .desktop-wallet-address span {
+                .avatar-gradient {
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                }
+
+                .address-text {
                     font-size: 14px;
                     font-weight: 500;
-                    color: #333;
+                    color: #1a1a1a;
                     font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
                 }
 
-                .desktop-header-actions {
+                .header-actions {
                     display: flex;
                     gap: 8px;
                     align-items: center;
                 }
 
-                .desktop-chain-btn {
+                .chain-selector {
                     display: flex;
                     align-items: center;
                     gap: 8px;
@@ -1472,17 +782,78 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     border-radius: 12px;
                     background: white;
                     cursor: pointer;
+                    transition: all 0.2s;
                     font-size: 14px;
                     font-weight: 500;
-                    transition: all 0.2s;
                 }
 
-                .desktop-chain-btn:hover {
+                .chain-selector:hover {
                     border-color: #667eea;
                     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
                 }
 
-                .desktop-close, .desktop-back, .desktop-more {
+                .chain-icon {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                }
+
+                .chain-icon-placeholder {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                }
+
+                .chain-name {
+                    color: #1a1a1a;
+                }
+
+                .chain-selector i {
+                    font-size: 10px;
+                    color: #666;
+                    transition: transform 0.2s;
+                }
+
+                .chain-dropdown {
+                    position: absolute;
+                    top: 70px;
+                    right: 20px;
+                    background: white;
+                    border-radius: 16px;
+                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+                    z-index: 100;
+                    overflow: hidden;
+                    min-width: 200px;
+                }
+
+                .chain-option {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 14px 16px;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                    font-size: 14px;
+                    font-weight: 500;
+                }
+
+                .chain-option:hover {
+                    background: #f8f9fa;
+                }
+
+                .chain-option.active {
+                    background: #f0f4ff;
+                    color: #667eea;
+                }
+
+                .chain-option i {
+                    margin-left: auto;
+                    color: #667eea;
+                }
+
+                /* Icon Buttons */
+                .icon-button {
                     width: 36px;
                     height: 36px;
                     border-radius: 12px;
@@ -1492,37 +863,53 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
-                    color: #666;
-                    font-size: 16px;
                     transition: all 0.2s;
+                    color: #666;
                 }
 
-                .desktop-close:hover, .desktop-back:hover, .desktop-more:hover {
+                .icon-button:hover {
                     background: #e9ecef;
                     transform: scale(1.05);
                 }
 
-                .desktop-title {
-                    font-size: 18px;
-                    font-weight: 600;
-                    color: #333;
-                    flex: 1;
-                    text-align: center;
-                }
-
-                .desktop-balance-section {
-                    padding: 24px;
-                    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-                }
-
-                .desktop-balance-header {
+                .icon-button-sm {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 8px;
+                    border: none;
+                    background: transparent;
                     display: flex;
-                    justify-content: space-between;
                     align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    color: #666;
+                }
+
+                .icon-button-sm:hover {
+                    background: #f8f9fa;
+                }
+
+                /* Balance Section */
+                .balance-section {
+                    padding: 24px;
+                    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+                }
+
+                .total-balance {
+                    text-align: center;
+                    margin-bottom: 24px;
+                }
+
+                .balance-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
                     margin-bottom: 8px;
                 }
 
-                .desktop-balance-header span {
+                .balance-label {
                     font-size: 13px;
                     color: #666;
                     font-weight: 500;
@@ -1530,76 +917,63 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     letter-spacing: 0.5px;
                 }
 
-                .desktop-balance-actions {
-                    display: flex;
-                    gap: 8px;
-                }
-
-                .desktop-balance-actions button {
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 8px;
-                    border: none;
-                    background: transparent;
-                    cursor: pointer;
-                    color: #666;
-                    transition: background 0.2s;
-                    font-size: 14px;
-                }
-
-                .desktop-balance-actions button:hover {
-                    background: #f8f9fa;
-                }
-
-                .desktop-balance-actions button.spinning {
-                    animation: spin 1s linear infinite;
-                }
-
-                .desktop-balance-amount {
+                .balance-amount {
                     font-size: 42px;
                     font-weight: 700;
-                    color: #333;
+                    color: #1a1a1a;
                     line-height: 1;
                     margin-bottom: 8px;
-                    text-align: center;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                 }
 
-                .desktop-balance-change {
-                    text-align: center;
-                    font-size: 13px;
-                    color: #22c55e;
-                    font-weight: 500;
+                .balance-change {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
                     padding: 4px 8px;
                     border-radius: 8px;
-                    background: #f0f9ff;
-                    display: inline-block;
-                    margin: 0 auto;
+                    font-size: 13px;
+                    font-weight: 500;
                 }
 
-                .desktop-actions {
+                .balance-change.positive {
+                    background: #e8f5e9;
+                    color: #2e7d32;
+                }
+
+                .balance-change.negative {
+                    background: #ffebee;
+                    color: #c62828;
+                }
+
+                .balance-change i {
+                    font-size: 10px;
+                }
+
+                /* Action Buttons */
+                .action-buttons {
                     display: flex;
                     gap: 12px;
                     justify-content: center;
-                    margin-top: 24px;
                 }
 
-                .desktop-action-btn {
+                .action-btn {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     gap: 8px;
+                    padding: 0;
                     border: none;
                     background: none;
                     cursor: pointer;
                     transition: transform 0.2s;
                 }
 
-                .desktop-action-btn:hover {
+                .action-btn:hover {
                     transform: translateY(-2px);
                 }
 
-                .desktop-action-btn div {
+                .action-icon {
                     width: 48px;
                     height: 48px;
                     border-radius: 16px;
@@ -1608,31 +982,35 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     align-items: center;
                     justify-content: center;
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-                    font-size: 18px;
                     transition: all 0.2s;
                 }
 
-                .desktop-action-btn:hover div {
+                .action-btn:hover .action-icon {
                     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     color: white;
                 }
 
-                .desktop-action-btn span {
+                .action-btn span {
                     font-size: 12px;
                     font-weight: 500;
                     color: #666;
                 }
 
-                .desktop-tabs {
+                /* Tabs */
+                .wallet-tabs {
                     display: flex;
                     padding: 0 16px;
                     border-bottom: 1px solid #f0f0f0;
                     background: #fafafa;
                 }
 
-                .desktop-tab {
+                .tab {
                     flex: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 6px;
                     padding: 14px 0;
                     border: none;
                     background: none;
@@ -1641,19 +1019,18 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     font-weight: 500;
                     color: #999;
                     position: relative;
-                    transition: color 0.2s;
-                    text-align: center;
+                    transition: all 0.2s;
                 }
 
-                .desktop-tab:hover {
+                .tab:hover {
                     color: #666;
                 }
 
-                .desktop-tab.active {
+                .tab.active {
                     color: #667eea;
                 }
 
-                .desktop-tab.active::after {
+                .tab.active::after {
                     content: '';
                     position: absolute;
                     bottom: 0;
@@ -1664,32 +1041,51 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     border-radius: 2px;
                 }
 
-                .desktop-token-list {
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 16px;
-                    max-height: 300px;
+                .tab i {
+                    font-size: 14px;
                 }
 
-                .desktop-token-list::-webkit-scrollbar {
+                /* Tab Content */
+                .tab-content {
+                    display: none;
+                    flex: 1;
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                    padding: 16px;
+                    min-height: 0;
+                    max-height: calc(100% - 280px);
+                }
+
+                .tab-content.active {
+                    display: block;
+                }
+
+                .tab-content::-webkit-scrollbar {
                     width: 6px;
                 }
 
-                .desktop-token-list::-webkit-scrollbar-track {
+                .tab-content::-webkit-scrollbar-track {
                     background: #f1f1f1;
                     border-radius: 3px;
                 }
 
-                .desktop-token-list::-webkit-scrollbar-thumb {
+                .tab-content::-webkit-scrollbar-thumb {
                     background: #888;
                     border-radius: 3px;
                 }
 
-                .desktop-token-list::-webkit-scrollbar-thumb:hover {
+                .tab-content::-webkit-scrollbar-thumb:hover {
                     background: #555;
                 }
 
-                .desktop-token-item {
+                /* Token List */
+                .token-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .token-item {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
@@ -1697,15 +1093,15 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     border-radius: 12px;
                     cursor: pointer;
                     transition: all 0.2s;
-                    margin-bottom: 8px;
+                    min-height: 64px;
                 }
 
-                .desktop-token-item:hover {
+                .token-item:hover {
                     background: #f8f9fa;
                     transform: translateX(4px);
                 }
 
-                .desktop-token-left {
+                .token-info {
                     display: flex;
                     align-items: center;
                     gap: 12px;
@@ -1713,7 +1109,7 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     min-width: 0;
                 }
 
-                .desktop-token-icon {
+                .token-icon {
                     width: 40px;
                     height: 40px;
                     border-radius: 50%;
@@ -1724,22 +1120,47 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     flex-shrink: 0;
                 }
 
-                .desktop-token-icon img {
+                .token-icon img {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
                 }
 
-                .desktop-token-name {
+                .token-icon-placeholder {
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: 600;
+                    font-size: 14px;
+                }
+
+                .token-icon-placeholder.large {
+                    width: 64px;
+                    height: 64px;
+                    font-size: 20px;
+                }
+
+                .token-details {
+                    display: flex;
+                    flex-direction: column;
+                    min-width: 0;
+                    flex: 1;
+                }
+
+                .token-name {
                     font-size: 15px;
                     font-weight: 600;
-                    color: #333;
+                    color: #1a1a1a;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
 
-                .desktop-token-network {
+                .token-network {
                     font-size: 12px;
                     color: #999;
                     white-space: nowrap;
@@ -1747,23 +1168,23 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     text-overflow: ellipsis;
                 }
 
-                .desktop-token-right {
+                .token-balance {
                     text-align: right;
                     flex-shrink: 0;
-                    max-width: 40%;
+                    max-width: 45%;
                 }
 
-                .desktop-token-amount {
+                .token-amount {
                     font-size: 15px;
                     font-weight: 600;
-                    color: #333;
-                    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+                    color: #1a1a1a;
+                    font-family: 'SF Mono', 'Monaco', monospace;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
 
-                .desktop-token-value {
+                .token-value {
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
@@ -1772,46 +1193,88 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     color: #666;
                 }
 
-                .desktop-token-change {
+                .token-change {
                     font-size: 11px;
-                    color: #22c55e;
                     font-weight: 500;
+                    white-space: nowrap;
                 }
 
-                .desktop-empty-state {
-                    flex: 1;
+                .token-change.positive {
+                    color: #2e7d32;
+                }
+
+                .token-change.negative {
+                    color: #c62828;
+                }
+
+                /* NFT Grid */
+                .nft-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 12px;
+                }
+
+                .nft-item {
+                    border-radius: 12px;
+                    overflow: hidden;
+                    cursor: pointer;
+                    transition: transform 0.2s;
+                    background: #f8f9fa;
+                }
+
+                .nft-item:hover {
+                    transform: scale(1.02);
+                }
+
+                .nft-image {
+                    aspect-ratio: 1;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     display: flex;
-                    flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    color: #999;
+                }
+
+                .nft-placeholder {
+                    color: white;
+                    opacity: 0.5;
+                    font-size: 32px;
+                }
+
+                .nft-info {
+                    padding: 12px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                }
+
+                .nft-name {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #1a1a1a;
+                }
+
+                .nft-price {
+                    font-size: 12px;
+                    color: #666;
+                }
+
+                /* Activity List */
+                .activity-list {
+                    display: flex;
+                    flex-direction: column;
                     gap: 12px;
-                    padding: 48px 20px;
                 }
 
-                .desktop-empty-state div {
-                    font-size: 48px;
-                    opacity: 0.3;
-                }
-
-                .desktop-activity-list {
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 16px;
-                    max-height: 300px;
-                }
-
-                .desktop-activity-item {
+                .activity-item {
                     display: flex;
                     align-items: center;
                     gap: 12px;
                     padding: 12px;
                     border-radius: 12px;
                     background: #f8f9fa;
-                    margin-bottom: 8px;
                 }
 
-                .desktop-activity-icon {
+                .activity-icon {
                     width: 36px;
                     height: 36px;
                     border-radius: 50%;
@@ -1819,89 +1282,284 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     align-items: center;
                     justify-content: center;
                     color: white;
-                    font-size: 16px;
-                    font-weight: 600;
+                    font-size: 14px;
                 }
 
-                .desktop-activity-icon.send {
+                .activity-icon.send {
                     background: #ef5350;
                 }
 
-                .desktop-activity-icon.receive {
+                .activity-icon.receive {
                     background: #66bb6a;
                 }
 
-                .desktop-activity-details {
+                .activity-details {
                     flex: 1;
                     display: flex;
                     flex-direction: column;
                 }
 
-                .desktop-activity-type {
+                .activity-type {
                     font-size: 14px;
                     font-weight: 500;
-                    color: #333;
+                    color: #1a1a1a;
                 }
 
-                .desktop-activity-time {
+                .activity-time {
                     font-size: 12px;
                     color: #999;
                 }
 
-                .desktop-activity-amount {
+                .activity-amount {
                     font-size: 14px;
                     font-weight: 600;
-                    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+                    font-family: 'SF Mono', 'Monaco', monospace;
                 }
 
-                .desktop-activity-amount.positive {
-                    color: #22c55e;
+                .activity-amount.positive {
+                    color: #2e7d32;
                 }
 
-                .desktop-activity-amount.negative {
-                    color: #ef5350;
+                .activity-amount.negative {
+                    color: #c62828;
                 }
 
-                .desktop-qr-content, .desktop-token-detail {
-                    flex: 1;
+                /* Empty State */
+                .empty-state {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    padding: 32px 24px;
-                    gap: 24px;
-                    overflow-y: auto;
+                    padding: 48px;
+                    color: #999;
                 }
 
-                .desktop-qr-container {
+                .empty-state i {
+                    font-size: 48px;
+                    margin-bottom: 16px;
+                    opacity: 0.3;
+                }
+
+                .empty-state p {
+                    font-size: 14px;
+                    margin: 0;
+                }
+
+                /* Loading State */
+                .loading-state {
                     padding: 20px;
-                    background: white;
-                    border-radius: 12px;
-                    border: 2px solid #f0f0f0;
                 }
 
-                .desktop-address-display {
+                .skeleton-loader {
+                    height: 60px;
+                    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                    background-size: 200% 100%;
+                    animation: loading 1.5s infinite;
+                    border-radius: 12px;
+                    margin-bottom: 12px;
+                }
+
+                @keyframes loading {
+                    0% { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                }
+
+                /* Token Detail View */
+                .token-detail-view {
+                    background: white;
+                }
+
+                .detail-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    padding: 20px;
+                    border-bottom: 1px solid #f0f0f0;
+                }
+
+                .back-button {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 12px;
+                    border: none;
+                    background: #f8f9fa;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    color: #666;
+                }
+
+                .back-button:hover {
+                    background: #e9ecef;
+                    transform: scale(1.05);
+                }
+
+                .detail-title {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .detail-title span:first-child {
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: #1a1a1a;
+                }
+
+                .detail-network {
+                    font-size: 12px;
+                    color: #999;
+                }
+
+                .detail-content {
+                    padding: 24px;
+                    overflow-y: auto;
+                    flex: 1;
+                }
+
+                .token-detail-balance {
+                    text-align: center;
+                    margin-bottom: 32px;
+                }
+
+                .detail-token-icon {
+                    width: 64px;
+                    height: 64px;
+                    margin: 0 auto 16px;
+                    border-radius: 50%;
+                    overflow: hidden;
+                }
+
+                .detail-token-icon img {
+                    width: 100%;
+                    height: 100%;
+                }
+
+                .detail-balance-amount {
+                    font-size: 28px;
+                    font-weight: 600;
+                    color: #1a1a1a;
+                    margin-bottom: 8px;
+                }
+
+                .detail-balance-value {
+                    font-size: 18px;
+                    color: #666;
+                }
+
+                .price-chart {
+                    margin-bottom: 32px;
+                }
+
+                .chart-placeholder {
+                    height: 180px;
+                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                    border-radius: 16px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    color: #999;
+                    gap: 8px;
+                }
+
+                .chart-placeholder i {
+                    font-size: 32px;
+                    opacity: 0.5;
+                }
+
+                .token-stats {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 16px;
+                    margin-bottom: 32px;
+                }
+
+                .stat-item {
                     padding: 16px;
                     background: #f8f9fa;
                     border-radius: 12px;
-                    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-                    font-size: 14px;
-                    word-break: break-all;
-                    text-align: center;
-                    max-width: 100%;
-                    color: #333;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
                 }
 
-                .desktop-qr-actions {
+                .stat-label {
+                    font-size: 12px;
+                    color: #999;
+                    font-weight: 500;
+                }
+
+                .stat-value {
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: #1a1a1a;
+                }
+
+                .stat-value.positive {
+                    color: #2e7d32;
+                }
+
+                .stat-value.negative {
+                    color: #c62828;
+                }
+
+                .detail-actions {
                     display: flex;
                     gap: 12px;
-                    width: 100%;
                 }
 
-                .desktop-copy-btn, .desktop-share-btn, .desktop-detail-btn {
+                /* QR View */
+                .qr-view {
+                    background: white;
+                }
+
+                .qr-section {
+                    padding: 24px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 24px;
+                }
+
+                .qr-container.inline {
+                    display: flex;
+                    justify-content: center;
+                    padding: 24px;
+                    background: white;
+                    border-radius: 16px;
+                    border: 2px solid #f0f0f0;
+                }
+
+                .address-display.inline {
+                    padding: 16px;
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    word-break: break-all;
+                    font-family: 'SF Mono', 'Monaco', monospace;
+                    font-size: 14px;
+                    color: #1a1a1a;
+                    text-align: center;
+                    max-width: 100%;
+                }
+
+                .qr-actions {
+                    width: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                }
+
+                /* Buttons */
+                .primary-button {
+                    flex: 1;
                     padding: 14px 24px;
                     border-radius: 12px;
                     border: none;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
                     font-size: 15px;
                     font-weight: 600;
                     cursor: pointer;
@@ -1912,124 +1570,57 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     gap: 8px;
                 }
 
-                .desktop-copy-btn, .desktop-detail-btn.primary {
-                    background: linear-gradient(135deg, #667eea, #764ba2);
-                    color: white;
-                    flex: 1;
-                }
-
-                .desktop-copy-btn:hover, .desktop-detail-btn.primary:hover {
+                .primary-button:hover {
                     transform: translateY(-2px);
                     box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
                 }
 
-                .desktop-share-btn, .desktop-detail-btn.secondary {
+                .primary-button.full-width {
+                    width: 100%;
+                }
+
+                .secondary-button {
+                    flex: 1;
+                    padding: 14px 24px;
+                    border-radius: 12px;
+                    border: 1px solid #e0e0e0;
                     background: white;
                     color: #667eea;
-                    border: 1px solid #667eea;
-                    flex: 1;
-                }
-
-                .desktop-share-btn:hover, .desktop-detail-btn.secondary:hover {
-                    background: #f0f4ff;
-                }
-
-                .desktop-detail-icon {
-                    width: 64px;
-                    height: 64px;
-                    border-radius: 50%;
-                    overflow: hidden;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-
-                .desktop-detail-icon img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
-
-                .desktop-detail-balance {
-                    font-size: 28px;
+                    font-size: 15px;
                     font-weight: 600;
-                    color: #333;
-                    text-align: center;
-                    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-                }
-
-                .desktop-detail-value {
-                    font-size: 18px;
-                    color: #666;
-                    text-align: center;
-                }
-
-                .desktop-chart-placeholder {
-                    width: 100%;
-                    height: 180px;
-                    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-                    border-radius: 16px;
+                    cursor: pointer;
+                    transition: all 0.2s;
                     display: flex;
-                    flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    color: #999;
                     gap: 8px;
                 }
 
-                .desktop-token-stats {
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 16px;
-                    width: 100%;
+                .secondary-button:hover {
+                    border-color: #667eea;
+                    background: #f0f4ff;
                 }
 
-                .desktop-stat-item {
-                    padding: 16px;
-                    background: #f8f9fa;
-                    border-radius: 12px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 4px;
-                }
-
-                .desktop-stat-label {
-                    font-size: 12px;
-                    color: #999;
-                    font-weight: 500;
-                }
-
-                .desktop-stat-value {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #333;
-                }
-
-                .desktop-stat-value.positive {
-                    color: #22c55e;
-                }
-
-                .desktop-detail-actions {
-                    display: flex;
-                    gap: 12px;
+                .secondary-button.full-width {
                     width: 100%;
                 }
 
                 /* Toast */
-                .toast {
+                .toast-notification {
                     position: fixed;
                     bottom: 24px;
                     left: 50%;
                     transform: translateX(-50%);
-                    background: #333;
+                    background: #1a1a1a;
                     color: white;
                     padding: 12px 20px;
                     border-radius: 12px;
-                    z-index: 10000;
-                    animation: slideUp 0.3s ease;
                     display: flex;
                     align-items: center;
                     gap: 8px;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                    z-index: 10001;
+                    animation: slideUp 0.3s ease;
                 }
 
                 @keyframes slideUp {
@@ -2043,41 +1634,400 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                     }
                 }
 
-                /* Responsive breakpoints */
-                @media (max-width: 768px) {
-                    .desktop-wallet-wrapper {
-                        display: none;
-                    }
+                .toast-notification i {
+                    color: #66bb6a;
                 }
 
-                @media (min-width: 769px) {
-                    .mobile-backdrop,
-                    .mobile-wallet {
-                        display: none;
-                    }
+                /* Utilities */
+                .spinning {
+                    animation: spin 1s linear infinite;
                 }
 
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+
+                /* Mobile Offcanvas Styles */
+                .offcanvas-backdrop {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    z-index: 1040;
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                    pointer-events: none;
+                }
+
+                .offcanvas-backdrop.show {
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+
+                .wallet-offcanvas {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    height: 85vh;
+                    background: white;
+                    border-radius: 24px 24px 0 0;
+                    z-index: 1050;
+                    transform: translateY(100%);
+                    transition: transform 0.3s ease-in-out;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                }
+
+                .wallet-offcanvas.show {
+                    transform: translateY(0);
+                }
+
+                .wallet-offcanvas-content {
+                    display: flex;
+                    flex-direction: column;
+                    height: 100%;
+                }
+
+                .wallet-offcanvas .offcanvas-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 20px;
+                    border-bottom: 1px solid #f0f0f0;
+                    background: #fafafa;
+                }
+
+                .wallet-offcanvas .offcanvas-title {
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: #1a1a1a;
+                    margin: 0;
+                }
+
+                .wallet-offcanvas .btn-close {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 8px;
+                    border: none;
+                    background: transparent;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    color: #666;
+                }
+
+                .wallet-offcanvas .btn-close:hover {
+                    background: #f0f0f0;
+                }
+
+                .wallet-offcanvas .offcanvas-body {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 0;
+                }
+
+                /* Mobile specific styles */
+                .mobile-wallet-header {
+                    padding: 16px;
+                    background: #f8f9fa;
+                    cursor: pointer;
+                }
+
+                .address-section {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+
+                .address-info {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .mobile-balance-section {
+                    padding: 24px;
+                    text-align: center;
+                    background: white;
+                }
+
+                .mobile-balance-section .balance-label {
+                    font-size: 12px;
+                    color: #999;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 8px;
+                }
+
+                .mobile-balance-section .balance-amount {
+                    font-size: 36px;
+                    font-weight: 700;
+                    color: #1a1a1a;
+                    margin-bottom: 8px;
+                }
+
+                .mobile-action-buttons {
+                    display: flex;
+                    justify-content: space-around;
+                    padding: 16px;
+                    background: white;
+                    border-bottom: 1px solid #f0f0f0;
+                }
+
+                .mobile-action-buttons .action-btn {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 4px;
+                    padding: 8px;
+                    border: none;
+                    background: none;
+                    cursor: pointer;
+                    color: #666;
+                }
+
+                .mobile-action-buttons .action-btn i {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 12px;
+                    background: #f8f9fa;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 16px;
+                }
+
+                .mobile-action-buttons .action-btn span {
+                    font-size: 11px;
+                    font-weight: 500;
+                }
+
+                .mobile-tabs {
+                    display: flex;
+                    padding: 0 16px;
+                    background: #fafafa;
+                    border-bottom: 1px solid #f0f0f0;
+                }
+
+                .mobile-tabs .tab {
+                    flex: 1;
+                    padding: 14px 0;
+                    border: none;
+                    background: none;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #999;
+                    position: relative;
+                }
+
+                .mobile-tabs .tab.active {
+                    color: #667eea;
+                }
+
+                .mobile-tabs .tab.active::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    height: 2px;
+                    background: #667eea;
+                }
+
+                .mobile-token-list {
+                    padding: 16px;
+                    flex: 1;
+                    overflow-y: auto;
+                }
+
+                .mobile-token-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px;
+                    margin-bottom: 8px;
+                    border-radius: 12px;
+                    background: #f8f9fa;
+                    cursor: pointer;
+                }
+
+                .mobile-token-item:active {
+                    background: #e9ecef;
+                }
+
+                .mobile-token-item .token-icon {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    overflow: hidden;
+                }
+
+                .mobile-token-item .token-icon img {
+                    width: 100%;
+                    height: 100%;
+                }
+
+                .mobile-token-item .token-info {
+                    flex: 1;
+                }
+
+                .mobile-token-item .token-name {
+                    font-size: 15px;
+                    font-weight: 600;
+                    color: #1a1a1a;
+                }
+
+                .mobile-token-item .token-network {
+                    font-size: 12px;
+                    color: #999;
+                }
+
+                .mobile-token-item .token-balance {
+                    text-align: right;
+                }
+
+                .mobile-token-item .token-amount {
+                    font-size: 15px;
+                    font-weight: 600;
+                    color: #1a1a1a;
+                }
+
+                .mobile-token-item .token-value {
+                    font-size: 12px;
+                    color: #666;
+                }
+
+                .mobile-qr-view,
+                .mobile-token-detail {
+                    padding: 20px;
+                }
+
+                .back-button {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 8px 12px;
+                    border: none;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    color: #666;
+                }
+
+                .qr-content,
+                .token-detail-content {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 20px;
+                }
+
+                .qr-content canvas {
+                    border: 2px solid #f0f0f0;
+                    border-radius: 12px;
+                    padding: 20px;
+                }
+
+                .qr-content .address-display {
+                    padding: 12px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    word-break: break-all;
+                    font-family: monospace;
+                    font-size: 13px;
+                    width: 100%;
+                    text-align: center;
+                }
+
+                .token-icon.large {
+                    width: 80px;
+                    height: 80px;
+                }
+
+                .token-icon-placeholder.large {
+                    font-size: 24px;
+                }
+
+                .token-actions {
+                    display: flex;
+                    gap: 12px;
+                    width: 100%;
+                }
+
+                .primary-button,
+                .secondary-button {
+                    flex: 1;
+                    padding: 14px;
+                    border-radius: 12px;
+                    border: none;
+                    font-size: 15px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                }
+
+                .primary-button {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                }
+
+                .secondary-button {
+                    background: white;
+                    color: #667eea;
+                    border: 1px solid #667eea;
+                }
+
+                .mobile-toast {
+                    position: fixed;
+                    bottom: 100px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #1a1a1a;
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    z-index: 1060;
+                    animation: slideUp 0.3s ease;
+                }
+
+                /* Responsive adjustments */
                 @media (max-width: 480px) {
                     .wallet-container {
-                        width: calc(100vw - 20px);
-                        right: 10px;
                         top: 60px;
+                        right: 10px;
+                        left: 10px;
+                        width: auto;
+                        max-width: none;
                     }
 
-                    .mobile-balance-amount {
-                        font-size: 32px;
+                    .balance-amount {
+                        font-size: 36px;
                     }
-
-                    .mobile-token-list {
-                        padding: 12px 16px;
+                    
+                    .action-buttons {
+                        padding: 0 8px;
                     }
-
-                    .mobile-qr-content, 
-                    .mobile-token-detail {
-                        padding: 24px 16px;
+                    
+                    .action-btn span {
+                        font-size: 11px;
                     }
                 }
-            `}</style>
+            `}</style >
         </>
     );
 }

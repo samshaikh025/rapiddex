@@ -185,6 +185,46 @@ export default function Header() {
                     <Link href="/liquidity"> Fixed Deposit </Link>
                     <Link href="/loans">Crypto Funds</Link>
                     <Link href="/liquidity">Secure P2P</Link>
+
+                    <div className="dropdown">
+
+
+                      <>
+                        {/* button for small screen */}
+                        <button className="btn primary-btn dropdown-toggle d-flex d-lg-none header-btn border-radius-half btn-primary-bgColor" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWalletData" aria-controls="offcanvasWalletData">
+                          <div className="position-relative coin-wrapper">
+
+                            <i className="fa-solid fa-globe"></i>
+                          </div>
+
+                        </button>
+
+                        {/* button for large screen */}
+                        <button className="btn primary-btn dropdown-toggle d-none d-lg-flex header-btn border-radius-half btn-primary-bgColor" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          <div className="position-relative coin-wrapper">
+                            <i className="fa-solid fa-globe"></i>
+                          </div>
+
+                        </button>
+                        <ul className="dropdown-menu dropdown-menu-right">
+                          <div className="d-flex align-items-center user-profile">
+                            <div className="position-relative coin-wrapper">
+                              <i className="fa-solid fa-globe"></i>
+                            </div>
+                            <a href="/transaction-history" className="d-flex align-items-center dropdown-item">
+
+                              Explore RapidX
+
+                            </a>
+                          </div>
+                          <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
+                          <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()}>View On Block Explorer</a></li>
+                          <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()}>Diconnect</a></li>
+                        </ul>
+                      </>
+
+
+                    </div>
                     {/* <Link href="/stack">Stack</Link> */}
                   </div>
                 </>

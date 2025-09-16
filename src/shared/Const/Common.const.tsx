@@ -19,8 +19,8 @@ export const CommonConfig = [
     },
     {
         apiKey: '',
-        apiUrl: 'http://localhost:5159/api/'
-        //apiUrl: 'https://rapidxdatasave.protocolix.com/api/'
+        //apiUrl: 'http://localhost:5159/api/'
+        apiUrl: 'https://rapidxdatasave.protocolix.com/api/'
     },
     {
         apiKey: '',

@@ -191,22 +191,11 @@ export default function Header() {
 
 
                       <>
-                        {/* button for small screen */}
-                        <button className="btn primary-btn dropdown-toggle d-flex d-lg-none header-btn border-radius-half btn-primary-bgColor" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWalletData" aria-controls="offcanvasWalletData">
-                          <div className="position-relative coin-wrapper">
 
-                            <i className="fa-solid fa-globe"></i>
-                          </div>
+                        <a className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 
-                        </button>
-
-                        {/* button for large screen */}
-                        <button className="btn primary-btn dropdown-toggle d-none d-lg-flex header-btn border-radius-half btn-primary-bgColor" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <div className="position-relative coin-wrapper">
-                            <i className="fa-solid fa-globe"></i>
-                          </div>
                           More
-                        </button>
+                        </a>
                         <ul className="dropdown-menu dropdown-menu-right">
                           <div className="d-flex align-items-center user-profile">
                             <div className="position-relative coin-wrapper">

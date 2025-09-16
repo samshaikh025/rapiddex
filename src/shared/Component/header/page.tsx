@@ -172,7 +172,7 @@ export default function Header() {
           <div className="container-fluid">
             <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
               <div className="site-logo me-3">
-                <a href="index.html">
+                <a href="/">
                   <img src={apiUrlENV + '/assets/images/rapidx/logo_' + currentTheme + '.svg'} className="desktop-logo" alt="" />
                   <img src={apiUrlENV + '/assets/images/rapidx/logo_icon_' + currentTheme + '.svg'} className="mobile-logo" alt="site-logo" />
                 </a>
@@ -182,9 +182,10 @@ export default function Header() {
                 <>
                   <div className="menu-wrapper d-flex align-items-center small">
                     <Link href="/swap" className="active"> Multi - Swap </Link>
-                    <Link href="/liquidity"> Fixed Deposit </Link>
-                    <Link href="/loans">Crypto Funds</Link>
-                    <Link href="/liquidity">Secure P2P</Link>
+                    <Link href="/transaction-history" > Transactions </Link>
+                    <Link href="https://docs.rapidx.app" target="_blank"> Docs </Link>
+
+
 
                     <div className="dropdown">
 
@@ -204,22 +205,23 @@ export default function Header() {
                           <div className="position-relative coin-wrapper">
                             <i className="fa-solid fa-globe"></i>
                           </div>
-
+                          More
                         </button>
                         <ul className="dropdown-menu dropdown-menu-right">
                           <div className="d-flex align-items-center user-profile">
                             <div className="position-relative coin-wrapper">
                               <i className="fa-solid fa-globe"></i>
                             </div>
-                            <a href="/transaction-history" className="d-flex align-items-center dropdown-item">
+                            <a href="#" className="d-flex align-items-center dropdown-item">
 
                               Explore RapidX
 
                             </a>
                           </div>
-                          <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
-                          <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()}>View On Block Explorer</a></li>
-                          <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()}>Diconnect</a></li>
+                          <li><Link href="#" className="dropdown-item">Fixed Deposit <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
+                          <li><Link href="#" className="dropdown-item">Crypto Funds  <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
+                          <li><Link href="#" className="dropdown-item">Secure P2P <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
+                          <li><Link href="https://docs.rapidx.app" className="dropdown-item" target="_blank">Support</Link></li>
                         </ul>
                       </>
 
@@ -318,15 +320,15 @@ export default function Header() {
             </div>
           </div>
         </section>
-      </div>
+      </div >
 
       {/* Mobile */}
-      <div className="d-block d-md-none">
+      < div className="d-block d-md-none" >
         <section className="header">
           <div className="container">
             <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
               <div className="site-logo">
-                <a href="index.html">
+                <a href="/">
                   <img src={apiUrlENV + '/assets/images/rapidx/logo_' + currentTheme + '.svg'} className="desktop-logo" alt="" />
                   <img src={apiUrlENV + '/assets/images/rapidx/logo_icon_' + currentTheme + '.svg'} className="mobile-logo" alt="site-logo" />
                 </a>
@@ -430,7 +432,7 @@ export default function Header() {
             </div>
           </div>
         </section>
-      </div>
-    </div>
+      </div >
+    </div >
   )
 }

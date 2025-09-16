@@ -247,6 +247,7 @@ export default function Exchangeui(props: propsType) {
 
     function updateAmount(amount, sourceTokenValue) {
         try {
+            debugger;
             // setIsShowPathComponent(false);
 
             if (!utilityService.isNullOrEmpty(amount) && !isNaN(amount) && sourceTokenValue > 0 && Number(amount) > 0) {
@@ -282,9 +283,10 @@ export default function Exchangeui(props: propsType) {
                     setShowMinOneUSDAmountErr(false);
                     setshowSelectSourceErr(false);
                     setshowSelectDestinationErr(false);
-                    if (numAmount > sourceTokenBalance.balance) {
+
+                    if (numAmount > sourceTokenBalance?.balance) {
                         setBalanceErr(true);
-                        setIsShowPathComponent(false);
+                        setIsShowPathComponent(true);
                     }
                     else {
                         setIsShowPathComponent(true);

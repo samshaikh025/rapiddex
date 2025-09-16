@@ -23,6 +23,7 @@ export async function POST(req: Request, res: NextApiResponse) {
             method: 'GET',
             headers: reqHeader
         });
+        console.log(request);
         if (apiResponse.status == 200) {
             apiResponse = await apiResponse.json();
         } else {
@@ -37,6 +38,7 @@ export async function POST(req: Request, res: NextApiResponse) {
     else if (request.apiType == 'POST') {
         reqHeader['Content-Type'] = 'application/json';
         reqHeader['Accept'] = 'application/json';
+        console.log(request);
         apiResponse = await fetch(request.apiUrl, {
             method: 'POST',
             headers: reqHeader,

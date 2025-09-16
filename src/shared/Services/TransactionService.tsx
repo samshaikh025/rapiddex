@@ -150,7 +150,7 @@ export class TransactionService {
         let response = [];
         let payLoad = {
             apiType: 'GET',
-            apiUrl: 'Crypto/GetTransaction?walletAddress='+input.walletAddress,
+            apiUrl: 'Crypto/GetTransaction',
             apiData: null,
             apiProvider: SwapProvider.DOTNET
         }
@@ -202,11 +202,11 @@ export class TransactionService {
         return response;
     }
 
-    async GetPaymentDetailByQuoteId(quoteId: string) : Promise<PaymentLinkDto> {
-        let response : PaymentLinkDto;
+    async GetPaymentDetailByQuoteId(quoteId: string): Promise<PaymentLinkDto> {
+        let response: PaymentLinkDto;
         let payLoad = {
             apiType: 'GET',
-            apiUrl: 'Checkout/'+quoteId,
+            apiUrl: 'Checkout/' + quoteId,
             apiData: null,
             apiProvider: SwapProvider.DOTNETPAYMENTAPI
         }

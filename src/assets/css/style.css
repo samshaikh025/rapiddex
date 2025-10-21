@@ -350,7 +350,7 @@
     color: var(--primary-color);
     display: flex;
     align-items: center;
-    justofy-content: center
+    justify-content: center
 }
 
 .selcet-coin.coin-wrapper .coin,

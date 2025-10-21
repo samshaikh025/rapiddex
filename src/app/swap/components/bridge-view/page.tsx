@@ -544,7 +544,6 @@ export default function BridgeView(props: propsType) {
     }
 
     return (
-        <div className="col-lg-5 col-md-12 col-sm-12 col-12 position-relative overflow-hidden" id="swap-wrapper">
             <div className="card">
                 <div className="p-24">
 
@@ -785,8 +784,6 @@ export default function BridgeView(props: propsType) {
                     </div>
                 </div>
             </div>
-        </div>
-
     )
 }
 

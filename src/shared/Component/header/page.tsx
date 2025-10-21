@@ -45,9 +45,7 @@ export default function Header() {
 
   // Wallet Functions
   const openWallet = () => {
-    if (!utilityService.isNullOrEmpty(walletData.address)) {
       setIsWalletOpen(true);
-    }
   };
 
   const closeWallet = () => {
@@ -56,7 +54,6 @@ export default function Header() {
 
   const handleWalletButtonClick = () => {
     if (!utilityService.isNullOrEmpty(walletData.address)) {
-      debugger;
       closeWallet();
       openWallet();
     } else {
@@ -157,271 +154,268 @@ export default function Header() {
   }
 
   return (
-    <div>
-      {/* Embedded Wallet Component */}
-      <EmbeddedWallet
-        isOpen={isWalletOpen}
-        onClose={closeWallet}
-        walletAddress={walletData.address}
-        className="embedded-wallet"
-      />
+    <>
+    {
+      showMenu && 
+        <>
+          <div>
+            {/* Embedded Wallet Component */}
+            <EmbeddedWallet
+              isOpen={isWalletOpen}
+              onClose={closeWallet}
+              walletAddress={walletData.address}
+              className="embedded-wallet"
+            />
 
-      {/* Desktop */}
-      <div className="d-none d-md-block">
-        <section className="header">
-          <div className="container-fluid">
-            <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
-              <div className="site-logo me-3">
-                <a href="/">
-                  <img src={apiUrlENV + '/assets/images/rapidx/logo_' + currentTheme + '.svg'} className="desktop-logo" alt="" />
-                  <img src={apiUrlENV + '/assets/images/rapidx/logo_icon_' + currentTheme + '.svg'} className="mobile-logo" alt="site-logo" />
-                </a>
-              </div>
-              {
-                showMenu &&
-                <>
-                  <div className="menu-wrapper d-flex align-items-center small">
-                    <Link href="/swap" className="active"> Multi - Swap </Link>
-                    <Link href="/transaction-history" > Transactions </Link>
-                    <Link href="https://docs.rapidx.app" target="_blank"> Docs </Link>
+            {/* Desktop */}
+            <div className="d-none d-md-block">
+              <section className="header">
+                <div className="container-fluid">
+                  <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
+                    <div className="site-logo me-3">
+                      <a href="/">
+                        <img src={apiUrlENV + '/assets/images/rapidx/logo_' + currentTheme + '.svg'} className="desktop-logo" alt="" />
+                        <img src={apiUrlENV + '/assets/images/rapidx/logo_icon_' + currentTheme + '.svg'} className="mobile-logo" alt="site-logo" />
+                      </a>
+                    </div>
+                    <>
+                      <div className="menu-wrapper d-flex align-items-center small">
+                        <Link href="/swap" className="active"> Multi - Swap </Link>
+                        <Link href="/transaction-history" > Transactions </Link>
+                        <Link href="https://docs.rapidx.app" target="_blank"> Docs </Link>
+                        <div className="dropdown">
 
 
+                          <>
 
-                    <div className="dropdown">
+                            <a className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 
+                              More
+                            </a>
+                            <ul className="dropdown-menu dropdown-menu-right">
+                              <div className="d-flex align-items-center user-profile">
+                                <div className="position-relative coin-wrapper">
+                                  <i className="fa-solid fa-globe"></i>
+                                </div>
+                                <a href="#" className="d-flex align-items-center dropdown-item">
+
+                                  Explore RapidX
+
+                                </a>
+                              </div>
+                              <li><Link href="#" className="dropdown-item">Fixed Deposit <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
+                              <li><Link href="#" className="dropdown-item">Crypto Funds  <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
+                              <li><Link href="#" className="dropdown-item">Secure P2P <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
+                              <li><Link href="https://docs.rapidx.app" className="dropdown-item" target="_blank">Support</Link></li>
+                            </ul>
+                          </>
+
+
+                        </div>
+                        {/* <Link href="/stack">Stack</Link> */}
+                      </div>
+                    </>
+                    <div className="btn-wrapper d-flex align-items-center gap-2 ms-auto">
 
                       <>
-
-                        <a className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-
-                          More
-                        </a>
-                        <ul className="dropdown-menu dropdown-menu-right">
-                          <div className="d-flex align-items-center user-profile">
-                            <div className="position-relative coin-wrapper">
-                              <i className="fa-solid fa-globe"></i>
-                            </div>
-                            <a href="#" className="d-flex align-items-center dropdown-item">
-
-                              Explore RapidX
-
-                            </a>
-                          </div>
-                          <li><Link href="#" className="dropdown-item">Fixed Deposit <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
-                          <li><Link href="#" className="dropdown-item">Crypto Funds  <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
-                          <li><Link href="#" className="dropdown-item">Secure P2P <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
-                          <li><Link href="https://docs.rapidx.app" className="dropdown-item" target="_blank">Support</Link></li>
-                        </ul>
+                        <div className="theme-mode position-relative">
+                          <input type="checkbox" className="checkbox" id="checkbox" checked={currentTheme == 'light' ? false : true} onChange={(e) => toggleTheme(e.currentTarget.checked)} />
+                          <label htmlFor="checkbox" className="checkbox-label">
+                            <i className="fas fa-sun"></i>
+                            <i className="fas fa-moon"></i>
+                            <span className="ball"></span>
+                          </label>
+                        </div>
                       </>
 
-
-                    </div>
-                    {/* <Link href="/stack">Stack</Link> */}
-                  </div>
-                </>
-              }
-              <div className="btn-wrapper d-flex align-items-center gap-2 ms-auto">
-                {
-                  showMenu &&
-                  <>
-                    <div className="theme-mode position-relative">
-                      <input type="checkbox" className="checkbox" id="checkbox" checked={currentTheme == 'light' ? false : true} onChange={(e) => toggleTheme(e.currentTarget.checked)} />
-                      <label htmlFor="checkbox" className="checkbox-label">
-                        <i className="fas fa-sun"></i>
-                        <i className="fas fa-moon"></i>
-                        <span className="ball"></span>
-                      </label>
-                    </div>
-                  </>
-                }
-
-                <div className="dropdown">
-                  {
-                    utilityService.isNullOrEmpty(walletData.address) &&
-                    <>
-                      <button className="btn primary-btn border-radius-half btn-primary-bgColor" onClick={handleWalletButtonClick}>
-                        {utilityService.Translate(selectedLang, 'CONNECT_WALLET')}</button>
-                    </>
-                  }
-                  {
-                    !utilityService.isNullOrEmpty(walletData.address) &&
-                    <>
-                      {/* Connected wallet button - opens embedded wallet directly */}
-                      <button className="btn primary-btn header-btn border-radius-half btn-primary-bgColor d-flex align-items-center"
-                        type="button"
-                        onClick={handleWalletButtonClick}>
-                        <div className="position-relative coin-wrapper me-2">
-                          {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
-                            className="coin" alt="coin" />}
-                          {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
-                            className="coin-small" alt="coin" />}
-                        </div>
-                        <span>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</span>
-                        <i className="fas fa-chevron-down ms-2 small"></i>
-                      </button>
-                    </>
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Keep existing mobile offcanvas with embedded wallet integration */}
-          <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasWalletData" data-bs-backdrop="true" aria-labelledby="offcanvasWalletDataLabel" style={{ height: '50%' }}>
-            <div className="offcanvas-header cms-header">
-              <h5 className="offcanvas-title primary-text" id="offcanvasWalletDataLabel">Wallet Detail</h5>
-              <button type="button" className="btn-close text-reset primary-text" data-bs-dismiss="offcanvas" aria-label="Close">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
-              </button>
-            </div>
-            <div className="offcanvas-body small pt-0">
-              <div className='d-flex gap-3 flex-column add-scroll-bar'>
-                <ul>
-                  <div className="d-flex align-items-center user-profile">
-                    <div className="position-relative coin-wrapper">
-                      {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
-                        className="coin" alt="coin" />}
-                      {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
-                        className="coin-small" alt="coin" />}
-                    </div>
-                    <div className="d-flex gap-2">
-                      <div className="d-flex flex-column">
-                        <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
-                        <a href="#">
-                          <span>{walletData.chainName}</span>
-                        </a>
+                      <div className="dropdown">
+                        {
+                          utilityService.isNullOrEmpty(walletData.address) &&
+                          <>
+                            <button className="btn primary-btn border-radius-half btn-primary-bgColor" onClick={handleWalletButtonClick}>
+                              {utilityService.Translate(selectedLang, 'CONNECT_WALLET')}</button>
+                          </>
+                        }
+                        {
+                          !utilityService.isNullOrEmpty(walletData.address) &&
+                          <>
+                            {/* Connected wallet button - opens embedded wallet directly */}
+                            <button className="btn primary-btn header-btn border-radius-half btn-primary-bgColor d-flex align-items-center"
+                              type="button"
+                              onClick={handleWalletButtonClick}>
+                              <div className="position-relative coin-wrapper me-2">
+                                {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
+                                  className="coin" alt="coin" />}
+                                {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
+                                  className="coin-small" alt="coin" />}
+                              </div>
+                              <span>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</span>
+                              <i className="fas fa-chevron-down ms-2 small"></i>
+                            </button>
+                          </>
+                        }
                       </div>
-                      <i className="fa-regular fa-clipboard px-2 py-1" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
                     </div>
                   </div>
-
-                  {/* Added Open Wallet option for mobile */}
-                  <li>
-                    <button className="dropdown-item" onClick={handleWalletButtonClick} data-bs-dismiss="offcanvas">
-                      <i className="fas fa-wallet me-2"></i>Open Wallet
-                    </button>
-                  </li>
-                  <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
-                  <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()} data-bs-dismiss="offcanvas">View On Block Explorer</a></li>
-                  <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()} data-bs-dismiss="offcanvas">Disconnect</a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div >
-
-      {/* Mobile */}
-      < div className="d-block d-md-none" >
-        <section className="header">
-          <div className="container">
-            <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
-              <div className="site-logo">
-                <a href="/">
-                  <img src={apiUrlENV + '/assets/images/rapidx/logo_' + currentTheme + '.svg'} className="desktop-logo" alt="" />
-                  <img src={apiUrlENV + '/assets/images/rapidx/logo_icon_' + currentTheme + '.svg'} className="mobile-logo" alt="site-logo" />
-                </a>
-              </div>
-              {
-                showMenu &&
-                <>
-                  <div className="menu-wrapper d-flex align-items-center">
-                    <Link href="/swap" className="active"> Multi - Swap </Link>
-                    <Link href="/liquidity"> Fixed Deposit </Link>
-                    <Link href="/loans">Crypto Funds</Link>
-                    <Link href="/liquidity">Secure P2P</Link>
-                    {/* <Link href="/stack">Stack</Link> */}
-                  </div>
-                </>
-              }
-              <div className="btn-wrapper d-flex align-items-center gap-2">
-                {
-                  showMenu &&
-                  <>
-                    <div className="theme-mode position-relative">
-                      <input type="checkbox" className="checkbox" id="checkbox" checked={currentTheme == 'light' ? false : true} onChange={(e) => toggleTheme(e.currentTarget.checked)} />
-                      <label htmlFor="checkbox" className="checkbox-label">
-                        <i className="fas fa-sun"></i>
-                        <i className="fas fa-moon"></i>
-                        <span className="ball"></span>
-                      </label>
-                    </div>
-                  </>
-                }
-
-                <div className="dropdown">
-                  {
-                    utilityService.isNullOrEmpty(walletData.address) &&
-                    <>
-                      <button className="btn primary-btn border-radius-half btn-primary-bgColor" onClick={handleWalletButtonClick}>
-                        {utilityService.Translate(selectedLang, 'CONNECT_WALLET')}</button>
-                    </>
-                  }
-                  {
-                    !utilityService.isNullOrEmpty(walletData.address) &&
-                    <>
-                      {/* Mobile wallet button - opens embedded wallet directly */}
-                      <button className="btn primary-btn dropdown-toggle d-flex d-lg-none header-btn border-radius-half btn-primary-bgColor"
-                        type="button"
-                        onClick={handleWalletButtonClick}>
-                        <div className="position-relative coin-wrapper">
-                          {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
-                            className="coin" alt="coin" />}
-                          {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
-                            className="coin-small" alt="coin" />}
-                        </div>
-                        {walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}
-                      </button>
-                    </>
-                  }
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Mobile offcanvas - same as above */}
-          <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasWalletData" data-bs-backdrop="true" aria-labelledby="offcanvasWalletDataLabel" style={{ height: '50%' }}>
-            <div className="offcanvas-header cms-header">
-              <h5 className="offcanvas-title primary-text" id="offcanvasWalletDataLabel">Wallet Detail</h5>
-              <button type="button" className="btn-close text-reset primary-text" data-bs-dismiss="offcanvas" aria-label="Close">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
-              </button>
-            </div>
-            <div className="offcanvas-body small pt-0">
-              <div className='d-flex gap-3 flex-column add-scroll-bar'>
-                <ul>
-                  <div className="d-flex align-items-center user-profile">
-                    <div className="position-relative coin-wrapper">
-                      {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
-                        className="coin" alt="coin" />}
-                      {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
-                        className="coin-small" alt="coin" />}
-                    </div>
-                    <div className="d-flex gap-2">
-                      <div className="d-flex flex-column">
-                        <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
-                        <a href="#">
-                          <span>{walletData.chainName}</span>
-                        </a>
-                      </div>
-                      <i className="fa-regular fa-clipboard px-2 py-1" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
+                {/* Keep existing mobile offcanvas with embedded wallet integration */}
+                <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasWalletData" data-bs-backdrop="true" aria-labelledby="offcanvasWalletDataLabel" style={{ height: '50%' }}>
+                  <div className="offcanvas-header cms-header">
+                    <h5 className="offcanvas-title primary-text" id="offcanvasWalletDataLabel">Wallet Detail</h5>
+                    <button type="button" className="btn-close text-reset primary-text" data-bs-dismiss="offcanvas" aria-label="Close">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
+                    </button>
+                  </div>
+                  <div className="offcanvas-body small pt-0">
+                    <div className='d-flex gap-3 flex-column add-scroll-bar'>
+                      <ul>
+                        <div className="d-flex align-items-center user-profile">
+                          <div className="position-relative coin-wrapper">
+                            {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
+                              className="coin" alt="coin" />}
+                            {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
+                              className="coin-small" alt="coin" />}
+                          </div>
+                          <div className="d-flex gap-2">
+                            <div className="d-flex flex-column">
+                              <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
+                              <a href="#">
+                                <span>{walletData.chainName}</span>
+                              </a>
+                            </div>
+                            <i className="fa-regular fa-clipboard px-2 py-1" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
+                          </div>
+                        </div>
+
+                        {/* Added Open Wallet option for mobile */}
+                        <li>
+                          <button className="dropdown-item" onClick={handleWalletButtonClick} data-bs-dismiss="offcanvas">
+                            <i className="fas fa-wallet me-2"></i>Open Wallet
+                          </button>
+                        </li>
+                        <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
+                        <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()} data-bs-dismiss="offcanvas">View On Block Explorer</a></li>
+                        <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()} data-bs-dismiss="offcanvas">Disconnect</a></li>
+                      </ul>
                     </div>
                   </div>
+                </div>
+              </section>
+            </div >
 
-                  <li>
-                    <button className="dropdown-item" onClick={handleWalletButtonClick} data-bs-dismiss="offcanvas">
-                      <i className="fas fa-wallet me-2"></i>Open Wallet
+            {/* Mobile */}
+            < div className="d-block d-md-none" >
+              <section className="header">
+                <div className="container">
+                  <div className="header-wrapper d-flex align-items-center justify-content-between gap-3">
+                    <div className="site-logo">
+                      <a href="/">
+                        <img src={apiUrlENV + '/assets/images/rapidx/logo_' + currentTheme + '.svg'} className="desktop-logo" alt="" />
+                        <img src={apiUrlENV + '/assets/images/rapidx/logo_icon_' + currentTheme + '.svg'} className="mobile-logo" alt="site-logo" />
+                      </a>
+                    </div>
+
+                    <>
+                      <div className="menu-wrapper d-flex align-items-center">
+                        <Link href="/swap" className="active"> Multi - Swap </Link>
+                        <Link href="/liquidity"> Fixed Deposit </Link>
+                        <Link href="/loans">Crypto Funds</Link>
+                        <Link href="/liquidity">Secure P2P</Link>
+                        {/* <Link href="/stack">Stack</Link> */}
+                      </div>
+                    </>
+
+                    <div className="btn-wrapper d-flex align-items-center gap-2">
+
+                      <>
+                        <div className="theme-mode position-relative">
+                          <input type="checkbox" className="checkbox" id="checkbox" checked={currentTheme == 'light' ? false : true} onChange={(e) => toggleTheme(e.currentTarget.checked)} />
+                          <label htmlFor="checkbox" className="checkbox-label">
+                            <i className="fas fa-sun"></i>
+                            <i className="fas fa-moon"></i>
+                            <span className="ball"></span>
+                          </label>
+                        </div>
+                      </>
+
+                      <div className="dropdown">
+                        {
+                          utilityService.isNullOrEmpty(walletData.address) &&
+                          <>
+                            <button className="btn primary-btn border-radius-half btn-primary-bgColor" onClick={handleWalletButtonClick}>
+                              {utilityService.Translate(selectedLang, 'CONNECT_WALLET')}</button>
+                          </>
+                        }
+                        {
+                          !utilityService.isNullOrEmpty(walletData.address) &&
+                          <>
+                            {/* Mobile wallet button - opens embedded wallet directly */}
+                            <button className="btn primary-btn dropdown-toggle d-flex d-lg-none header-btn border-radius-half btn-primary-bgColor"
+                              type="button"
+                              onClick={handleWalletButtonClick}>
+                              <div className="position-relative coin-wrapper">
+                                {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
+                                  className="coin" alt="coin" />}
+                                {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
+                                  className="coin-small" alt="coin" />}
+                              </div>
+                              {walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}
+                            </button>
+                          </>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile offcanvas - same as above */}
+                <div className="offcanvas offcanvas-bottom custom-backgrop" id="offcanvasWalletData" data-bs-backdrop="true" aria-labelledby="offcanvasWalletDataLabel" style={{ height: '50%' }}>
+                  <div className="offcanvas-header cms-header">
+                    <h5 className="offcanvas-title primary-text" id="offcanvasWalletDataLabel">Wallet Detail</h5>
+                    <button type="button" className="btn-close text-reset primary-text" data-bs-dismiss="offcanvas" aria-label="Close">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
                     </button>
-                  </li>
-                  <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
-                  <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()} data-bs-dismiss="offcanvas">View On Block Explorer</a></li>
-                  <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()} data-bs-dismiss="offcanvas">Disconnect</a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div >
-    </div >
+                  </div>
+                  <div className="offcanvas-body small pt-0">
+                    <div className='d-flex gap-3 flex-column add-scroll-bar'>
+                      <ul>
+                        <div className="d-flex align-items-center user-profile">
+                          <div className="position-relative coin-wrapper">
+                            {!utilityService.isNullOrEmpty(walletData.providerImgPath) && <img src={walletData.providerImgPath}
+                              className="coin" alt="coin" />}
+                            {!utilityService.isNullOrEmpty(walletData.chainLogo) && <img src={walletData.chainLogo}
+                              className="coin-small" alt="coin" />}
+                          </div>
+                          <div className="d-flex gap-2">
+                            <div className="d-flex flex-column">
+                              <label>{walletData.address.substring(0, 4) + '...' + walletData.address.substring(37, 42)}</label>
+                              <a href="#">
+                                <span>{walletData.chainName}</span>
+                              </a>
+                            </div>
+                            <i className="fa-regular fa-clipboard px-2 py-1" onClick={() => navigator.clipboard.writeText(walletData.address)}></i>
+                          </div>
+                        </div>
+
+                        <li>
+                          <button className="dropdown-item" onClick={handleWalletButtonClick} data-bs-dismiss="offcanvas">
+                            <i className="fas fa-wallet me-2"></i>Open Wallet
+                          </button>
+                        </li>
+                        <li><Link href="/transaction-history" className="dropdown-item">Transaction History</Link></li>
+                        <li><a className="dropdown-item" role="button" onClick={() => openBlockExplorer()} data-bs-dismiss="offcanvas">View On Block Explorer</a></li>
+                        <li><a role="button" className="dropdown-item" onClick={() => diconnectWallet()} data-bs-dismiss="offcanvas">Disconnect</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div >
+          </div >
+        </>
+    }
+    </>
+    
   )
 }

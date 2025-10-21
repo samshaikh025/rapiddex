@@ -1184,7 +1184,9 @@ export default function Exchangeui(props: propsType) {
             {
                 startBridging &&
                 <>
-                    <BridgeView closeBridgeView={() => closeBridBridgeView()}></BridgeView>
+                    <div className="col-lg-5 col-md-12 col-sm-12 col-12 position-relative overflow-hidden" id="swap-wrapper">
+                        <BridgeView closeBridgeView={() => closeBridBridgeView()}></BridgeView>
+                    </div>
                 </>
             }
         </>

@@ -420,7 +420,6 @@ export default function Tokenui(props: propsType) {
 
     return (
         <>
-            <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-coin-wrapper">
                 <div className="card">
                     <div className="p-24">
                         <div className="d-flex align-items-center gap-3 mb-2">
@@ -533,7 +532,6 @@ export default function Tokenui(props: propsType) {
                         </div>
                     </div>
                 </div>
-            </div>
         </>
     );
 }

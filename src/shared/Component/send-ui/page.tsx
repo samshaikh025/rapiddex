@@ -1,20 +1,24 @@
 "use client"
-import { OpenWalletModalA, SetActiveTransactionA } from "@/app/redux-store/action/action-redux";
+import { OpenWalletModalA, SetActiveTransactionA, SetWalletDataA, SetWalletDisconnectedA } from "@/app/redux-store/action/action-redux";
 import BridgeView from "@/app/swap/components/bridge-view/page";
 import Chainui from "@/app/swap/components/chainui/page";
 import Tokenui from "@/app/swap/components/tokenui/page";
 import { AggregatorProvider, DataSource, Keys, TransactionStatus } from "@/shared/Enum/Common.enum";
-import { BridgeMessage, Chains, GetPaymentRequest, PathShowViewModel, Tokens, TransactionRequestoDto } from "@/shared/Models/Common.model";
+import { BridgeMessage, Chains, GetPaymentRequest, PathShowViewModel, Tokens, TransactionRequestoDto, WalletConnectData } from "@/shared/Models/Common.model";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import { SharedService } from "@/shared/Services/SharedService";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { formatUnits, parseEther } from "viem";
 import { useSwitchChain } from "wagmi";
 import { Chain } from "wagmi/chains";
 import * as definedChains from "wagmi/chains";
+import { useWeb3Modal } from "@web3modal/wagmi/react";
+import { useAccount, useAccountEffect, useConnect, useDisconnect } from "wagmi";
+import { UserService } from "@/shared/Services/UserService";
+import EmbeddedWallet from "../embeddedwallet/page";
 
 type propsType = {
   chains: Chains[],
@@ -82,9 +86,9 @@ export default function SendUI(props: propsType) {
 
   let [isBridgeMessage, setIsBridgeMessage] = useState<string>('');
   let bridgeMessage: BridgeMessage = new BridgeMessage();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-
-
+  const [isWalletOpen, setIsWalletOpen] = useState(false);
 
   const {
     switchChain,
@@ -111,6 +115,13 @@ export default function SendUI(props: propsType) {
 
   // Type assertion to tuple
   const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
+  const { open } = useWeb3Modal();
+  const { disconnect } = useDisconnect();
+  const allAvailableChains = useSelector((state: any) => state.AvailableChains);
+  let userService = new UserService();
+  let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
+  let currentTheme = useSelector((state: any) => state.SelectedTheme);
+
 
   function openChainUi() {
     setIsShowChainUi(true);
@@ -274,20 +285,30 @@ export default function SendUI(props: propsType) {
 
   useEffect(() => {
     if (walletDisconnected) {
-
+       setSelectedPath(new PathShowViewModel());
     }
   }, [walletDisconnected])
 
   useEffect(() => {
     if (walletData.isReconnected == false && sourceChain && sourceToken.address) {
-      fetchQuoteFromRapidx(sourceToken, sendAmount, sendAmountUSDC);
+      //fetchQuoteFromRapidx(sourceToken, sendAmount, sendAmountUSDC);
+      getAllPathForAmount(sourceToken, destiationToken, sendAmount);
     }
   }, [walletData.isReconnected]);
 
   useEffect(() => {
+
     setDestinationChain(JSON.parse(props.transactionRequest.toChainJSon));
     setDestinationToken(JSON.parse(props.transactionRequest.toTokenJSon));
     setSendAmount(props.transactionRequest.amountIn);
+
+    // Cleanup function to clear the interval
+    return () => {
+      // Abort on unmount
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   async function setDestinationData() {
@@ -387,8 +408,9 @@ export default function SendUI(props: propsType) {
       let truncatedValue = Number(sendActuallyAmount.toFixed(sourceToken.decimal));
       setSendAmount(truncatedValue);//no of token in decimal
       setSendAmountUSDC(Number(totalSendAmountUsdc?.toFixed(2)));// actual amount in usdc
-
-      fetchQuoteFromRapidx(sourceToken, truncatedValue, totalSendAmountUsdc);
+      debugger;
+      //fetchQuoteFromRapidx(sourceToken, truncatedValue, totalSendAmountUsdc);
+      getAllPathForAmount(sourceToken, destiationToken, truncatedValue);
     }
   }
 
@@ -396,12 +418,77 @@ export default function SendUI(props: propsType) {
     setStartBridging(false);
   }
 
+  function getAllPathForAmount(sourceToken: Tokens, destToken: Tokens, amt: number) {
+
+    
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new controller
+    abortControllerRef.current = new AbortController();
+    const { signal } = abortControllerRef.current;
+
+    try {
+      let walletAddress = !utilityService.isNullOrEmpty(walletData.address) ? walletData.address : '';
+      setPathShowSpinner(true);
+      setPathShowRetry(false);
+
+      cryptoService.getBestPathFromChosenChains(
+        sourceChain,
+        destiationChain,
+        sourceToken,
+        destToken,
+        amt,
+        walletAddress,
+        false
+      ).then((result) => {
+        if (signal.aborted) {
+          return;
+        }
+        else if (result && result.length > 0) {
+          const lifiPath = result.find(path => path.aggregator === AggregatorProvider.LIFI);
+          if(lifiPath){
+            setSelectedPath(result[0]);
+            setPathShowSpinner(false);
+            setPathShowRetry(false);
+          }else{
+            setPathShowSpinner(false);
+            setPathShowRetry(true);
+          }
+        } else if (result && result.length == 0) {
+          setPathShowSpinner(false);
+          setPathShowRetry(true);
+        }
+      }).catch((error) => {
+          setPathShowSpinner(false);
+          setPathShowRetry(true);
+      })
+    }
+    catch (error) {
+      console.log("Error fetching path data:", error);
+      setPathShowSpinner(false);
+      setPathShowRetry(true);
+    }
+  }
+
+   // Wallet Functions
+  const openWallet = () => {
+      setIsWalletOpen(true);
+  };
+
+  const closeWallet = () => {
+    setIsWalletOpen(false);
+  };
+
   return (
     <>
       <div className="exchange-wrapper">
         <div className="container">
           <div className="row justify-content-center gap-md-0 gap-3">
-            <div className="col-lg-5">
+            {/* Left Side - Payment Details */}
+            <div className="col-lg-5 col-md-12 col-sm-12 mb-3 mb-lg-0">
               <div className="card shadow-sm">
                 <div className="card-body p-24">
                   <div className="d-flex mb-3">
@@ -426,232 +513,336 @@ export default function SendUI(props: propsType) {
                       <h5>{props.transactionRequest.amountIn} {destiationToken?.symbol}</h5>
                     </div>
 
-                    <div className="d-flex justify-content-between mb-3"><span>Note - Payment will automatically will credited at RapidY Merchant.</span><span></span></div>
+                    <div className="d-flex justify-content-between mb-3">
+                      <span className="small text-muted">Note - Payment will automatically be credited at RapidY Merchant.</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {
-              !startBridging &&
-              <>
-                {/* <div className="row">
-                    <div className="col-5">
+            {/* Right Side - Payment Methods Accordion */}
 
-                    </div>
-                  </div> */}
-                {
-                  (!isShowChainUi && !isShowTokenUi) &&
-                  <>
-                    <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-wrapper">
-                      <div className="card">
-                        <div className="p-24">
-                          <>
-                            <div className="d-flex justify-content-between align-items-center mb-3">
-                              <div className="card-title">
-                                Send
-                              </div>
-                              {/* <div className="card-action-wrapper">
-                                  <i className="fas fa-cog cursor-pointer"></i>
-                                </div> */}
-                            </div>
-                            <div className="d-flex align-items-center gap-3 position-relative">
-                              <div className="inner-card w-100 py-2 px-3" id="select-coin" onClick={() =>
-                                openChainUi()}>
-                                <label className="mb-2 fw-600">Network</label>
-                                <div className="d-flex align-items-center gap-3">
-                                  <div className="selcet-coin coin-wrapper">
-                                    {utilityService.isNullOrEmpty(sourceChain.logoURI) && <div className="coin"></div>}
+            <div className="col-lg-5 col-md-12 col-sm-12" id="payment-methods-wrapper">
+              <div className="card shadow-sm">
+                <div className="card-body p-3 p-md-4">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5 className="card-title mb-0">Select Payment Method</h5>
+                    {
+                      !utilityService.isNullOrEmpty(walletData.address) &&
+                      <>
+                        <i
+                          className="fa-regular fa-user fs-5 cursor-pointer"
+                          data-bs-toggle="offcanvas"
+                          data-bs-target="#offcanvasMyWallet"
+                          aria-controls="offcanvasMyWallet"
+                          onClick={() => openWallet()}
+                        ></i>
+                      </>
+                    }
+                  </div>
 
-                                    {!utilityService.isNullOrEmpty(sourceChain.logoURI) && <img src={sourceChain.logoURI}
-                                      className="coin" alt="coin" />}
+                  <div className="accordion" id="paymentMethodsAccordion">
 
-                                  </div>
-                                  <div className="d-flex flex-column">
-                                    <label className="coin-name d-block fw-600">{sourceChain.chainId > 0 ?
-                                      sourceChain.chainName : 'Select Network'}</label>
-                                    {/* <label className="coin-sub-name">{props.sourceToken.name != '' ? props.sourceToken.name :
-                              'Token'}</label> */}
-                                  </div>
-                                </div>
-                              </div>
-                              {/* <div className="change-btn position-absolute cursor-pointer inner-card d-flex align-items-center justify-content-center">
-                        <i className="fas fa-exchange-alt"></i>
-                      </div> */}
-                              <div className="inner-card w-100 py-2 px-3" onClick={() => openTokenUi()}>
-                                <label className="mb-2 fw-600">Coin</label>
-                                <div className="d-flex align-items-center gap-3">
-                                  <div className="selcet-coin coin-wrapper coin-to coin">
-
-                                    {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin"></div>}
-
-                                    {!utilityService.isNullOrEmpty(sourceToken.logoURI) && <img src={sourceToken.logoURI}
-                                      className="coin" alt="coin" />}
-
-                                  </div>
-                                  <div className="d-flex flex-column">
-                                    <label className="coin-name d-block fw-600">{sourceToken.name != '' ? sourceToken.name :
-                                      'Select Coin'}</label>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="inner-card w-100 py-2 px-3 mt-3">
-                              <label className="mb-2 fw-600">Send</label>
-                              <div className="d-flex align-items-center gap-3 pb-2">
-                                <div className="position-relative coin-wrapper ">
-                                  {utilityService.isNullOrEmpty(sourceChain.logoURI) && <div className="coin"></div>}
-                                  {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin-small"></div>}
-
-                                  {!utilityService.isNullOrEmpty(sourceChain.logoURI) && <img src={sourceChain.logoURI}
-                                    className="coin" alt="coin" />}
-                                  {!utilityService.isNullOrEmpty(sourceToken.logoURI) && <img src={sourceToken.logoURI}
-                                    className="coin-small" alt="coin" />}
-                                </div>
-                                <div className="d-flex flex-column">
-                                  <input type="text" className="transparent-input" value={sendAmount} onChange={() => null} readOnly />
-                                  {/* {sourceToken?.symbol} */}
-                                  {(sendAmountUSDC != null && sendAmountUSDC > 0) && <label className="coin-sub-name">$ {sendAmountUSDC}</label>}
-                                  {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
-                                </div>
-                              </div>
-                            </div>
-                            {
-                              (bridgeMessage) && (isBridgeMessage != '') &&
-
-                              <>
-                                <div className="inner-card w-100 py-2 px-3 mt-2">
-                                  <div className="d-flex align-items-center gap-3">
-
-
-
-                                    <><span>{isBridgeMessage}</span></>
-
-
-                                  </div>
-                                </div>
-                              </>
-                            }
-                            {/* {
-                            showMinOneUSDAmountErr &&
+                    {/* Accordion Item 1 - Pay via Crypto */}
+                    <div className="accordion-item">
+                      <h2 className="accordion-header" id="headingCrypto">
+                        <button
+                          className="accordion-button"
+                          type="button"
+                          data-bs-toggle="collapse"
+                          data-bs-target="#collapseCrypto"
+                          aria-expanded="true"
+                          aria-controls="collapseCrypto"
+                        >
+                          <i className="fa-brands fa-bitcoin me-2"></i>
+                          Pay via Crypto
+                        </button>
+                      </h2>
+                      <div
+                        id="collapseCrypto"
+                        className="accordion-collapse collapse show"
+                        aria-labelledby="headingCrypto"
+                        data-bs-parent="#paymentMethodsAccordion"
+                      >
+                        <div className="accordion-body">
+                          {!startBridging && (
                             <>
-                              <div className="inner-card w-100 py-2 px-3 mt-2">
-                                <div className="d-flex align-items-center gap-3">
+                              {(!isShowChainUi && !isShowTokenUi) && (
+                                <>
+                                  <div className="row mb-3 g-2">
+                                    <div className="col-md-6 col-12">
+                                      {/* <label className="form-label fw-600 mb-2">Network</label> */}
+                                      <div className="inner-card w-100 py-3 px-3 cursor-pointer" onClick={() => openChainUi()}
+                                      >
+                                        <div className="d-flex align-items-center gap-2">
+                                          <div className="selcet-coin coin-wrapper">
+                                            {utilityService.isNullOrEmpty(sourceChain.logoURI) ? (
+                                              <div className="coin"></div>
+                                            ) : (
+                                              <img src={sourceChain.logoURI} className="coin" alt="coin" />
+                                            )}
+                                          </div>
+                                          <div className="flex-grow-1">
+                                            <label className="coin-name d-block fw-600 mb-0 small">
+                                              {sourceChain.chainId > 0 ? sourceChain.chainName : 'Select Network'}
+                                            </label>
+                                          </div>
+                                          <i className="fas fa-chevron-right text-muted"></i>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="col-md-6 col-12">
+                                      {/* <label className="form-label fw-600 mb-2">Coin</label> */}
+                                      <div className="inner-card w-100 py-3 px-3 cursor-pointer" onClick={() => openTokenUi()}
+                                      >
+                                        <div className="d-flex align-items-center gap-2">
+                                          <div className="selcet-coin coin-wrapper">
+                                            {utilityService.isNullOrEmpty(sourceToken.logoURI) ? (
+                                              <div className="coin"></div>
+                                            ) : (
+                                              <img src={sourceToken.logoURI} className="coin" alt="coin" />
+                                            )}
+                                          </div>
+                                          <div className="flex-grow-1">
+                                            <label className="coin-name d-block fw-600 mb-0 small">
+                                              {sourceToken.name != '' ? sourceToken.name : 'Select Coin'}
+                                            </label>
+                                          </div>
+                                          <i className="fas fa-chevron-right text-muted"></i>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
 
 
+                                  <div className="inner-card w-100 py-3 px-3 mb-3">
+                                    {/* <label className="form-label fw-600 mb-2">Send Amount</label> */}
+                                    <div className="d-flex align-items-center gap-3">
+                                      <div className="position-relative coin-wrapper">
+                                        {utilityService.isNullOrEmpty(sourceChain.logoURI) && <div className="coin"></div>}
+                                        {utilityService.isNullOrEmpty(sourceToken.logoURI) && <div className="coin-small"></div>}
+                                        {!utilityService.isNullOrEmpty(sourceChain.logoURI) && (
+                                          <img src={sourceChain.logoURI} className="coin" alt="coin" />
+                                        )}
+                                        {!utilityService.isNullOrEmpty(sourceToken.logoURI) && (
+                                          <img src={sourceToken.logoURI} className="coin-small" alt="coin" />
+                                        )}
+                                      </div>
+                                      <div className="flex-grow-1">
+                                        <div className="d-flex align-items-center mb-1">
+                                          <input
+                                            type="text"
+                                            className="transparent-input"
+                                            value={sendAmount}
+                                            onChange={() => null}
+                                            readOnly
+                                          />
+                                          <span className="fw-600 ms-2">
+                                            {(sourceToken && sourceToken.symbol != '' ? sourceToken.symbol : '')}
+                                          </span>
+                                        </div>
+                                        {(sendAmountUSDC != null && sendAmountUSDC > 0) && (
+                                          <label className="coin-sub-name mb-0 d-block">$ {sendAmountUSDC}</label>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
 
-                                  <span>Please enter an amount of at least $1 to proceed.</span>
+                                  {(bridgeMessage && isBridgeMessage != '') && (
+                                    <div className="alert alert-warning py-2 px-3 mb-3" role="alert">
+                                      <small>{isBridgeMessage}</small>
+                                    </div>
+                                  )}
 
+                                  {!utilityService.isNullOrEmpty(walletData.address) && pathShowRetry == false && (
+                                    <button
+                                      className="btn primary-btn w-100 btn-primary-bgColor"
+                                      onClick={() => initPayment()}
+                                      disabled={sendAmount == null}
+                                    >
+                                      {pathShowSpinner ? (
+                                        <>
+                                          <i className="fa-solid fa-spinner fa-spin me-2"></i>
+                                          Fetching Quote
+                                        </>
+                                      ) : (
+                                        'Exchange'
+                                      )}
+                                    </button>
+                                  )}
 
+                                  {utilityService.isNullOrEmpty(walletData.address) && pathShowRetry == false && (
+                                    <button
+                                      className="btn primary-btn w-100 btn-primary-bgColor"
+                                      onClick={() => dispatch(OpenWalletModalA(true))}
+                                    >
+                                      {pathShowSpinner ? (
+                                        <>
+                                          <i className="fa-solid fa-spinner fa-spin me-2"></i>
+                                          Fetching Quote
+                                        </>
+                                      ) : (
+                                        'Connect Wallet'
+                                      )}
+                                    </button>
+                                  )}
+
+                                  {pathShowRetry == true && (
+                                    <button
+                                      className="btn primary-btn w-100 btn-primary-bgColor"
+                                      onClick={() => getAllPathForAmount(sourceToken, destiationToken, sendAmount)}
+                                      disabled={sendAmount == null}
+                                    >
+                                      {pathShowSpinner ? (
+                                        <>
+                                          <i className="fa-solid fa-spinner fa-spin me-2"></i>
+                                          Retry Fetching Quote
+                                        </>
+                                      ) : (
+                                        'Retry'
+                                      )}
+                                    </button>
+                                  )}
+                                </>
+                              )}
+
+                              {isShowChainUi &&
+                                <div className="col-12" id="swap-coin-wrapper">
+                                  <Chainui
+                                    closeChainUI={(chain: Chains) => closeChainUi(chain)}
+                                    sourceChain={sourceChain}
+                                    destChain={destiationChain}
+                                    dataSource={dataSource}
+                                    chains={props.chains} />
                                 </div>
-                              </div>
+                              }
 
+                              {isShowTokenUi &&
+                                <div className="col-12" id="swap-coin-wrapper">
+                                  <Tokenui
+                                    openChainUI={(isShow: boolean) => null}
+                                    closeTokenUI={(token: Tokens) => closeTokenUi(token)}
+                                    sourceChain={sourceChain}
+                                    destChain={destiationChain}
+                                    dataSource={dataSource}
+                                    sourceToken={sourceToken}
+                                    destToken={destiationToken}
+                                  />
+                                </div>
+                              }
                             </>
-                          }  */}
-
-                            {
-                              (!utilityService.isNullOrEmpty(walletData.address) && pathShowRetry == false) &&
-                              <>
-                                <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => initPayment()} disabled={sendAmount == null}>
-                                  {
-                                    pathShowSpinner &&
-                                    <>
-                                      <i className="fa-solid fa-spinner fa-spin mx-2"></i>
-                                      Fetching Quote
-                                    </>
-                                  }
-                                  {
-                                    !pathShowSpinner &&
-                                    <>
-                                      Exchange
-                                    </>
-                                  }
-                                </button>
-                              </>
-                            }
-
-                            {
-                              pathShowRetry == true &&
-                              <>
-                                <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => fetchQuoteFromRapidx(sourceToken, sendAmount, sendAmountUSDC)} disabled={sendAmount == null}>
-                                  {
-                                    pathShowSpinner &&
-                                    <>
-                                      <i className="fa-solid fa-spinner fa-spin mx-2"></i>
-                                      Retry Fetching Quote
-                                    </>
-                                  }
-                                  {
-                                    !pathShowSpinner &&
-                                    <>
-                                      Retry
-                                    </>
-                                  }
-                                </button>
-                              </>
-                            }
-
-
-                            {
-                              utilityService.isNullOrEmpty(walletData.address) &&
-                              <>
-                                <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => dispatch(OpenWalletModalA(true))}>
-                                  {
-                                    pathShowSpinner &&
-                                    <>
-                                      <i className="fa-solid fa-spinner fa-spin mx-2"></i>
-                                      Fetching Quote
-                                    </>
-                                  }
-                                  {
-                                    !pathShowSpinner &&
-                                    <>
-                                      Connect Wallet
-                                    </>
-                                  }
-                                </button>
-                              </>
-                            }
-                          </>
+                          )}
+                          {startBridging && (
+                            <div className="col-12 position-relative overflow-hidden" id="swap-wrapper">
+                              <BridgeView closeBridgeView={() => closeBridBridgeView()}></BridgeView>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
-                  </>
-                }
-                {
-                  isShowChainUi &&
-                  <>
-                    <Chainui closeChainUI={(chain: Chains) => closeChainUi(chain)}
-                      sourceChain={sourceChain}
-                      destChain={destiationChain}
-                      dataSource={dataSource}
-                      chains={props.chains} />
-                  </>
-                }
-                {
-                  isShowTokenUi &&
-                  <>
-                    <Tokenui
-                      openChainUI={(isShow: boolean) => null}
-                      closeTokenUI={(token: Tokens) => closeTokenUi(token)}
-                      sourceChain={sourceChain}
-                      destChain={destiationChain}
-                      dataSource={dataSource}
-                      sourceToken={sourceToken}
-                      destToken={destiationToken} />
-                  </>
-                }
-              </>
-            }
-            {
-              startBridging &&
-              <>
-                <BridgeView closeBridgeView={() => closeBridBridgeView()}></BridgeView>
-              </>
-            }
+
+                    {/* Accordion Item 2 - Pay via Card */}
+                    <div className="accordion-item">
+                      <h2 className="accordion-header" id="headingCard">
+                        <button
+                          className="accordion-button collapsed"
+                          type="button"
+                          data-bs-toggle="collapse"
+                          data-bs-target="#collapseCard"
+                          aria-expanded="false"
+                          aria-controls="collapseCard"
+                        >
+                          <i className="fa-solid fa-credit-card me-2"></i>
+                          Pay via Card
+                        </button>
+                      </h2>
+                      <div
+                        id="collapseCard"
+                        className="accordion-collapse collapse"
+                        aria-labelledby="headingCard"
+                        data-bs-parent="#paymentMethodsAccordion"
+                      >
+                        <div className="accordion-body">
+                          <div className="text-center py-4">
+                            <i className="fa-solid fa-credit-card fa-3x text-muted mb-3"></i>
+                            <p className="text-muted">Card payment integration coming soon!</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Accordion Item 3 - Pay via UPI */}
+                    <div className="accordion-item">
+                      <h2 className="accordion-header" id="headingUPI">
+                        <button
+                          className="accordion-button collapsed"
+                          type="button"
+                          data-bs-toggle="collapse"
+                          data-bs-target="#collapseUPI"
+                          aria-expanded="false"
+                          aria-controls="collapseUPI"
+                        >
+                          <i className="fa-solid fa-mobile-screen-button me-2"></i>
+                          Pay via UPI
+                        </button>
+                      </h2>
+                      <div
+                        id="collapseUPI"
+                        className="accordion-collapse collapse"
+                        aria-labelledby="headingUPI"
+                        data-bs-parent="#paymentMethodsAccordion"
+                      >
+                        <div className="accordion-body">
+                          <div className="text-center py-4">
+                            <i className="fa-solid fa-mobile-screen-button fa-3x text-muted mb-3"></i>
+                            <p className="text-muted">UPI payment integration coming soon!</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* my wallet detail offcanvas start - Inside Accordion Body */}
+                    <div className="offcanvas offcanvas-end custom-backgrop offcanvas-cms" id="offcanvasMyWallet" aria-labelledby="offcanvasMyWalletLabel" style={{ position: 'absolute' }}>
+                      <div className="offcanvas-header">
+                        <h5 className="offcanvas-title" id="offcanvasMyWalletLabel">My Wallet</h5>
+                        <button type="button" className="btn-close text-reset primary-text" data-bs-dismiss="offcanvas" aria-label="Close" onClick={() => closeWallet()}>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
+                        </button>
+                      </div>
+                      <div className="offcanvas-body">
+                        {/* Embedded Wallet Component */}
+                        <EmbeddedWallet
+                          isOpen={isWalletOpen}
+                          onClose={closeWallet}
+                          walletAddress={walletData.address}
+                          className="embedded-wallet"
+                        />
+                      </div>
+                    </div>
+                    {/* my wallet detail offcanvas end */}
+                    
+                  </div>
+                  {/* Powered By Section */}
+                    <div className="mt-2 pt-1 border-top">
+                      <div className="d-flex align-items-center justify-content-center gap-2">
+                        <small className="text-muted mb-0">Powered by</small>
+                        <img
+                          src={apiUrlENV + '/assets/images/rapidx/logo_light.svg'}
+                          className="desktop-logo"
+                          alt="RapidX Logo"
+                         style={{ maxHeight: '20px', width: 'auto', height: 'auto' }}
+                        />
+                      </div>
+                    </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
-      </div >
+      </div>
     </>
   );
 }

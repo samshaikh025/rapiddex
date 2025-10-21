@@ -121,20 +121,25 @@ export default function Swapui(props: propsType) {
                                 destTokenAmount={destTokenAmount}
                                 interChangeData={() => InterChangeData()} />}
                         {(!showExchangeUI && !showChainUI) &&
-                            <Tokenui openChainUI={(isShow: boolean) => OpenChainUI(isShow)}
-                                closeTokenUI={(token: Tokens) => CloseTokenUI(token)}
-                                sourceChain={sourceChain}
-                                destChain={destChain}
-                                dataSource={dataSource}
-                                sourceToken={sourceToken}
-                                destToken={destToken} />
+                            <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-coin-wrapper">
+                                <Tokenui openChainUI={(isShow: boolean) => OpenChainUI(isShow)}
+                                    closeTokenUI={(token: Tokens) => CloseTokenUI(token)}
+                                    sourceChain={sourceChain}
+                                    destChain={destChain}
+                                    dataSource={dataSource}
+                                    sourceToken={sourceToken}
+                                    destToken={destToken} />
+                            </div>
                         }
                         {(!showExchangeUI && showChainUI) &&
-                            <Chainui closeChainUI={(chain: Chains) => CloseChainUI(chain)}
-                                sourceChain={sourceChain}
-                                destChain={destChain}
-                                dataSource={dataSource}
-                                chains={props.chains} />}
+                            <div className="col-lg-5 col-md-12 col-sm-12 col-12" id="swap-coin-wrapper">
+                                <Chainui closeChainUI={(chain: Chains) => CloseChainUI(chain)}
+                                    sourceChain={sourceChain}
+                                    destChain={destChain}
+                                    dataSource={dataSource}
+                                    chains={props.chains} />
+                            </div>
+                        }
                     </div>
                 </div>
             </div>

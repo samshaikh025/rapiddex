@@ -263,7 +263,7 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
 
     function diconnectWallet() {
         disconnect();
-        clearWalletData();
+        //clearWalletData();
     }
 
     function clearWalletData() {

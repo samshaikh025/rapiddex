@@ -4,6 +4,7 @@ import "./globals.css";//comment later
 import "../assets/css/global.css";
 import "../assets/css/style.css";
 import "../assets/css/responsive.css";
+import "../assets/css/walletview.css";
 import "../assets/fonts/fonts.css";
 import 'bootstrap/dist/css/bootstrap.css';
 import Header from "@/shared/Component/header/page";

@@ -45,7 +45,7 @@ export default function Header() {
 
   // Wallet Functions
   const openWallet = () => {
-      setIsWalletOpen(true);
+    setIsWalletOpen(true);
   };
 
   const closeWallet = () => {
@@ -155,17 +155,20 @@ export default function Header() {
 
   return (
     <>
-    {
-      showMenu && 
+      {
+        showMenu &&
         <>
           <div>
-            {/* Embedded Wallet Component */}
-            <EmbeddedWallet
-              isOpen={isWalletOpen}
-              onClose={closeWallet}
-              walletAddress={walletData.address}
-              className="embedded-wallet"
-            />
+
+            <div className="walletview">
+              {/* Embedded Wallet Component */}
+              <EmbeddedWallet
+                isOpen={isWalletOpen}
+                onClose={closeWallet}
+                walletAddress={walletData.address}
+                className="embedded-wallet"
+              />
+            </div>
 
             {/* Desktop */}
             <div className="d-none d-md-block">
@@ -414,8 +417,8 @@ export default function Header() {
             </div >
           </div >
         </>
-    }
+      }
     </>
-    
+
   )
 }

@@ -39,6 +39,10 @@ export class UtilityService {
         return ethers.formatEther(amount);
     }
 
+    async convertweiToEther(amount: string) {
+        return ethers.formatEther(amount);
+    }
+
     async formatDuration(seconds) {
         let result;
         if (seconds < 1) {

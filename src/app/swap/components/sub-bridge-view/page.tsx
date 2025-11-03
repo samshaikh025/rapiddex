@@ -146,7 +146,7 @@ export default function SubBridgeView(props: propsType) {
     }
 
     function closeSubBridgeView() {
-        if (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED || activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) {
+        if (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED) {
             sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
             dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
         }
@@ -207,7 +207,7 @@ export default function SubBridgeView(props: propsType) {
                 <div className="d-flex justify-content-between w-100">
                     <div className="coin-name d-flex gap-4 justify-content-between">
                         <div className="d-block ">
-                            <span className="d-block fw-600"> {activeTransactionData.amount} {activeTransactionData.sourceTokenName} </span>
+                            <span className="d-block fw-600"> {activeTransactionData.amountInEther} {activeTransactionData.sourceTokenName} </span>
                             <span className="d-block coin-sub-name" >$ {activeTransactionData.amountUsd}</span>
                             {/* <div className="base-coin-box d-flex mt-1 gap-2 align-items-center">
                                 <div className="base-coin">

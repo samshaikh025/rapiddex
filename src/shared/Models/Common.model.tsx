@@ -217,6 +217,7 @@ export class TransactionRequestoDto {
   walletAddress: string = '';
   amount: string;
   amountUsd: string = '';
+  amountInEther: string = '';
   approvalAddress: string = '';
   transactionHash: string = '';
   transactionStatus: number = 0;

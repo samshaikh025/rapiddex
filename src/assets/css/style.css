@@ -35,9 +35,17 @@
     border-radius: 100px
 }
 
-.header .header-wrapper .menu-wrapper a:hover,
-.header .header-wrapper .menu-wrapper a.active {
+.header .header-wrapper .menu-wrapper > a:hover,
+.header .header-wrapper .menu-wrapper > a.active {
     background-color: var(--primary-color-8)
+}
+
+.header .header-wrapper .menu-wrapper .dropdown > a.dropdown-toggle:hover {
+    background-color: var(--primary-color-8)
+}
+
+.header .header-wrapper .menu-wrapper .explore-menu .dropdown-item:hover {
+    background-color: #5244d214 !important;
 }
 
 .header .header-wrapper .menu-wrapper a.dropdown-item {
@@ -345,6 +353,24 @@
     z-index: 0;
 }
 
+.custom-backdrop-bridgeview.show:before {
+    content: '';
+    position: absolute;
+    background-color: #000;
+    /* top: -100vh; */
+    right: 0;
+    bottom: 190px;
+    left: 0;
+    opacity: 0.5;
+    height: 48vh;
+    z-index: 0;
+    border-radius: 35px 35px 0px 0px;
+}
+
+.offcanvas-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
 .btn-close {
     background: var(--white-color);
     color: var(--primary-color);
@@ -528,7 +554,7 @@ button.swap-btn {
     width: 1px;
     transform: scale(1, 2);
     transform-origin: 50% -100%;
-    background-color: var(--border-color-2);
+    background-color: var(--border-color-comman);
     z-index: 0;
 }
 

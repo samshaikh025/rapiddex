@@ -17,6 +17,7 @@ import { SupportedLang } from "@/shared/Const/Common.const";
 import Link from 'next/link';
 import { useSearchParams } from "next/navigation";
 
+
 import EmbeddedWallet from '@/shared/Component/embeddedwallet/page';
 
 export default function Header() {
@@ -37,7 +38,6 @@ export default function Header() {
   let currentTheme = useSelector((state: any) => state.SelectedTheme);
   let [showMenu, setShowMenu] = useState<boolean>(true);
   let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
-
   // Embedded Wallet State
   const [isWalletOpen, setIsWalletOpen] = useState(false);
 
@@ -187,33 +187,39 @@ export default function Header() {
                         <Link href="/transaction-history" > Transactions </Link>
                         <Link href="https://docs.rapidx.app" target="_blank"> Docs </Link>
                         <div className="dropdown">
-
-
-                          <>
-
-                            <a className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-
-                              More
-                            </a>
-                            <ul className="dropdown-menu dropdown-menu-right">
-                              <div className="d-flex align-items-center user-profile">
-                                <div className="position-relative coin-wrapper">
-                                  <i className="fa-solid fa-globe"></i>
-                                </div>
-                                <a href="#" className="d-flex align-items-center dropdown-item">
-
-                                  Explore RapidX
-
-                                </a>
-                              </div>
-                              <li><Link href="#" className="dropdown-item">Fixed Deposit <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
-                              <li><Link href="#" className="dropdown-item">Crypto Funds  <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
-                              <li><Link href="#" className="dropdown-item">Secure P2P <span className="badge bg-secondary ms-2">Coming Soon</span></Link></li>
-                              <li><Link href="https://docs.rapidx.app" className="dropdown-item" target="_blank">Support</Link></li>
-                            </ul>
-                          </>
-
-
+                          <a
+                            className="dropdown-toggle text-decoration-none cursor-pointer"
+                            role="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                          >
+                            Explore
+                          </a>
+                          <ul className="dropdown-menu explore-menu">
+                            <li>
+                              <Link href="#" className="dropdown-item">
+                                Fixed Deposit
+                                <span className="badge bg-secondary ms-2">Coming Soon</span>
+                              </Link>
+                            </li>
+                            <li>
+                              <Link href="#" className="dropdown-item">
+                                Crypto Funds
+                                <span className="badge bg-secondary ms-2">Coming Soon</span>
+                              </Link>
+                            </li>
+                            <li>
+                              <Link href="#" className="dropdown-item">
+                                Secure P2P
+                                <span className="badge bg-secondary ms-2">Coming Soon</span>
+                              </Link>
+                            </li>
+                            <li>
+                              <Link href="https://docs.rapidx.app" className="dropdown-item" target="_blank">
+                                Support
+                              </Link>
+                            </li>
+                          </ul>
                         </div>
                         {/* <Link href="/stack">Stack</Link> */}
                       </div>

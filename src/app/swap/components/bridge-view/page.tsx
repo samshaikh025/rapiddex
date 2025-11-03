@@ -56,19 +56,19 @@ export default function BridgeView(props: propsType) {
 
     const searchParams = useSearchParams();
 
-    let [showButton, setShowButton] = useState<boolean>(true);
+    let [isPaymentMode, setIsPaymentMode] = useState<boolean>(false);
 
 
     useEffect(() => {
-        showButtonItem();
+        checkIsPaymentMode();
         //clean up function
         return () => {
             clearInterval(statusIntervalId.current);
         }
     }, []);
 
-    function showButtonItem() {
-        searchParams.has('quoteId') ? setShowButton(false) : null;
+    function checkIsPaymentMode() {
+        searchParams.has('quoteId') ? setIsPaymentMode(true) : null;
     }
 
     function getPayloadForTransaction(transactionData: TransactionRequestoDto) {
@@ -544,57 +544,70 @@ export default function BridgeView(props: propsType) {
     }
 
     return (
-            <div className="card">
-                <div className="p-24">
+            <div className="card" style={{overflow: "hidden", borderRadius: isPaymentMode ? 0 : 32}}>
+                <div className={!isPaymentMode ? "p-24" : null}>
 
-                    <div className="d-block gap-3 align-items-center mb-4">
-                        <div className="card-action-wrapper cursor-pointer left-arrow" id="back-to-swap" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>
-                            <i className="fas fa-chevron-left"></i>
-                        </div>
-                        <div className="card-title">
-                            Swap
-                        </div>
-                        {/* <div className="card-action-wrapper">
-                            <i className="fas fa-cog cursor-pointer"></i>
-                        </div> */}
-                    </div>
+                    {
+                        !isPaymentMode &&
+                        <div className="d-block gap-3 align-items-center mb-4">
+                            <div className="card-action-wrapper cursor-pointer left-arrow" id="back-to-swap" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>
+                                <i className="fas fa-chevron-left"></i>
+                            </div>
+                            <div className="card-title">
+                                Swap
+                            </div>
 
-                    <div className="d-flex align-items-center gap-3 position-relative">
-                        <div className="inner-card w-100 py-2 px-3" id="select-coin">
-                            <label className="mb-2 fw-600">From</label>
-                            <div className="d-flex align-items-center gap-3">
-                                <div className="position-relative coin-wrapper">
-                                    {!utilityService.isNullOrEmpty(activeTransactionData?.sourceChainLogoUri) && <img src={activeTransactionData?.sourceChainLogoUri}
-                                        className="coin" alt="coin" />}
-                                    {!utilityService.isNullOrEmpty(activeTransactionData?.sourceTokenLogoUri) && <img src={activeTransactionData?.sourceTokenLogoUri}
-                                        className="coin-small" alt="coin" />}
+
+
+
+                            {/* <div className="card-action-wrapper">
+                                <i className="fas fa-cog cursor-pointer"></i>
+                                </div> */}
+                        </div>
+                    }
+
+                    {
+                        !isPaymentMode &&
+                        <>
+                            <div className="d-flex align-items-center gap-3 position-relative">
+                                <div className="inner-card w-100 py-2 px-3" id="select-coin">
+                                    <label className="mb-2 fw-600">From</label>
+                                    <div className="d-flex align-items-center gap-3">
+                                        <div className="position-relative coin-wrapper">
+                                            {!utilityService.isNullOrEmpty(activeTransactionData?.sourceChainLogoUri) && <img src={activeTransactionData?.sourceChainLogoUri}
+                                                className="coin" alt="coin" />}
+                                            {!utilityService.isNullOrEmpty(activeTransactionData?.sourceTokenLogoUri) && <img src={activeTransactionData?.sourceTokenLogoUri}
+                                                className="coin-small" alt="coin" />}
+                                        </div>
+                                        <div className="d-flex flex-column">
+                                            <label className="coin-name d-block fw-600">{activeTransactionData?.sourceChainName}</label>
+                                            <label className="coin-sub-name">{activeTransactionData?.sourceTokenSymbol}</label>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="d-flex flex-column">
-                                    <label className="coin-name d-block fw-600">{activeTransactionData?.sourceChainName}</label>
-                                    <label className="coin-sub-name">{activeTransactionData?.sourceTokenSymbol}</label>
+                                <div className="change-btn position-absolute cursor-pointer inner-card d-flex align-items-center justify-content-center">
+                                    <i className="fas fa-exchange-alt"></i>
+                                </div>
+                                <div className="inner-card w-100 py-2 px-3">
+                                    <label className="mb-2 fw-600">To</label>
+                                    <div className="d-flex align-items-center gap-3">
+                                        <div className="position-relative coin-wrapper">
+                                            {!utilityService.isNullOrEmpty(activeTransactionData?.destinationChainLogoUri) && <img src={activeTransactionData?.destinationChainLogoUri}
+                                                className="coin" alt="coin" />}
+                                            {!utilityService.isNullOrEmpty(activeTransactionData?.destinationTokenLogoUri) && <img src={activeTransactionData?.destinationTokenLogoUri}
+                                                className="coin-small" alt="coin" />}
+                                        </div>
+                                        <div className="d-flex flex-column">
+                                            <label className="coin-name d-block fw-600">{activeTransactionData?.destinationChainName}</label>
+                                            <label className="coin-sub-name">{activeTransactionData?.destinationTokenSymbol}</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="change-btn position-absolute cursor-pointer inner-card d-flex align-items-center justify-content-center">
-                            <i className="fas fa-exchange-alt"></i>
-                        </div>
-                        <div className="inner-card w-100 py-2 px-3">
-                            <label className="mb-2 fw-600">To</label>
-                            <div className="d-flex align-items-center gap-3">
-                                <div className="position-relative coin-wrapper">
-                                    {!utilityService.isNullOrEmpty(activeTransactionData?.destinationChainLogoUri) && <img src={activeTransactionData?.destinationChainLogoUri}
-                                        className="coin" alt="coin" />}
-                                    {!utilityService.isNullOrEmpty(activeTransactionData?.destinationTokenLogoUri) && <img src={activeTransactionData?.destinationTokenLogoUri}
-                                        className="coin-small" alt="coin" />}
-                                </div>
-                                <div className="d-flex flex-column">
-                                    <label className="coin-name d-block fw-600">{activeTransactionData?.destinationChainName}</label>
-                                    <label className="coin-sub-name">{activeTransactionData?.destinationTokenSymbol}</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="inner-card w-100 p-4 mt-3 swap-card">
+                        </>
+                    }
+                    
+                    <div className={`inner-card w-100 p-4 swap-card ${!isPaymentMode ? "mt-3" : null}`} >
                         <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE ? 'step-active' : ''}`}>
                             <div>
                                 <div className="circle">
@@ -737,7 +750,7 @@ export default function BridgeView(props: propsType) {
                             </div>
                         </div>
                         {
-                            ((activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) && showButton) &&
+                            ((activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) && !isPaymentMode) &&
                             <>
 
                                 <div className="inner-card swap-card-btn mt-4">
@@ -756,7 +769,7 @@ export default function BridgeView(props: propsType) {
                     </div>
 
                     <div
-                        className="offcanvas offcanvas-bottom custom-backgrop position-absolute"
+                        className="offcanvas offcanvas-bottom position-absolute offcanvas-cms custom-backgrop"
                         id="exceptionOffCanvas"
                         data-bs-backdrop="true"
                         aria-labelledby="exceptionOffCanvasLabel"

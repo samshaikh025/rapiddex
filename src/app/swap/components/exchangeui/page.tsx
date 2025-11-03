@@ -9,7 +9,7 @@ import Pathshow from "../pathshow/page";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import Skeleton from "react-loading-skeleton";
 import { useDispatch, useSelector } from "react-redux";
-import { OpenWalletModalA, SetActiveTransactionA, UpdateTransactionGuid } from "@/app/redux-store/action/action-redux";
+import { OpenWalletModalA, SetActiveTransactionA, SetWalletDataA, UpdateTransactionGuid } from "@/app/redux-store/action/action-redux";
 import { mainnet, sepolia } from 'wagmi/chains';
 import { config } from '../../../wagmi/config';// Go up a level if needed
 import { Chain } from "wagmi/chains";
@@ -17,12 +17,13 @@ import { TransactionService } from "@/shared/Services/TransactionService";
 
 import BridgeView from "../bridge-view/page";
 import { formatUnits, parseEther } from 'viem';
-import { readContract, writeContract } from '@wagmi/core';
+import { injected, readContract, reconnect, writeContract, getChainId } from '@wagmi/core';
 import * as definedChains from "wagmi/chains";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import SubBridgeView from "../sub-bridge-view/page";
 import SwapChatBot from "../swap-chatbot/page";
 import { TokenBalanceService } from "@/shared/Services/TokenBalanceService";
+import { parse } from "path";
 
 type propsType = {
     sourceChain: Chains,
@@ -104,10 +105,7 @@ export default function Exchangeui(props: propsType) {
     // Type assertion to tuple
     const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    const [showSelectSourceErr, setshowSelectSourceErr] = useState<boolean>(false);
-    const [showSelectDestinationErr, setshowSelectDestinationErr] = useState<boolean>(false);
-    const [showBalanceErr, setBalanceErr] = useState<boolean>(false);
+    let [showBalanceErr, setBalanceErr] = useState<boolean>(false);
 
     // Token balance state
     const [sourceTokenBalance, setSourceTokenBalance] = useState<any>(null);
@@ -197,7 +195,8 @@ export default function Exchangeui(props: propsType) {
 
         if (isNative && percentage === 1) {
             // Leave 0.001 for gas if it's native token and max is selected
-            adjustedBalance = Math.max(0, sourceTokenBalance.balance - 0.001);
+            //adjustedBalance = Math.max(0, sourceTokenBalance.balance - 0.001);
+            percentage = 0.9; // Set to 90% instead of 100%
         }
 
         const newAmount = (adjustedBalance * percentage).toFixed(6);
@@ -258,19 +257,6 @@ export default function Exchangeui(props: propsType) {
                 //setIsShowPathComponent(true);
                 //shwo validation message if balance is less than 1 USD
 
-
-                if (props.sourceChain.chainId == 0 || props.sourceToken.address == '') {
-                    setshowSelectSourceErr(true);
-                    setIsShowPathComponent(false);
-                    return false;
-                }
-
-                if (props.destChain.chainId == 0 || props.destToken.address == '') {
-                    setshowSelectDestinationErr(true);
-                    setIsShowPathComponent(false);
-                    return false;
-                }
-
                 if (eq < 0.95) {
                     currentAmountRef.current = null;
                     setShowMinOneUSDAmountErr(true);
@@ -279,10 +265,7 @@ export default function Exchangeui(props: propsType) {
                 else {
                     currentAmountRef.current = numAmount;
                     setSendAmount(numAmount);
-
                     setShowMinOneUSDAmountErr(false);
-                    setshowSelectSourceErr(false);
-                    setshowSelectDestinationErr(false);
 
                     if (numAmount > sourceTokenBalance?.balance) {
                         setBalanceErr(true);
@@ -300,8 +283,6 @@ export default function Exchangeui(props: propsType) {
                 currentAmountRef.current = null;
                 setequAmountUSD(null);
                 setShowMinOneUSDAmountErr(false);
-                setshowSelectSourceErr(false);
-                setshowSelectDestinationErr(false);
                 setIsShowPathComponent(false);
                 setBalanceErr(false);
             }
@@ -318,11 +299,7 @@ export default function Exchangeui(props: propsType) {
             amountTextBoxRef.current.value = '';
         }
         prevFetchKeyRef.current = '';
-
-        setshowSelectSourceErr(false);
-        setshowSelectDestinationErr(false);
         setBalanceErr(false);
-
         props.interChangeData();
     }
 
@@ -335,8 +312,6 @@ export default function Exchangeui(props: propsType) {
         setTotalAvailablePath(0);
         setSelectedPath(new PathShowViewModel());
         setShowMinOneUSDAmountErr(false);
-        setshowSelectSourceErr(false);
-        setshowSelectDestinationErr(false);
         setBalanceErr(false);
 
         if (amountTextBoxRef.current) {
@@ -383,92 +358,8 @@ export default function Exchangeui(props: propsType) {
         setSourceTokenAmount(props.sourceTokenAmount);
     }, [props.sourceChain, props.destChain, props.sourceToken, props.destToken, props.sourceTokenAmount])
 
-
-    async function getAllowance() {
-
-        const SPENDER_ADDRESS = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
-        const amountToSend = parseEther(sendAmount.toString());
-
-        if (account && account.address && account.address === walletData.address) {
-            // Token approval logic
-            const tokenAbi = [
-                {
-                    type: 'function',
-                    name: 'allowance',
-                    stateMutability: 'view',
-                    inputs: [
-                        { name: 'owner', type: 'address' },
-                        { name: 'spender', type: 'address' },
-                    ],
-                    outputs: [{ name: 'remaining', type: 'uint256' }],
-                },
-                {
-                    type: 'function',
-                    name: 'approve',
-                    stateMutability: 'nonpayable',
-                    inputs: [
-                        { name: 'spender', type: 'address' },
-                        { name: 'amount', type: 'uint256' },
-                    ],
-                    outputs: [{ name: 'success', type: 'bool' }],
-                },
-            ];
-
-            try {
-                // Check allowance
-                const allowance = await readContract(config, {
-                    address: sourceToken.address as `0x${string}`,
-                    abi: tokenAbi,
-                    functionName: 'allowance',
-                    args: [walletData.address, SPENDER_ADDRESS],
-                });
-
-                // If allowance is insufficient, request approval
-                if (Number(allowance) <= Number(amountToSend)) {
-                    console.log("Requesting token approval...");
-
-                    const a = await writeContract(config, {
-                        address: sourceToken.address as `0x${string}`,
-                        abi: tokenAbi,
-                        functionName: 'approve',
-                        args: [SPENDER_ADDRESS, amountToSend],
-                        chain: chainsTuple.find(a => a.id == sourceChain.chainId), // Add chain
-                        account: walletData.address as `0x${string}`, // Add account
-                    });
-
-                    // Wait for approval transaction
-
-
-                    console.log("Approval successful:", a);
-                } else {
-                    console.log("Token already approved");
-                }
-
-                // Proceed with the main transaction
-                const tx = await sendTransactionAsync({
-                    to: SPENDER_ADDRESS,
-                    value: amountToSend,
-                });
-
-                console.log('Transaction successful:', tx);
-                alert('Transaction sent successfully!');
-
-            } catch (error) {
-                console.error('Transaction error:', error);
-                alert('Transaction failed. Please try again.');
-            }
-
-
-
-
-        }
-
-
-    }
-
-
-
-    async function isGasEnough(balance: string) {
+    async function isGasEnough(checkSourceTokenIsNativeCoin: boolean, workingRpc: string, sourceTokenbalance: string) {
+        
 
         let totalGasCost = 0;
         let totalGasCostNative = 0;
@@ -484,6 +375,8 @@ export default function Exchangeui(props: propsType) {
         payableGasToken.decimal = payableGasChain.nativeCurrency.decimals;
         payableGasToken.name = payableGasChain.nativeCurrency.name;
 
+        let currentNativeBalance = checkSourceTokenIsNativeCoin ? sourceTokenbalance : await utilityService.getBalanceIne(true, payableGasToken, walletData.address, workingRpc);
+
         let payableprice = (await cryptoService.GetTokenData(payableGasToken)).data.price;
 
         let gasafeeRequiredTransactionEther = formatUnits(BigInt(selectedPath.gasafeeRequiredTransaction), payableGasToken.decimal)
@@ -494,13 +387,13 @@ export default function Exchangeui(props: propsType) {
 
         totalGasCostNative = totalGasCost / payableprice;
 
-        let currentBalance = Number(balance);
+        //let currentBalance = Number(balance);
 
-        let totalBalanceGas = totalGasCostNative + sendAmount;
+        let totalNativeBalanceRequired =  checkSourceTokenIsNativeCoin ? totalGasCostNative + sendAmount : totalGasCostNative;
 
-        if (currentBalance < totalBalanceGas) {
+        if (Number(currentNativeBalance) < totalNativeBalanceRequired) {
 
-            bridgeMessage.message = "You don't have enough Gas to Complete this transaction. You required atleast " + totalGasCostNative + "  " + payableGasToken.symbol;
+            bridgeMessage.message = "You don't have enough Gas to Complete this transaction. You required atleast " + totalNativeBalanceRequired + "  " + payableGasToken.symbol;
             setIsBridgeMessageVisible(true);
             setIsBridgeMessage(bridgeMessage.message);
             return false;
@@ -543,6 +436,7 @@ export default function Exchangeui(props: propsType) {
         transactoinObj.walletAddress = walletData.address;
         transactoinObj.amount = sendAmt;
         transactoinObj.amountUsd = sendAmtUsdc;
+        transactoinObj.amountInEther = sendAmount.toString();//value in ether
         transactoinObj.approvalAddress = selectedPath.aggregator == AggregatorProvider.RAPID_DEX && selectedPath.isMultiChain == true ? '' : selectedPath.approvalAddress;
         transactoinObj.transactionHash = '';
         transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
@@ -599,6 +493,18 @@ export default function Exchangeui(props: propsType) {
                     try {
                         await switchChain({ chainId: sourceChain.chainId }) // Call switchChain with only chainId
                         console.log("Chain Switched")
+                        
+                        //update redux wallet data state
+                        dispatch(SetWalletDataA({
+                            ...walletData,
+                            chainId: sourceChain?.chainId,
+                            chainName: sourceChain?.chainName,
+                            chainLogo: sourceChain?.logoURI,
+                            //blockExplorer: newChain.blockExplorers?.default
+                        }));
+
+                        await waitUntilWagmiUpdatesChain(sourceChain.chainId);
+                        console.log("wagmi chain updated")
                     }
                     catch (error) {
                         console.log("rejected switch chain");
@@ -608,18 +514,17 @@ export default function Exchangeui(props: propsType) {
                     console.log("No Need to switch chain")
                 }
 
-                let checkNativeCoin = await utilityService.checkCoinNative(sourceChain, sourceToken);
+                let checkSourceTokenIsNativeCoin = await utilityService.checkCoinNative(sourceChain, sourceToken);
                 // check balance
-                let balance = await utilityService.getBalanceIne(checkNativeCoin, sourceToken, walletData.address, workingRpc);
-
-                if (Number(balance) < Number(sendAmount)) {
+                let sourceTokenbalance = await utilityService.getBalanceIne(checkSourceTokenIsNativeCoin, sourceToken, walletData.address, workingRpc);
+                if (Number(sourceTokenbalance) < Number(sendAmount)) {
                     bridgeMessage.message = "You don't have enough " + sourceToken.symbol + " to complete the transaction.";
                     setIsBridgeMessageVisible(true);
                     setIsBridgeMessage(bridgeMessage.message);
                     return false;
                 }
                 else {
-                    if (await isGasEnough(balance)) {
+                    if (await isGasEnough(checkSourceTokenIsNativeCoin, workingRpc, sourceTokenbalance)) {
                         await prepareTransactionRequest();
                     }
                     else {
@@ -716,6 +621,28 @@ export default function Exchangeui(props: propsType) {
 
             updateAmount(data.amount, sourceTokenObj?.price);
         }
+    }
+
+    async function waitUntilWagmiUpdatesChain(targetChainId: number) {
+        return new Promise((resolve) => {
+            const interval = setInterval(async () => {
+                const id = await getChainId(config);
+                if (id === targetChainId) {
+                    console.log("Wagmi chainId updated to:", id);
+                    clearInterval(interval);
+                    resolve(true);
+                }
+            }, 200);
+        });
+    }
+
+    function isAmoutInputDisabled() {
+        return (
+            props.sourceChain.chainId === 0 ||
+            props.sourceToken.address === "" ||
+            props.destChain.chainId === 0 ||
+            props.destToken.address === ""
+        );
     }
 
     return (
@@ -917,6 +844,9 @@ export default function Exchangeui(props: propsType) {
                                                                 className="transparent-input"
                                                                 onChange={handleChange}
                                                                 placeholder="0"
+                                                                disabled={isAmoutInputDisabled()}
+                                                                title={isAmoutInputDisabled() ? "Source or Destination Missing" : ""}
+                                                                style={{ cursor: isAmoutInputDisabled() ? "not-allowed" : "text" }}
                                                             />
                                                             {(equAmountUSD != null && equAmountUSD > 0) && <label className="coin-sub-name">$ {equAmountUSD}</label>}
                                                             {(!utilityService.isNullOrEmpty(sendAmount) && isNaN(Number(sendAmount))) && <label className="text-danger">Only Numeric Value Allowed</label>}
@@ -971,12 +901,7 @@ export default function Exchangeui(props: propsType) {
                                     <>
                                         <div className="inner-card w-100 py-2 px-3 mt-2">
                                             <div className="d-flex align-items-center gap-3">
-
-
-
                                                 <><span>{isBridgeMessage}</span></>
-
-
                                             </div>
                                         </div>
                                     </>
@@ -986,36 +911,10 @@ export default function Exchangeui(props: propsType) {
                                     <>
                                         <div className="inner-card w-100 py-2 px-3 mt-2">
                                             <div className="d-flex align-items-center gap-3">
-
-
-
                                                 <span>Please enter an amount of at least $1 to proceed.</span>
-
-
                                             </div>
                                         </div>
 
-                                    </>
-                                }
-
-                                {
-                                    showSelectSourceErr &&
-                                    <>
-                                        <div className="inner-card w-100 py-2 px-3 mt-2">
-                                            <div className="d-flex align-items-center gap-3">
-                                                <span>Please select source.</span>
-                                            </div>
-                                        </div>
-                                    </>
-                                }
-                                {
-                                    showSelectDestinationErr &&
-                                    <>
-                                        <div className="inner-card w-100 py-2 px-3 mt-2">
-                                            <div className="d-flex align-items-center gap-3">
-                                                <span>Please select destination.</span>
-                                            </div>
-                                        </div>
                                     </>
                                 }
                                 {
@@ -1023,7 +922,7 @@ export default function Exchangeui(props: propsType) {
                                     <>
                                         <div className="inner-card w-100 py-2 px-3 mt-2">
                                             <div className="d-flex align-items-center gap-3">
-                                                <span>You do not have enough balance.</span>
+                                                <span>You do not have enough balance. {showBalanceErr}</span>
                                             </div>
                                         </div>
                                     </>
@@ -1140,10 +1039,6 @@ export default function Exchangeui(props: propsType) {
                                         </div>
                                     </>
                                 }
-
-
-
-
                                 {
                                     !utilityService.isNullOrEmpty(walletData.address) &&
                                     <>
@@ -1160,8 +1055,6 @@ export default function Exchangeui(props: propsType) {
                                         </button>
                                     </>
                                 }
-
-
                             </div>
                         </div>
                     </div>
@@ -1184,7 +1077,7 @@ export default function Exchangeui(props: propsType) {
             {
                 startBridging &&
                 <>
-                    <div className="col-lg-5 col-md-12 col-sm-12 col-12 position-relative overflow-hidden" id="swap-wrapper">
+                    <div className="col-lg-5 col-md-12 col-sm-12 col-12 position-relative" id="swap-wrapper">
                         <BridgeView closeBridgeView={() => closeBridBridgeView()}></BridgeView>
                     </div>
                 </>

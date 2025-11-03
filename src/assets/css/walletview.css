@@ -997,7 +997,7 @@
 }
 
 /* Mobile Offcanvas Styles */
-.offcanvas-backdrop {
+/* .offcanvas-backdrop {
     position: fixed;
     top: 0;
     left: 0;
@@ -1013,7 +1013,7 @@
 .offcanvas-backdrop.show {
     opacity: 1;
     pointer-events: auto;
-}
+} */
 
 .wallet-offcanvas {
     position: fixed;

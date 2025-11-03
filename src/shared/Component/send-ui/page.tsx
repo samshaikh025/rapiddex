@@ -19,6 +19,8 @@ import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useAccount, useAccountEffect, useConnect, useDisconnect } from "wagmi";
 import { UserService } from "@/shared/Services/UserService";
 import EmbeddedWallet from "../embeddedwallet/page";
+import { getChainId } from '@wagmi/core';
+import { config } from "@/app/wagmi/config";
 
 type propsType = {
   chains: Chains[],
@@ -158,6 +160,18 @@ export default function SendUI(props: propsType) {
           console.log("Need switch chain");
           try {
             await switchChain({ chainId: sourceChain.chainId }) // Call switchChain with only chainId
+            
+            //update redux wallet data state
+            dispatch(SetWalletDataA({
+              ...walletData,
+              chainId: sourceChain?.chainId,
+              chainName: sourceChain?.chainName,
+              chainLogo: sourceChain?.logoURI,
+              //blockExplorer: newChain.blockExplorers?.default
+            }));
+
+            //wait wagmi to update chainId
+            await waitUntilWagmiUpdatesChain(sourceChain.chainId);
             console.log("Chain Switched")
           }
           catch (error) {
@@ -168,17 +182,17 @@ export default function SendUI(props: propsType) {
           console.log("No Need to switch chain")
         }
 
-        let checkNativeCoin = await utilityService.checkCoinNative(sourceChain, sourceToken);
+        let checkSourceTokenIsNativeCoin = await utilityService.checkCoinNative(sourceChain, sourceToken);
         // check balance
-        let balance = await utilityService.getBalanceIne(checkNativeCoin, sourceToken, walletData.address, workingRpc);
+        let sourceTokenbalance = await utilityService.getBalanceIne(checkSourceTokenIsNativeCoin, sourceToken, walletData.address, workingRpc);
 
-        if (Number(balance) < Number(sendAmount)) {
+        if (Number(sourceTokenbalance) < Number(sendAmount)) {
           bridgeMessage.message = "You don't have enough " + sourceToken.symbol + " to complete the transaction.";
           setIsBridgeMessage(bridgeMessage.message);
           return false;
         }
         else {
-          if (await isGasEnough(balance)) {
+          if (await isGasEnough(checkSourceTokenIsNativeCoin, workingRpc, sourceTokenbalance)) {
             await prepareTransactionRequest();
           }
           else {
@@ -189,7 +203,7 @@ export default function SendUI(props: propsType) {
     }
   }
 
-  async function isGasEnough(balance: string) {
+  async function isGasEnough(checkSourceTokenIsNativeCoin: boolean, workingRpc: string, sourceTokenbalance: string) {
 
     let totalGasCost = 0;
     let totalGasCostNative = 0;
@@ -205,6 +219,8 @@ export default function SendUI(props: propsType) {
     payableGasToken.decimal = payableGasChain.nativeCurrency.decimals;
     payableGasToken.name = payableGasChain.nativeCurrency.name;
 
+    let currentNativeBalance = checkSourceTokenIsNativeCoin ? sourceTokenbalance : await utilityService.getBalanceIne(true, payableGasToken, walletData.address, workingRpc);
+    
     let payableprice = (await cryptoService.GetTokenData(payableGasToken)).data.price;
 
     let gasafeeRequiredTransactionEther = formatUnits(BigInt(selectedPath.gasafeeRequiredTransaction), payableGasToken.decimal)
@@ -215,12 +231,12 @@ export default function SendUI(props: propsType) {
 
     totalGasCostNative = totalGasCost / payableprice;
 
-    let currentBalance = Number(balance);
+    //let currentBalance = Number(balance);
 
-    let totalBalanceGas = totalGasCostNative + sendAmount;
+    let totalNativeBalanceRequired =  checkSourceTokenIsNativeCoin ? totalGasCostNative + sendAmount : totalGasCostNative;
 
-    if (currentBalance < totalBalanceGas) {
-      bridgeMessage.message = "You don't have enough Gas to Complete this transaction. You required atleast " + totalGasCostNative + "  " + payableGasToken.symbol;
+    if (Number(currentNativeBalance) < totalNativeBalanceRequired) {
+      bridgeMessage.message = "You don't have enough Gas to Complete this transaction. You required atleast " + totalNativeBalanceRequired + "  " + payableGasToken.symbol;
       setIsBridgeMessage(bridgeMessage.message);
       return false;
     }
@@ -233,15 +249,27 @@ export default function SendUI(props: propsType) {
 
   async function prepareTransactionRequest() {
 
-    let sendAmount = (selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain) ? selectedPath.fromAmountWei : '';
-    let sendAmountUsdc = (selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain) ? selectedPath.fromAmountUsd : '';
+    // let sendAmount = (selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain) ? selectedPath.fromAmountWei : '';
+    // let sendAmountUsdc = (selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain) ? selectedPath.fromAmountUsd : '';
+
+    let sendAmt = '';
+    let sendAmtUsdc = '0';
+
+    if (selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain) {
+      sendAmt = selectedPath.fromAmountWei;
+      sendAmtUsdc = selectedPath.fromAmountUsd;
+    } else if (selectedPath.aggregator != AggregatorProvider.RAPID_DEX) {
+      let wei = parseEther(sendAmount.toString());
+      sendAmt = String(wei);
+      sendAmtUsdc = String(sendAmountUSDC);
+    }
 
     let transactoinObj = new TransactionRequestoDto();
     transactoinObj.transactionId = 0;
     transactoinObj.transactionGuid = '';
     transactoinObj.walletAddress = walletData.address;
-    transactoinObj.amount = sendAmount;
-    transactoinObj.amountUsd = sendAmountUsdc;
+    transactoinObj.amount = sendAmt;
+    transactoinObj.amountUsd = sendAmtUsdc;
     transactoinObj.approvalAddress = selectedPath.aggregator == AggregatorProvider.RAPID_DEX && selectedPath.isMultiChain == true ? '' : selectedPath.approvalAddress;
     transactoinObj.transactionHash = '';
     transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
@@ -480,8 +508,25 @@ export default function SendUI(props: propsType) {
 
   const closeWallet = () => {
     setIsWalletOpen(false);
+    const offcanvasEl = document.getElementById("offcanvasMyWallet");
+    if (offcanvasEl) {
+      const bsOffcanvas = (window as any)?.bootstrap?.Offcanvas.getInstance(offcanvasEl);
+      bsOffcanvas?.hide();
+    }
   };
 
+  async function waitUntilWagmiUpdatesChain(targetChainId: number) {
+    return new Promise((resolve) => {
+      const interval = setInterval(async () => {
+        const id = await getChainId(config);
+        if (id === targetChainId) {
+          console.log("Wagmi chainId updated to:", id);
+          clearInterval(interval);
+          resolve(true);
+        }
+      }, 200);
+    });
+  }
   return (
     <>
       <div className="exchange-wrapper">
@@ -491,7 +536,7 @@ export default function SendUI(props: propsType) {
 
             {/* Payment Options Panel (Centered Single Card) */}
 
-            <div className="col-lg-6 col-md-8 col-12" id="payment-methods-wrapper">
+            <div className="col-lg-5 col-md-8 col-12" id="payment-methods-wrapper">
               <div className="card border-0" style={{
                 borderRadius: '16px',
                 overflow: 'hidden',
@@ -536,24 +581,27 @@ export default function SendUI(props: propsType) {
 
                 <div className="card-body p-4">
                   {/* Payment Options Title */}
-                  <div className="d-flex justify-content-between align-items-center mb-4">
+                  <div className="d-flex justify-content-between align-items-center mb-1">
                     <h5 className="mb-0" style={{
-                      fontSize: '22px',
+                      fontSize: '16px',
                       fontWeight: '700',
                       color: '#212121',
                       letterSpacing: '-0.5px'
                     }}>
-                      Payment Methods
+                      Select Payment Method
                     </h5>
-                    <div className="badge" style={{
-                      backgroundColor: '#e3f2fd',
-                      color: '#1976d2',
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }}>
-                      {destiationToken?.symbol} {props.transactionRequest.amountIn}
+                    <div className="d-flex align-items-center gap-2">
+                      <span className="text-muted small">Pay:</span>
+                      <div className="badge" style={{
+                        backgroundColor: '#e3f2fd',
+                        color: '#1976d2',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}>
+                        {props.transactionRequest.amountIn} {destiationToken?.symbol}
+                      </div>
                     </div>
                   </div>
 
@@ -575,9 +623,8 @@ export default function SendUI(props: propsType) {
                             color: '#212121',
                             fontWeight: '600',
                             fontSize: '16px',
-                            padding: '16px 20px',
+                            padding: '10px 20px',
                             boxShadow: 'none',
-                            borderRadius: '12px'
                           }}
                         >
                           <div className="d-flex align-items-center gap-3 w-100">
@@ -602,7 +649,7 @@ export default function SendUI(props: propsType) {
                         aria-labelledby="headingCrypto"
                         data-bs-parent="#paymentAccordion"
                       >
-                        <div className="accordion-body" style={{ padding: '20px' }}>
+                        <div className="accordion-body" style={{ padding: '10px' }}>
                       {!startBridging && (
                         <>
                           {(!isShowChainUi && !isShowTokenUi) && (
@@ -795,9 +842,8 @@ export default function SendUI(props: propsType) {
                             color: '#212121',
                             fontWeight: '600',
                             fontSize: '16px',
-                            padding: '16px 20px',
+                            padding: '10px 20px',
                             boxShadow: 'none',
-                            borderRadius: '12px'
                           }}
                         >
                           <div className="d-flex align-items-center gap-3 w-100">
@@ -829,7 +875,7 @@ export default function SendUI(props: propsType) {
                         aria-labelledby="headingUPI"
                         data-bs-parent="#paymentAccordion"
                       >
-                        <div className="accordion-body" style={{ padding: '20px' }}>
+                        <div className="accordion-body" style={{ padding: '10px' }}>
                           <div className="text-center py-5">
                             <div className="mb-4" style={{
                               width: '80px',
@@ -870,9 +916,8 @@ export default function SendUI(props: propsType) {
                             color: '#212121',
                             fontWeight: '600',
                             fontSize: '16px',
-                            padding: '16px 20px',
+                            padding: '10px 20px',
                             boxShadow: 'none',
-                            borderRadius: '12px'
                           }}
                         >
                           <div className="d-flex align-items-center gap-3 w-100">
@@ -904,7 +949,7 @@ export default function SendUI(props: propsType) {
                         aria-labelledby="headingCards"
                         data-bs-parent="#paymentAccordion"
                       >
-                        <div className="accordion-body" style={{ padding: '20px' }}>
+                        <div className="accordion-body" style={{ padding: '10px' }}>
                           <div className="text-center py-5">
                             <div className="mb-4" style={{
                               width: '80px',
@@ -931,7 +976,7 @@ export default function SendUI(props: propsType) {
                     </div>
 
                     {/* Accordion Item 4 - Pay via Netbanking */}
-                    <div className="accordion-item" style={{ border: '1px solid #e0e0e0', borderRadius: '12px !important', marginBottom: '12px', overflow: 'hidden' }}>
+                    {/* <div className="accordion-item" style={{ border: '1px solid #e0e0e0', borderRadius: '12px !important', marginBottom: '12px', overflow: 'hidden' }}>
                       <h2 className="accordion-header" id="headingNetbanking">
                         <button
                           className="accordion-button collapsed"
@@ -945,9 +990,8 @@ export default function SendUI(props: propsType) {
                             color: '#212121',
                             fontWeight: '600',
                             fontSize: '16px',
-                            padding: '16px 20px',
+                            padding: '10px 20px',
                             boxShadow: 'none',
-                            borderRadius: '12px'
                           }}
                         >
                           <div className="d-flex align-items-center gap-3 w-100">
@@ -979,7 +1023,7 @@ export default function SendUI(props: propsType) {
                         aria-labelledby="headingNetbanking"
                         data-bs-parent="#paymentAccordion"
                       >
-                        <div className="accordion-body" style={{ padding: '20px' }}>
+                        <div className="accordion-body" style={{ padding: '10px' }}>
                           <div className="text-center py-5">
                             <div className="mb-4" style={{
                               width: '80px',
@@ -1003,15 +1047,15 @@ export default function SendUI(props: propsType) {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </div> */}
 
                   </div>
 
                   {/* Wallet Offcanvas */}
-                  <div className="offcanvas offcanvas-end custom-backgrop offcanvas-cms" id="offcanvasMyWallet" aria-labelledby="offcanvasMyWalletLabel" style={{ position: 'absolute' }}>
+                  <div className="offcanvas offcanvas-end custom-backgrop offcanvas-cms custom-backgrop" id="offcanvasMyWallet" aria-labelledby="offcanvasMyWalletLabel" style={{ position: 'absolute' }}>
                     <div className="offcanvas-header">
                       <h5 className="offcanvas-title" id="offcanvasMyWalletLabel">My Wallet</h5>
-                      <button type="button" className="btn-close text-reset primary-text" data-bs-dismiss="offcanvas" aria-label="Close" onClick={() => closeWallet()}>
+                      <button type="button" className="btn-close text-reset primary-text" aria-label="Close" onClick={() => closeWallet()}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
                       </button>
                     </div>

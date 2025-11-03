@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect, useSwitchChain } from 'wagmi';
 import { TokenBalanceService } from '@/shared/Services/TokenBalanceService';
 import { UtilityService } from '@/shared/Services/UtilityService';
 import { Chains, Tokens, TransactionRequestoDto, WalletConnectData } from '@/shared/Models/Common.model';
@@ -60,6 +60,11 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
 
     let dispatch = useDispatch();
 
+    const {
+        switchChain
+    } = useSwitchChain();
+    const allAvailableChains = useSelector((state: any) => state.AvailableChains);
+    
     // Check if connected chain is supported and set current chain
     useEffect(() => {
         if (walletData.chainId) {
@@ -183,8 +188,23 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
         }, 2000);
     };
 
-    const switchChain = async (newChain: any) => {
+    const switchChainSelectedByUSer = async (newChain: any) => {
         if (newChain.chainId === currentChain?.chainId) return;
+        //swich chain
+        // await switchChain({ chainId: newChain.chainId });
+        
+        // //get switched chain infor from allChains and update redux walletData state
+        // let selectedChain = allAvailableChains.length > 0 ? allAvailableChains?.find(x => x.chainId == newChain?.chainId) : null;
+        // if (selectedChain) {
+        //     dispatch(SetWalletDataA({
+        //         ...walletData,
+        //         chainId: selectedChain?.chainId,
+        //         chainName: selectedChain?.chainName,
+        //         chainLogo: selectedChain?.logoURI,
+        //         //blockExplorer: newChain.blockExplorers?.default
+        //     }));
+        // }
+
         setCurrentChain(newChain);
         setIsChainSupported(true);
         setLoading(true);
@@ -263,6 +283,7 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
 
     function diconnectWallet() {
         disconnect();
+        onClose();
         //clearWalletData();
     }
 
@@ -321,7 +342,7 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                                     <div
                                         key={chain.chainId}
                                         className={`chain-option ${currentChain?.chainId === chain.chainId ? 'active' : ''}`}
-                                        onClick={() => switchChain(chain)}
+                                        onClick={() => switchChainSelectedByUSer(chain)}
                                     >
                                         {chain.logoURI && (
                                             <img src={chain.logoURI} alt="" className="chain-icon" />
@@ -365,7 +386,7 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                                     </div>
                                     <span>Qr Code</span>
                                 </button>
-                                <button className="action-btn" onClick={() => window.location.href = "/transaction-history"}>
+                                <button className="action-btn" onClick={() => window.open("/transaction-history", "_blank", "noopener,noreferrer")}>
                                     <div className="action-icon">
                                         <i className="fas fa-history"></i>
 
@@ -415,7 +436,7 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                             </button> */}
                             <button
                                 className={`tab ${activeTab === 'activity' ? 'active' : ''}`}
-                                onClick={() => window.location.href = "/transaction-history"}
+                                onClick={() => window.open("/transaction-history", "_blank", "noopener,noreferrer")}
                             >
                                 <i className="fas fa-history"></i>
                                 <span>Activity</span>

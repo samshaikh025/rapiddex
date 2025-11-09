@@ -124,6 +124,7 @@ export default function BridgeView(props: propsType) {
                 let response: LiFiTransactionResponse = await cryptoService.TransactionStatusLIFI(tx, activeTransactionData.sourceChainId, activeTransactionData.destinationChainId)
                 if (response && response.status) {
                     status = TransactionSubStatusLIFI[response.status];
+                    console.log("LIFI Transaction Status:", status);
                 }
             }
             else if (activeTransactionData.transactiionAggregator == AggregatorProvider.RANGO) {
@@ -131,6 +132,7 @@ export default function BridgeView(props: propsType) {
                 let response: LiFiTransactionResponse = await cryptoService.TransactionStatusRango(activeTransactionData.transactionAggregatorRequestId, tx, 1);
                 if (response && response.status) {
                     status = TransactionSubStatusRango[response.status];
+                    console.log("Rango Transaction Status:", status);
                 }
             }
             else if (activeTransactionData.transactiionAggregator == AggregatorProvider.OWLTO) {
@@ -138,6 +140,7 @@ export default function BridgeView(props: propsType) {
                 let response: OwltoTransactionResponse = await cryptoService.TransactionStatusOwlto(activeTransactionData.sourceChainId, tx);
                 if (response && response.status) {
                     status = OwltoSubStatus[String(response.status.code)];
+                    console.log("Owlto Transaction Status:", status);
                 }
             }
             else if (activeTransactionData.transactiionAggregator == AggregatorProvider.RAPID_DEX) {
@@ -148,6 +151,7 @@ export default function BridgeView(props: propsType) {
                 payLoad.rpcUrl = SupportedChains.find(x => x.chainId == chainId)?.supportedRPC[0];
 
                 status = await GetTransactionStatusRapidDex(payLoad);
+                console.log("Rapid Dex Transaction Status:", status);
             }
         }
 
@@ -210,14 +214,19 @@ export default function BridgeView(props: propsType) {
 
                 tx = await sendTransactionAsync(transactionRequest);
 
-                if (searchParams.toString().includes('quoteId') && tx != null) {
+                // if (searchParams.toString().includes('quoteId') && tx != null) {
 
-                    window.location.href = 'https://demochekout.rapidx.app/success'
+                //     window.location.href = 'https://demochekout.rapidx.app/success'
 
-                }
+                // }
 
                 let status = await GetTransactionStatus(tx);
-
+                
+                // if 0 then check one more time tx status
+                if(status == 0){
+                    status = await GetTransactionStatus(tx);
+                }
+                console.log("Transaction Status:", status);
                 let updateTransactionData = {
                     ...activeTransactionData,
                     transactionHash: tx ? tx : '',
@@ -332,7 +341,7 @@ export default function BridgeView(props: propsType) {
                             UpdateTransactionLog(requestPayload);
                             clearInterval(statusIntervalId.current);
                         }
-                    }, 10000)
+                    }, 5000)
                     statusIntervalId.current = (intervalId as unknown as number);
                 }
             }
@@ -451,6 +460,12 @@ export default function BridgeView(props: propsType) {
 
     function closeExceptionModal() {
         document.getElementById('exceptionOffCanvas').classList.remove('show');
+    }
+
+    function goBack(){
+        sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+        dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
+        props.closeBridgeView();
     }
 
     async function storeSignDceller(signdata: any) {
@@ -761,9 +776,41 @@ export default function BridgeView(props: propsType) {
                         {
                             !utilityService.isNullOrEmpty(execptionErrorMessage) &&
                             <>
-                                <div className="inner-card swap-card-btn mt-4">
-                                    <label><a href="" role="button" onClick={(event) => { event.preventDefault(); tryAgain() }}>Try Again</a></label>
+                            <div className="row justify-content-center mt-4"> {/* g-2 adds space between cols */}
+                                {isPaymentMode && (
+                                    <div className="col-5 inner-card swap-card-btn me-3">
+                                        <label>
+                                            <a
+                                                href="#"
+                                                role="button"
+                                                onClick={(event) => {
+                                                    event.preventDefault();
+                                                    goBack();
+                                                }}
+                                            >
+                                                Back
+                                            </a>
+                                        </label>
+                                    </div>
+                                )}
+                                <div
+                                    className={`inner-card swap-card-btn ${isPaymentMode ? "col-5" : "col-12"
+                                        }`}
+                                >
+                                    <label>
+                                        <a
+                                            href="#"
+                                            role="button"
+                                            onClick={(event) => {
+                                                event.preventDefault();
+                                                tryAgain();
+                                            }}
+                                        >
+                                            Try Again
+                                        </a>
+                                    </label>
                                 </div>
+                            </div>
                             </>
                         }
                     </div>

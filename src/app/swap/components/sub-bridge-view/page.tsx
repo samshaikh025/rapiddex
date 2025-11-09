@@ -66,7 +66,7 @@ export default function SubBridgeView(props: propsType) {
                             UpdateTransactionLog(requestPayload);
                             clearInterval(statusIntervalId.current);
                         }
-                    }, 10000)
+                    }, 5000)
                     statusIntervalId.current = (intervalInit as unknown as number);
                 }
             }

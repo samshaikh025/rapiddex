@@ -89,7 +89,7 @@ export default function Exchangeui(props: propsType) {
     let [showNoRouteFoundErr, setShowNoRouteFoundErr] = useState<boolean>(false);
     let cryptoService = new CryptoService();
     let [messageFromAssistant, setMessageFromAssistant] = useState<string>('');
-
+    
     const getAllChains = (): Chain[] => {
         return Object.values(definedChains).filter((chain) => chain.id !== undefined) as Chain[];
     };
@@ -246,7 +246,6 @@ export default function Exchangeui(props: propsType) {
 
     function updateAmount(amount, sourceTokenValue) {
         try {
-            debugger;
             // setIsShowPathComponent(false);
 
             if (!utilityService.isNullOrEmpty(amount) && !isNaN(amount) && sourceTokenValue > 0 && Number(amount) > 0) {
@@ -547,7 +546,13 @@ export default function Exchangeui(props: propsType) {
 
     function openOrCloseSubBridBridgeView() {
         let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
-        activeTransactiondata ? setShowSubBridgeView(true) : setShowSubBridgeView(false);
+        
+        if(activeTransactiondata){
+            setShowSubBridgeView(true);
+        }else{
+            setShowSubBridgeView(false);
+            fetchTokenBalance();
+        }
     }
 
     useEffect(() => {
@@ -645,6 +650,9 @@ export default function Exchangeui(props: propsType) {
         );
     }
 
+    function openWalletConnectModel() {
+        open();
+    }
     return (
         <>
             {
@@ -1039,10 +1047,10 @@ export default function Exchangeui(props: propsType) {
                                         </div>
                                     </>
                                 }
-                                {
+                            {
                                     !utilityService.isNullOrEmpty(walletData.address) &&
                                     <>
-                                        <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => exchange()} disabled={sendAmount == null}>
+                                        <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => exchange()} disabled={sendAmount == null} title={sendAmount == null ? "Enter Amount" : ""} style={{ cursor: sendAmount == null ? "not-allowed" : "pointer", pointerEvents: sendAmount == null ? "all" : "auto" }}>
                                             Exchange
                                         </button>
                                     </>
@@ -1050,7 +1058,7 @@ export default function Exchangeui(props: propsType) {
                                 {
                                     utilityService.isNullOrEmpty(walletData.address) &&
                                     <>
-                                        <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => dispatch(OpenWalletModalA(true))}>
+                                        <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => openWalletConnectModel()}>
                                             Connect Wallet
                                         </button>
                                     </>

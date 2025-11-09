@@ -141,7 +141,6 @@ export default function Header() {
     dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
     dispatch(SetWalletDataA(new WalletConnectData()));
     dispatch(SetWalletDisconnectedA(true));
-    dispatch(OpenWalletModalA(false))
   }
 
   function openBlockExplorer() {

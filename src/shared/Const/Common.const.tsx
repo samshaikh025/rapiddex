@@ -28,7 +28,7 @@ export const CommonConfig = [
     },
     {
         apiKey: '',
-        apiUrl: 'https://rapidxpaymentapi-f0cseqamcefcemgp.canadacentral-01.azurewebsites.net/api/'
+        apiUrl: 'https://rapidx-pg-api.protocolix.com/api/'
     }
 ]
 

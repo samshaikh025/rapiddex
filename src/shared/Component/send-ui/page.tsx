@@ -134,7 +134,10 @@ export default function SendUI(props: propsType) {
   }
 
   function closeChainUi(chain: Chains) {
-    (sourceChain && chain && sourceChain.chainId != chain.chainId) ? setSourceToken(new Tokens()) : null;
+    if(sourceChain && chain && sourceChain.chainId != chain.chainId){
+      setSourceToken(new Tokens());
+      setSelectedPath(new PathShowViewModel());
+    }
     setSourceChain(chain);
     setIsShowChainUi(false);
   }
@@ -142,6 +145,9 @@ export default function SendUI(props: propsType) {
   async function closeTokenUi(sourceTokenData: Tokens) {
     if (sourceChain && sourceToken.address != sourceTokenData.address) {
       setSourceToken(sourceTokenData);
+      setIsBridgeMessage("");
+      setSelectedPath(new PathShowViewModel());
+      console.log("path", selectedPath.pathId);
       fetchPriceOfTokens(sourceTokenData, destiationToken);
     }
     setIsShowTokenUi(false);
@@ -448,7 +454,8 @@ export default function SendUI(props: propsType) {
 
   function getAllPathForAmount(sourceToken: Tokens, destToken: Tokens, amt: number) {
 
-
+    setSelectedPath(new PathShowViewModel());
+    console.log("path", selectedPath);
     // Cancel any previous request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -484,20 +491,25 @@ export default function SendUI(props: propsType) {
           } else {
             setPathShowSpinner(false);
             setPathShowRetry(true);
+            setSelectedPath(new PathShowViewModel());
           }
         } else if (result && result.length == 0) {
           setPathShowSpinner(false);
           setPathShowRetry(true);
+            setSelectedPath(new PathShowViewModel());
         }
       }).catch((error) => {
         setPathShowSpinner(false);
         setPathShowRetry(true);
+        setSelectedPath(new PathShowViewModel());
       })
     }
     catch (error) {
       console.log("Error fetching path data:", error);
       setPathShowSpinner(false);
       setPathShowRetry(true);
+      setSelectedPath(new PathShowViewModel());
+
     }
   }
 
@@ -744,7 +756,7 @@ export default function SendUI(props: propsType) {
                                 <button
                                   className="btn primary-btn w-100 btn-primary-bgColor"
                                   onClick={() => initPayment()}
-                                  disabled={sendAmount == null}
+                                  disabled={(sendAmount == null || (selectedPath && selectedPath.pathId == null))}
                                 >
                                   {pathShowSpinner ? (
                                     <>

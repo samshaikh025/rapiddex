@@ -4,12 +4,12 @@ import BridgeView from "@/app/swap/components/bridge-view/page";
 import Chainui from "@/app/swap/components/chainui/page";
 import Tokenui from "@/app/swap/components/tokenui/page";
 import { AggregatorProvider, DataSource, Keys, TransactionStatus } from "@/shared/Enum/Common.enum";
-import { BridgeMessage, Chains, GetPaymentRequest, PathShowViewModel, Tokens, TransactionRequestoDto, WalletConnectData } from "@/shared/Models/Common.model";
+import { Chains, GetPaymentRequest, PathShowViewModel, Tokens, TransactionRequestoDto, WalletConnectData } from "@/shared/Models/Common.model";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import { SharedService } from "@/shared/Services/SharedService";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { formatUnits, parseEther } from "viem";
 import { useSwitchChain } from "wagmi";
@@ -86,8 +86,6 @@ export default function SendUI(props: propsType) {
 
   let dispatch = useDispatch();
 
-  let [isBridgeMessage, setIsBridgeMessage] = useState<string>('');
-  let bridgeMessage: BridgeMessage = new BridgeMessage();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const [isWalletOpen, setIsWalletOpen] = useState(false);
@@ -123,7 +121,8 @@ export default function SendUI(props: propsType) {
   let userService = new UserService();
   let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
   let currentTheme = useSelector((state: any) => state.SelectedTheme);
-
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
 
   function openChainUi() {
     setIsShowChainUi(true);
@@ -145,7 +144,6 @@ export default function SendUI(props: propsType) {
   async function closeTokenUi(sourceTokenData: Tokens) {
     if (sourceChain && sourceToken.address != sourceTokenData.address) {
       setSourceToken(sourceTokenData);
-      setIsBridgeMessage("");
       setSelectedPath(new PathShowViewModel());
       console.log("path", selectedPath.pathId);
       fetchPriceOfTokens(sourceTokenData, destiationToken);
@@ -156,36 +154,15 @@ export default function SendUI(props: propsType) {
   }
 
   async function initPayment() {
-    if (!utilityService.isNullOrEmpty(walletData.address)) {
-
+    try {
       let workingRpc = await utilityService.setupProviderForChain(sourceChain.chainId, sourceChain.rpcUrl);
 
       if (workingRpc != undefined && workingRpc != null) {
-        console.log(error);
+
+        //check current chain and switch if not matched
         if (walletData.chainId != sourceChain.chainId) {
           console.log("Need switch chain");
-          try {
-            await switchChain({ chainId: sourceChain.chainId }) // Call switchChain with only chainId
-            
-            //update redux wallet data state
-            dispatch(SetWalletDataA({
-              ...walletData,
-              chainId: sourceChain?.chainId,
-              chainName: sourceChain?.chainName,
-              chainLogo: sourceChain?.logoURI,
-              //blockExplorer: newChain.blockExplorers?.default
-            }));
-
-            //wait wagmi to update chainId
-            await waitUntilWagmiUpdatesChain(sourceChain.chainId);
-            console.log("Chain Switched")
-          }
-          catch (error) {
-            console.log("rejected switch chain");
-          }
-        }
-        else {
-          console.log("No Need to switch chain")
+          await switchCurrentChain();
         }
 
         let checkSourceTokenIsNativeCoin = await utilityService.checkCoinNative(sourceChain, sourceToken);
@@ -193,12 +170,12 @@ export default function SendUI(props: propsType) {
         let sourceTokenbalance = await utilityService.getBalanceIne(checkSourceTokenIsNativeCoin, sourceToken, walletData.address, workingRpc);
 
         if (Number(sourceTokenbalance) < Number(sendAmount)) {
-          bridgeMessage.message = "You don't have enough " + sourceToken.symbol + " to complete the transaction.";
-          setIsBridgeMessage(bridgeMessage.message);
+          displayToast(`Insufficient balance. Available: ${formatBalance(Number(sourceTokenbalance))} ${sourceToken.symbol}. Required: ${formatBalance(sendAmount)} ${sourceToken.symbol}.`);
           return false;
         }
         else {
-          if (await isGasEnough(checkSourceTokenIsNativeCoin, workingRpc, sourceTokenbalance)) {
+          const gasEnough = await isGasEnough(checkSourceTokenIsNativeCoin, workingRpc, sourceTokenbalance);
+          if (gasEnough) {
             await prepareTransactionRequest();
           }
           else {
@@ -206,6 +183,8 @@ export default function SendUI(props: propsType) {
           }
         }
       }
+    } catch (error) {
+      console.log(error);
     }
   }
 
@@ -226,8 +205,8 @@ export default function SendUI(props: propsType) {
     payableGasToken.name = payableGasChain.nativeCurrency.name;
 
     let currentNativeBalance = checkSourceTokenIsNativeCoin ? sourceTokenbalance : await utilityService.getBalanceIne(true, payableGasToken, walletData.address, workingRpc);
-    
-    let payableprice = (await cryptoService.GetTokenData(payableGasToken)).data.price;
+
+    let payableprice = (await cryptoService.getTokenAllInformation(payableGasToken)).price;
 
     let gasafeeRequiredTransactionEther = formatUnits(BigInt(selectedPath.gasafeeRequiredTransaction), payableGasToken.decimal)
 
@@ -239,16 +218,13 @@ export default function SendUI(props: propsType) {
 
     //let currentBalance = Number(balance);
 
-    let totalNativeBalanceRequired =  checkSourceTokenIsNativeCoin ? totalGasCostNative + sendAmount : totalGasCostNative;
+    let totalNativeBalanceRequired = checkSourceTokenIsNativeCoin ? totalGasCostNative + sendAmount : totalGasCostNative;
 
     if (Number(currentNativeBalance) < totalNativeBalanceRequired) {
-      bridgeMessage.message = "You don't have enough Gas to Complete this transaction. You required atleast " + totalNativeBalanceRequired + "  " + payableGasToken.symbol;
-      setIsBridgeMessage(bridgeMessage.message);
+      displayToast(`Insufficient gas balance. Available: ${formatBalance(Number(currentNativeBalance))} ${payableGasToken.symbol}. Required: ${formatBalance(totalNativeBalanceRequired)} ${payableGasToken.symbol}.`);
       return false;
     }
     else {
-      bridgeMessage.message = "";
-      setIsBridgeMessage("");
       return true;
     }
   }
@@ -433,8 +409,8 @@ export default function SendUI(props: propsType) {
   // }
 
   async function fetchPriceOfTokens(sourceToken: Tokens, destinationToken: Tokens) {
-    let sourceTokenPriceUsdc = (await cryptoService.GetTokenData(sourceToken))?.data?.price;
-    let destinationTokenPriceUsdc = (await cryptoService.GetTokenData(destinationToken))?.data?.price;
+    let sourceTokenPriceUsdc = (await cryptoService.getTokenAllInformation(sourceToken))?.price;
+    let destinationTokenPriceUsdc = (await cryptoService.getTokenAllInformation(destinationToken))?.price;
 
     if (sourceTokenPriceUsdc && destinationTokenPriceUsdc) {
       let totalSendAmountUsdc = props.transactionRequest.amountIn * destinationTokenPriceUsdc; // no of token * price with usdc
@@ -442,7 +418,6 @@ export default function SendUI(props: propsType) {
       let truncatedValue = Number(sendActuallyAmount.toFixed(sourceToken.decimal));
       setSendAmount(truncatedValue);//no of token in decimal
       setSendAmountUSDC(Number(totalSendAmountUsdc?.toFixed(2)));// actual amount in usdc
-      debugger;
       //fetchQuoteFromRapidx(sourceToken, truncatedValue, totalSendAmountUsdc);
       getAllPathForAmount(sourceToken, destiationToken, truncatedValue);
     }
@@ -539,6 +514,43 @@ export default function SendUI(props: propsType) {
       }, 200);
     });
   }
+
+  async function switchCurrentChain() {
+    try {
+      await switchChain({ chainId: sourceChain.chainId }) // Call switchChain with only chainId
+
+      //update redux wallet data state
+      dispatch(SetWalletDataA({
+        ...walletData,
+        chainId: sourceChain?.chainId,
+        chainName: sourceChain?.chainName,
+        chainLogo: sourceChain?.logoURI,
+        //blockExplorer: newChain.blockExplorers?.default
+      }));
+
+      //wait wagmi to update chainId
+      await waitUntilWagmiUpdatesChain(sourceChain.chainId);
+      console.log("Chain Switched")
+    }
+    catch (error) {
+      console.log("rejected switch chain");
+    }
+  }
+
+  function displayToast(message: string) {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 5000);
+  };
+
+  const formatBalance = useCallback((value: number): string => {
+    if (value === 0) return '0';
+    if (value < 0.0001) return '< 0.0001';
+    if (value < 1) return value.toFixed(6);
+    if (value < 1000) return value.toFixed(4);
+    return value.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  }, []);
+  
   return (
     <>
       <div className="exchange-wrapper">
@@ -745,12 +757,6 @@ export default function SendUI(props: propsType) {
                                   </div>
                                 </div>
                               </div>
-
-                              {(bridgeMessage && isBridgeMessage != '') && (
-                                <div className="alert alert-warning py-2 px-3 mb-3" role="alert">
-                                  <small>{isBridgeMessage}</small>
-                                </div>
-                              )}
 
                               {!utilityService.isNullOrEmpty(walletData.address) && pathShowRetry == false && (
                                 <button
@@ -1107,6 +1113,13 @@ export default function SendUI(props: propsType) {
                       </div>
                     </div>
                   </div>
+                  {/* Show error message in toaster */}
+                  {showToast && (
+                    <div className="toast-notification">
+                      <i className="fas fa-check-circle"></i>
+                      <span>{toastMessage}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -66,14 +66,17 @@ export default function Swapui(props: propsType) {
 
     async function CloseTokenUI(token: Tokens) {
         if (dataSource == DataSource.From) {
-            setSourceToken(token);
-            setShowExchangeUI(true);  // Show UI immediately
-            setSourceTokenAmount(token.price);
+            if (sourceToken.address == '' || sourceToken.address !== token.address) {
+                setSourceToken(token);
+                setSourceTokenAmount(token.price);
+            }
         } else if (dataSource == DataSource.To) {
-            setDestToken(token);
-            setShowExchangeUI(true);  // Show UI immediately
-            setDestTokenAmount(token.price);
+            if (destToken.address == '' || destToken.address !== token.address) {
+                setDestToken(token);
+                setDestTokenAmount(token.price);
+            }
         }
+        setShowExchangeUI(true);  // Show UI immediately
     }
 
     function OpenChainUI(isShow: boolean) {
@@ -82,11 +85,15 @@ export default function Swapui(props: propsType) {
 
     function CloseChainUI(chain: Chains) {
         if (dataSource == DataSource.From) {
-            setSourceChain(chain);
-            setSourceToken(new Tokens());
+            if (sourceChain.chainId === 0 || sourceChain.chainId !== chain.chainId) {
+                setSourceChain(chain);
+                setSourceToken(new Tokens());
+            }
         } else if (dataSource == DataSource.To) {
-            setDestChain(chain);
-            setDestToken(new Tokens());
+            if (destChain.chainId === 0 || destChain.chainId !== chain.chainId) {
+                setDestChain(chain);
+                setDestToken(new Tokens());
+            }
         }
         setshowChainUI(false);
     }

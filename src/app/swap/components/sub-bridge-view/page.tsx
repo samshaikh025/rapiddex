@@ -1,14 +1,15 @@
 "use client"
 import { SetActiveTransactionA } from "@/app/redux-store/action/action-redux";
 import { OwltoSubStatus } from "@/shared/Const/Common.const";
-import { Keys, TransactionStatus, TransactionSubStatus, TransactionSubStatusLIFI, TransactionSubStatusRango } from "@/shared/Enum/Common.enum";
-import { TransactionRequestoDto, UpdateTransactionRequestoDto } from "@/shared/Models/Common.model";
+import { AggregatorProvider, Keys, TransactionStatus, TransactionSubStatus, TransactionSubStatusLIFI, TransactionSubStatusRango } from "@/shared/Enum/Common.enum";
+import { GetSignPayload, TransactionRequestoDto, UpdateTransactionRequestoDto } from "@/shared/Models/Common.model";
 import { LiFiTransactionResponse } from "@/shared/Models/Lifi";
 import { OwltoTransactionResponse } from "@/shared/Models/Owlto";
 import { CryptoService } from "@/shared/Services/CryptoService";
 import { SharedService } from "@/shared/Services/SharedService";
 import { TransactionService } from "@/shared/Services/TransactionService";
 import { UtilityService } from "@/shared/Services/UtilityService";
+import { SupportedChains } from "@/shared/Static/SupportedChains";
 import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { parseEther } from "viem";
@@ -91,32 +92,48 @@ export default function SubBridgeView(props: propsType) {
     async function GetTransactionStatus(tx: string) {
         let status = 0;
         if (!utilityService.isNullOrEmpty(tx)) {
-            if (activeTransactionData.transactiionAggregator == 'lifi') {
+            if (activeTransactionData.transactiionAggregator == AggregatorProvider.LIFI) {
                 // check lifi transaction status
                 let response: LiFiTransactionResponse = await cryptoService.TransactionStatusLIFI(tx, activeTransactionData.sourceChainId, activeTransactionData.destinationChainId)
                 if (response && response.status) {
                     status = TransactionSubStatusLIFI[response.status];
                 }
             }
-            else if (activeTransactionData.transactiionAggregator == 'rango') {
+            else if (activeTransactionData.transactiionAggregator == AggregatorProvider.RANGO) {
                 // chack rango
                 let response: LiFiTransactionResponse = await cryptoService.TransactionStatusRango(activeTransactionData.transactionAggregatorRequestId, tx, 1);
                 if (response && response.status) {
                     status = TransactionSubStatusRango[response.status];
                 }
             }
-            else if (activeTransactionData.transactiionAggregator == 'owlto') {
+            else if (activeTransactionData.transactiionAggregator == AggregatorProvider.OWLTO) {
                 // cheack owlto
                 let response: OwltoTransactionResponse = await cryptoService.TransactionStatusOwlto(activeTransactionData.sourceChainId, tx);
                 if (response && response.status) {
                     status = OwltoSubStatus[String(response.status.code)];
                 }
             }
+            else if (activeTransactionData.transactiionAggregator == AggregatorProvider.RAPID_DEX) {
+                // cheack Rapid Dex
+                let payLoad = new GetSignPayload();
+                payLoad.txnHash = activeTransactionData.transactionHash;
+                let chainId = activeTransactionData.isMultiChain ? activeTransactionData.destinationChainId : activeTransactionData.sourceChainId;
+                payLoad.rpcUrl = SupportedChains.find(x => x.chainId == chainId)?.supportedRPC[0];
+
+                status = await GetTransactionStatusRapidDex(payLoad);
+                console.log("Rapid Dex Transaction Status:", status);
+            }
         }
 
         return status;
     }
 
+    async function GetTransactionStatusRapidDex(input: GetSignPayload) {
+        let status;
+        status = await transactionService.GetTransactionStatusRapidDex(input);
+        return status;
+    }
+    
     function getPayloadForTransaction(transactionData: TransactionRequestoDto, tx: string, transactionGuid: string, transactionStatus: number, transactionSubStatus: number) {
         let payLoad = {
             TransactionGuid: transactionGuid,

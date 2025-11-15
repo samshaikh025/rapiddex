@@ -406,35 +406,35 @@ export class TokenBalanceService {
         chain: Chains,
         tokens: Tokens[]
     ): Promise<TokenBalance[]> {
-        if (!walletAddress || !chain || tokens.length === 0) {
+        if (!walletAddress || !chain) {
             return [];
         }
-
+ 
         const cacheKey = this.getCacheKey(walletAddress, chain.chainId);
-
+ 
         // Check cache first
         const cachedEntry = this.cache.get(cacheKey);
         if (cachedEntry && this.isCacheValid(cachedEntry)) {
             console.log('Returning cached balances');
-            return this.tokensFromCache(cachedEntry.data, []);
+            return this.tokensFromCache(cachedEntry.data, tokens);
         }
-
+ 
         // Check if there's already a pending request
         const pendingRequest = this.pendingRequests.get(cacheKey);
         if (pendingRequest) {
             console.log('Returning pending request');
             const result = await pendingRequest;
-            return this.tokensFromCache(result, []);
+            return this.tokensFromCache(result, tokens);
         }
-
+ 
         // Create new request
         const requestPromise = this.fetchBalancesFromMobula(walletAddress, chain);
         this.pendingRequests.set(cacheKey, requestPromise);
-
+ 
         try {
             const balances = await requestPromise;
             this.pendingRequests.delete(cacheKey);
-            return this.tokensFromCache(balances, []);
+            return this.tokensFromCache(balances, tokens);
         } catch (error) {
             this.pendingRequests.delete(cacheKey);
             throw error;

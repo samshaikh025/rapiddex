@@ -29,6 +29,13 @@ export class CryptoService {
 
     apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
     private readonly MOBULA_API_KEY = "4ee7370b-89e7-4d74-8b87-38355f2fb37d";
+    // Add this property to your class
+    private static tokenInfoCache: { [key: string]: { data: Tokens, timestamp: number } } = {};
+    private static readonly CACHE_TTL = 2 * 60 * 1000; // 2 minutes in milliseconds
+ 
+    // Add these constants to your RoutingService class
+    private static readonly CHAINS_CACHE_TTL = 3600; // 1 hour in seconds
+    private static readonly TOKENS_CACHE_TTL = 3600; // 1 hour in seconds
 
     async getAvailableChainList() {
         let ChainListAPIResponseData = [];
@@ -42,34 +49,82 @@ export class CryptoService {
         return ChainListAPIResponseData;
     }
 
-    async GetTokenData(token: Tokens) {
-        let amountUSD = 0;
-        let TokenData: ResponseMobulaPricing;
-        let query = token.address == '0x0000000000000000000000000000000000000000' ? 'symbol=' + token.symbol : 'asset=' + token.address;
-        let payLoad = {
-            apiType: 'GET',
-            apiUrl: `market/data?${query}`,
-            apiData: null,
-            apiProvider: SwapProvider.MOBULA,
+    async getTokenAllInformation(token: Tokens): Promise<Tokens> {
+ 
+        let symbol = token.symbol;
+        let blockchain = token.chainId;
+        let asset = token.address;
+        // Create cache key
+        const cacheKey = symbol ? `${blockchain}:symbol:${symbol}` : `${blockchain}:${asset}`;
+ 
+        // Check cache first
+        const cachedData = CryptoService.tokenInfoCache[cacheKey];
+        if (cachedData) {
+            const age = Date.now() - cachedData.timestamp;
+            if (age < CryptoService.CACHE_TTL) {
+                console.log(`Cache hit for ${cacheKey} (age: ${Math.round(age / 1000)}s)`);
+                return cachedData.data;
+            } else {
+                // Cache expired, remove it
+                console.log(`Cache expired for ${cacheKey} (age: ${Math.round(age / 1000)}s)`);
+                delete CryptoService.tokenInfoCache[cacheKey];
+            }
         }
+ 
+ 
+        // Cache miss or expired, fetch from API
+        console.log(`Cache miss for ${cacheKey}, fetching from Mobula API`);
+ 
+ 
+        let url;
+        if (asset == "0x0000000000000000000000000000000000000000") {
+            url = `https://api.mobula.io/api/1/market/data?blockchain=${blockchain}&symbol=${symbol}`;
+        }
+        else {
+            url = `https://api.mobula.io/api/1/market/data?asset=${asset}&blockchain=${blockchain}`;
+        }
+ 
+        console.log(url);
+ 
         try {
-            let tokenExec = await fetch(this.apiUrlENV + '/api/common', {
-                method: 'POST',
+            const response = await fetch(url, {
+                method: "GET",
                 headers: {
-                    'Authorization': this.MOBULA_API_KEY || '',
-                    'Content-Type': 'application/json',
+                    'Authorization': '4ee7370b-89e7-4d74-8b87-38355f2fb37d',
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(payLoad),
-
             });
-            const TokenResponse = await tokenExec.json();
-
-            TokenData = TokenResponse?.Data;
+ 
+            const data: ResponseMobulaPricing = await response.json();
+            data.data.decimals = data.data.contracts.find(a => a.blockchainId == blockchain.toString()).decimals;
+ 
+            const tokendata = new Tokens();
+ 
+            tokendata.address = data.data.contracts.find(a => a.blockchainId = blockchain.toString()).address;
+            tokendata.chainId = blockchain;
+            tokendata.decimal = data.data.decimals;
+            tokendata.logoURI = data.data.logo;
+            tokendata.name = data.data.name;
+            tokendata.price = data.data.price;
+            tokendata.symbol = data.data.symbol;
+            tokendata.tokenIsNative = token.tokenIsNative;
+            tokendata.tokenIsStable = token.tokenIsStable;
+ 
+ 
+ 
+            // Store in cache
+            CryptoService.tokenInfoCache[cacheKey] = {
+                data: tokendata,
+                timestamp: Date.now()
+            };
+ 
+            console.log(`Cached token info for ${cacheKey}`);
+ 
+            return tokendata;
         } catch (error) {
-            console.log(error);
+            console.error(`Error fetching market data for asset: ${asset}, blockchain: ${blockchain}`, error);
+            throw error;
         }
-
-        return TokenData;
     }
 
     async getBestPathFromChosenChains(
@@ -631,7 +686,7 @@ export class CryptoService {
             pathShowViewModel.toToken = destToken.symbol;
             pathShowViewModel.toAmount = ((await this.utilityService.convertToNumber(RapidXPath.data.quote.toAmount, RapidXPath.data.quote.recevableAmoutAtDestination.token.decimal)).toFixed(5)).toString();
             pathShowViewModel.receivedAmount = (await this.utilityService.convertToNumber(RapidXPath.data.quote.toAmount, RapidXPath.data.quote.recevableAmoutAtDestination.token.decimal)).toString();
-            pathShowViewModel.fromAmountUsd = (Number(RapidXPath.data.route.sourceTransaction.fromToken.amount) * RapidXPath.data.route.sourceTransaction.fromToken.price).toFixed(2);
+            pathShowViewModel.fromAmountUsd = Number(RapidXPath.data.route.sourceTransaction.fromToken.amountInUsd).toFixed(2);
             pathShowViewModel.toAmountUsd = Number(RapidXPath.data.quote.recevableAmoutAtDestination.amountInUSD).toFixed(2);
             pathShowViewModel.aggregator = AggregatorProvider.RAPID_DEX;
             pathShowViewModel.aggregatorOrderType = orderType;

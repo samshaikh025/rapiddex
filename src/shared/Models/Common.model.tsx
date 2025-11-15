@@ -146,6 +146,7 @@ export class ResponseMobulaPricing {
     }>;
     total_supply: string;
     circulating_supply: string;
+    decimals: number;
   }
 }
 

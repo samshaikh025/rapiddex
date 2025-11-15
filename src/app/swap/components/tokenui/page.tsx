@@ -72,171 +72,118 @@ export default function Tokenui(props: propsType) {
         });
     };
 
-    // Fetch balances for visible tokens
-    const fetchBalancesForTokens = useCallback(async (tokens: Tokens[]) => {
-        if (!walletData.address || tokens.length === 0 || !isMountedRef.current) {
+    // Fetch ALL balances from Mobula and merge with token list
+    const fetchAllBalancesAndMerge = useCallback(async () => {
+        if (!walletData.address || !isMountedRef.current) {
             return;
         }
 
         const chainDataSource = props.dataSource == DataSource.From ? props.sourceChain : props.destChain;
 
-        // Filter tokens that haven't been fetched yet
-        const tokensToFetch = tokens.filter(
-            token => token.address && !fetchedBalancesRef.current.has(token.address.toLowerCase())
-        );
+        // Skip if already fetched for this chain
+        if (fetchedBalancesRef.current.has(`chain_${chainDataSource.chainId}`)) {
+            return;
+        }
 
-        if (tokensToFetch.length === 0) return;
-
-        console.log('Fetching balances for tokens:', tokensToFetch.map(t => ({ symbol: t.symbol, address: t.address })));
-
-        // Mark tokens as loading
-        setAvailableToken(prev => prev.map(token => {
-            const shouldLoad = tokensToFetch.some(t => t.address === token.address);
-            return shouldLoad ? { ...token, isLoadingBalance: true } : token;
-        }));
+        console.log('Fetching ALL balances from Mobula for chain:', chainDataSource.chainId);
 
         try {
-            // Fetch balances in batches of 10
-            const batchSize = 10;
-            for (let i = 0; i < tokensToFetch.length; i += batchSize) {
-                if (!isMountedRef.current) break;
+            // Fetch ALL balances from Mobula (it returns all tokens with balance)
+            const allBalances = await tokenBalanceService.getTokenBalances(
+                walletData.address,
+                chainDataSource,
+                [] // Empty array triggers fetching all balances
+            );
 
-                const batch = tokensToFetch.slice(i, i + batchSize);
-                const balances = await tokenBalanceService.getTokenBalances(
-                    walletData.address,
-                    chainDataSource,
-                    batch
-                );
+            console.log('Received all balances from Mobula:', allBalances);
 
-                console.log('Received balances:', balances);
+            if (!isMountedRef.current) return;
 
-                if (!isMountedRef.current) break;
+            // Mark as fetched for this chain
+            fetchedBalancesRef.current.add(`chain_${chainDataSource.chainId}`);
 
-                // Update tokens with fetched balances
-                setAvailableToken(prev => {
-                    const updated = prev.map(token => {
-                        // Skip if token doesn't have an address
-                        if (!token.address) return token;
+            // Helper function to check if addresses match
+            const addressesMatch = (addr1: string, addr2: string): boolean => {
+                const a1 = addr1.toLowerCase();
+                const a2 = addr2.toLowerCase();
+                if (a1 === a2) return true;
+                const nativeAddresses = [
+                    '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+                    '0x0000000000000000000000000000000000000000',
+                    'native'
+                ];
+                return (nativeAddresses.includes(a1) && nativeAddresses.includes(a2));
+            };
 
-                        const balanceData = balances.find(b => {
-                            // Skip if balance token doesn't have address
-                            if (!b.token || !b.token.address) return false;
+            // Helper function to merge balances into token list
+            const mergeBalances = (tokens: Tokens[]): Tokens[] => {
+                const updatedTokens = tokens.map(token => {
+                    if (!token.address) return token;
 
-                            // Handle different address formats for native tokens
-                            const tokenAddr = token.address.toLowerCase();
-                            const balanceAddr = b.token.address.toLowerCase();
-
-                            // Check exact match first
-                            if (tokenAddr === balanceAddr) return true;
-
-                            // Check for native token variations
-                            const nativeAddresses = [
-                                '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-                                '0x0000000000000000000000000000000000000000',
-                                'native'
-                            ];
-
-                            // Match by symbol for native tokens
-                            if ((nativeAddresses.includes(tokenAddr) || nativeAddresses.includes(balanceAddr)) &&
-                                token.symbol === b.token.symbol) {
-                                return true;
-                            }
-
-                            return false;
-                        });
-
-                        if (balanceData) {
-                            fetchedBalancesRef.current.add(token.address.toLowerCase());
-                            console.log(`Setting balance for ${token.symbol}:`, balanceData.balance);
-                            return {
-                                ...token,
-                                balance: balanceData.balance,
-                                balanceUSD: balanceData.balanceUSD,
-                                isLoadingBalance: false
-                            };
-                        }
-
-                        // Mark as not loading even if no balance found
-                        if (tokensToFetch.some(t => t.address === token.address)) {
-                            fetchedBalancesRef.current.add(token.address.toLowerCase());
-                            return { ...token, isLoadingBalance: false };
-                        }
-
-                        return token;
+                    const balanceData = allBalances.find(b => {
+                        if (!b.token || !b.token.address) return false;
+                        return addressesMatch(token.address, b.token.address) ||
+                            (token.symbol === b.token.symbol && (token.tokenIsNative || b.token.tokenIsNative));
                     });
 
-                    // Sort tokens with balance at top
-                    return sortTokensByBalance(updated);
+                    if (balanceData) {
+                        return {
+                            ...token,
+                            balance: balanceData.balance,
+                            balanceUSD: balanceData.balanceUSD,
+                            price: balanceData.price || token.price
+                        };
+                    }
+                    return token;
                 });
 
-                // Also update master lists
-                setTokenResponse(prev => {
-                    const updated = prev.map(token => {
-                        // Skip if token doesn't have an address
-                        if (!token.address) return token;
+                // Add tokens with balances that aren't in the current list
+                const tokensToAdd: Tokens[] = [];
+                allBalances.forEach(balanceData => {
+                    if (!balanceData.token || !balanceData.token.address) return;
 
-                        const balanceData = balances.find(b => {
-                            if (!b.token || !b.token.address) return false;
-                            const tokenAddr = token.address.toLowerCase();
-                            const balanceAddr = b.token.address.toLowerCase();
-                            if (tokenAddr === balanceAddr) return true;
-                            const nativeAddresses = ['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', '0x0000000000000000000000000000000000000000', 'native'];
-                            if ((nativeAddresses.includes(tokenAddr) || nativeAddresses.includes(balanceAddr)) && token.symbol === b.token.symbol) {
-                                return true;
-                            }
-                            return false;
+                    // Check if this token is already in the list
+                    const existsInList = updatedTokens.some(token =>
+                        token.address && (
+                            addressesMatch(token.address, balanceData.token.address) ||
+                            (token.symbol === balanceData.token.symbol && (token.tokenIsNative || balanceData.token.tokenIsNative))
+                        )
+                    );
+
+                    // If not in list and has balance, add it
+                    if (!existsInList && balanceData.balance > 0) {
+                        tokensToAdd.push({
+                            ...balanceData.token,
+                            balance: balanceData.balance,
+                            balanceUSD: balanceData.balanceUSD,
+                            price: balanceData.price
                         });
-
-                        if (balanceData) {
-                            return {
-                                ...token,
-                                balance: balanceData.balance,
-                                balanceUSD: balanceData.balanceUSD
-                            };
-                        }
-                        return token;
-                    });
-                    return sortTokensByBalance(updated);
+                    }
                 });
 
-                setMasterAvailableToken(prev => {
-                    const updated = prev.map(token => {
-                        // Skip if token doesn't have an address
-                        if (!token.address) return token;
+                // Combine and sort
+                return sortTokensByBalance([...updatedTokens, ...tokensToAdd]);
+            };
 
-                        const balanceData = balances.find(b => {
-                            if (!b.token || !b.token.address) return false;
-                            const tokenAddr = token.address.toLowerCase();
-                            const balanceAddr = b.token.address.toLowerCase();
-                            if (tokenAddr === balanceAddr) return true;
-                            const nativeAddresses = ['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', '0x0000000000000000000000000000000000000000', 'native'];
-                            if ((nativeAddresses.includes(tokenAddr) || nativeAddresses.includes(balanceAddr)) && token.symbol === b.token.symbol) {
-                                return true;
-                            }
-                            return false;
-                        });
+            // Update all token lists
+            setTokenResponse(prev => mergeBalances(prev));
+            setMasterAvailableToken(prev => mergeBalances(prev));
+            setAvailableToken(prev => {
+                const merged = mergeBalances(prev);
+                // Keep only first batch visible
+                return merged.slice(0, Math.max(prev.length, defaultListSize));
+            });
 
-                        if (balanceData) {
-                            return {
-                                ...token,
-                                balance: balanceData.balance,
-                                balanceUSD: balanceData.balanceUSD
-                            };
-                        }
-                        return token;
-                    });
-                    return sortTokensByBalance(updated);
-                });
-            }
         } catch (error) {
-            console.error('Error fetching balances:', error);
-            // Mark tokens as not loading on error
-            setAvailableToken(prev => prev.map(token => ({
-                ...token,
-                isLoadingBalance: false
-            })));
+            console.error('Error fetching all balances:', error);
         }
     }, [walletData.address, props.dataSource, props.sourceChain, props.destChain]);
+
+    // Legacy function for backward compatibility (now just calls the main function)
+    const fetchBalancesForTokens = useCallback(async (tokens: Tokens[]) => {
+        // Just trigger the full balance fetch
+        await fetchAllBalancesAndMerge();
+    }, [fetchAllBalancesAndMerge]);
 
     async function getCoinsByChain() {
         let tokens: Tokens[] = [];
@@ -255,39 +202,7 @@ export default function Tokenui(props: propsType) {
                     let obj = new PreDefinedTokensForChains();
                     obj.chainId = chainDataSource.chainId;
                     obj.tokens = tokens;
-                    let supportedTokens = SupportedTokens.filter(a => a.chainId == chainDataSource.chainId);
-                    if (supportedTokens) {
 
-
-                        obj.tokens = obj.tokens.map(token => {
-
-                            try {
-                                supportedTokens.forEach(supported => {
-
-                                    if (supported.address && token.address) {
-                                        if (supported.address.toLowerCase() == token.address.toLowerCase()) {
-                                            token.tokenIsNative = supported.tokenIsNative;
-                                            token.tokenIsStable = supported.tokenIsStable;
-                                        }
-
-
-                                    }
-
-
-
-
-
-                                });
-
-
-
-                                return token;
-                            }
-                            catch (error) {
-                                console.log(error)
-                            }
-                        });
-                    }
 
                     dispatch(SetPredineTokensForChainA(obj));
                 }
@@ -300,9 +215,9 @@ export default function Tokenui(props: propsType) {
                     setAvailableToken(firstBatch);
                     setHasMoreData(tokens.length > defaultListSize);
 
-                    // Fetch balances for first batch if wallet connected
+                    // Fetch ALL balances if wallet connected
                     if (walletData.address) {
-                        fetchBalancesForTokens(firstBatch);
+                        fetchAllBalancesAndMerge();
                     }
                 }
             }
@@ -321,13 +236,11 @@ export default function Tokenui(props: propsType) {
 
 
 
-        if (token?.price == 0) {
+        let tokendata = await cryptoService.getTokenAllInformation(token);
+        token.price = tokendata?.price || 0;
+        console.log(token);
 
-            let tokendata = await cryptoService.GetTokenData(token);
-            token.price = tokendata?.data?.price || 0;
-            console.log(token);
-        }
-        await props.closeTokenUI(token)
+        await props.closeTokenUI(token);
     }
 
     async function filterToken(tokenValue: string) {
@@ -360,16 +273,6 @@ export default function Tokenui(props: propsType) {
             setAvailableToken(firstBatch);
             setHasMoreData(tempData.length > defaultListSize);
             setShowCoinSpinner(false);
-
-            // Fetch balances for filtered results if wallet connected
-            if (walletData.address) {
-                const unfetchedTokens = firstBatch.filter(
-                    t => !fetchedBalancesRef.current.has(t.address.toLowerCase())
-                );
-                if (unfetchedTokens.length > 0) {
-                    fetchBalancesForTokens(unfetchedTokens);
-                }
-            }
         }
     }
 
@@ -381,16 +284,6 @@ export default function Tokenui(props: propsType) {
                     AvailableToken.length + defaultListSize
                 );
                 setAvailableToken([...AvailableToken, ...nextBatch]);
-
-                // Fetch balances for new batch if wallet connected
-                if (walletData.address) {
-                    const unfetchedTokens = nextBatch.filter(
-                        t => !fetchedBalancesRef.current.has(t.address.toLowerCase())
-                    );
-                    if (unfetchedTokens.length > 0) {
-                        fetchBalancesForTokens(unfetchedTokens);
-                    }
-                }
             } else {
                 setHasMoreData(false);
             }
@@ -409,129 +302,124 @@ export default function Tokenui(props: propsType) {
     // Fetch balances when wallet connects
     useEffect(() => {
         if (walletData.address && AvailableToken.length > 0) {
-            const unfetchedTokens = AvailableToken.filter(
-                t => !fetchedBalancesRef.current.has(t.address.toLowerCase())
-            );
-            if (unfetchedTokens.length > 0) {
-                fetchBalancesForTokens(unfetchedTokens);
-            }
+            fetchAllBalancesAndMerge();
         }
-    }, [walletData.address]);
+    }, [walletData.address, fetchAllBalancesAndMerge]);
 
     return (
         <>
-                <div className="card">
-                    <div className="p-24">
-                        <div className="d-flex align-items-center gap-3 mb-2">
-                            <div className="card-action-wrapper cursor-pointer" id="back-to-swap" onClick={() => backCloseTokenUI()}>
-                                <i className="fas fa-chevron-left"></i>
-                            </div>
-                            <div className="card-title">
-                                Exchange {props.dataSource == DataSource.From ? 'From' : 'To'}
-                            </div>
+            <div className="card">
+                <div className="p-24">
+                    <div className="d-flex align-items-center gap-3 mb-2">
+                        <div className="card-action-wrapper cursor-pointer" id="back-to-swap" onClick={() => backCloseTokenUI()}>
+                            <i className="fas fa-chevron-left"></i>
                         </div>
+                        <div className="card-title">
+                            Exchange {props.dataSource == DataSource.From ? 'From' : 'To'}
+                        </div>
+                    </div>
 
-                        <div className="inner-card w-100 py-3 px-3 d-flex flex-column gap-3">
-                            <div className="d-flex gap-3 w-100 align-items-center">
-                                <div className="selcet-coin coin-wrapper">
-                                    {utilityService.isNullOrEmpty(chainImageURL) && <div className="coin"></div>}
-                                    {!utilityService.isNullOrEmpty(chainImageURL) && <img src={chainImageURL} className="coin" alt="" />}
-                                </div>
-                                <button className="btn primary-btn w-100 btn-primary-bgColor" onClick={() => props.openChainUI(true)}>
-                                    {props.dataSource == DataSource.From ? (props.sourceChain.chainName == '' ? 'Select Chain' :
-                                        props.sourceChain.chainName) : (props.destChain.chainName == '' ? 'Select Chain' :
-                                            props.destChain.chainName)}
-                                </button>
+                    <div className="inner-card w-100 py-3 px-3 d-flex flex-column gap-3">
+                        <div className="d-flex gap-3 w-100 align-items-center">
+                            <div className="selcet-coin coin-wrapper">
+                                {utilityService.isNullOrEmpty(chainImageURL) && <div className="coin"></div>}
+                                {!utilityService.isNullOrEmpty(chainImageURL) && <img src={chainImageURL} className="coin" alt="" />}
                             </div>
-                            <div className="search-bar position-relative">
-                                <i className="fas fa-search"></i>
-                                <input type="text" className="w-100" placeholder="Search by token name or address" onKeyUp={(e) =>
-                                    filterToken(e.currentTarget.value)} />
-                            </div>
-                            <div className="mt-2">
-                                {
-                                    showCoinSpinner == true &&
-                                    <>
-                                        {Array.from({ length: 3 }, (_, i) => (
-                                            <div key={i} className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3 mb-2">
-                                                <div className="d-flex align-items-center gap-3">
-                                                    <div className="position-relative coin-wrapper">
-                                                        <Skeleton circle={true} width={50} height={50} />
-                                                    </div>
-                                                    <div className="d-flex flex-column">
-                                                        <Skeleton width={100} height={10} />
-                                                        <Skeleton width={100} height={10} />
-                                                    </div>
+                            <button className="btn primary-btn w-100 btn-primary-bgColor" onClick={() => props.openChainUI(true)}>
+                                {props.dataSource == DataSource.From ? (props.sourceChain.chainName == '' ? 'Select Chain' :
+                                    props.sourceChain.chainName) : (props.destChain.chainName == '' ? 'Select Chain' :
+                                        props.destChain.chainName)}
+                            </button>
+                        </div>
+                        <div className="search-bar position-relative">
+                            <i className="fas fa-search"></i>
+                            <input type="text" className="w-100" placeholder="Search by token name or address" onKeyUp={(e) =>
+                                filterToken(e.currentTarget.value)} />
+                        </div>
+                        <div className="mt-2">
+                            {
+                                showCoinSpinner == true &&
+                                <>
+                                    {Array.from({ length: 3 }, (_, i) => (
+                                        <div key={i} className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3 mb-2">
+                                            <div className="d-flex align-items-center gap-3">
+                                                <div className="position-relative coin-wrapper">
+                                                    <Skeleton circle={true} width={50} height={50} />
                                                 </div>
-                                                <Skeleton width={50} height={10} />
+                                                <div className="d-flex flex-column">
+                                                    <Skeleton width={100} height={10} />
+                                                    <Skeleton width={100} height={10} />
+                                                </div>
                                             </div>
-                                        ))}
-                                    </>
-                                }
-                                {
-                                    showCoinSpinner == false &&
-                                    <>
-                                        <div id="scrollableCoinDiv" className="coin-list-wrapper d-flex flex-column gap-2">
-                                            <InfiniteScroll
-                                                dataLength={AvailableToken?.length}
-                                                next={fetchMoreData}
-                                                hasMore={hasMoreData}
-                                                loader={<span className="text-center mt-2">Loading...</span>}
-                                                scrollableTarget="scrollableCoinDiv"
-                                            >
-                                                {
-                                                    AvailableToken.map((token: Tokens, index) => (
-                                                        <div key={index} className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3 cursor-pointer"
-                                                            onClick={() => handleCloseTokenUI(token)}>
-                                                            <div className="d-flex align-items-center gap-3">
-                                                                <div className="position-relative coin-wrapper">
-                                                                    <img
-                                                                        src={token.logoURI || 'https://media.istockphoto.com/id/2173059563/vector/coming-soon-image-on-white-background-no-photo-available.jpg?s=612x612&w=0&k=20&c=v0a_B58wPFNDPULSiw_BmPyhSNCyrP_d17i2BPPyDTk='}
-                                                                        className="coin"
-                                                                        alt="coin"
-                                                                        onError={(e) => {
-                                                                            (e.target as HTMLImageElement).src = 'https://media.istockphoto.com/id/2173059563/vector/coming-soon-image-on-white-background-no-photo-available.jpg?s=612x612&w=0&k=20&c=v0a_B58wPFNDPULSiw_BmPyhSNCyrP_d17i2BPPyDTk=';
-                                                                        }}
-                                                                    />
-                                                                </div>
-                                                                <div className="d-flex flex-column">
-                                                                    <label className="coin-name d-block fw-600">{token.symbol || 'Unknown'}</label>
-                                                                    <label className="coin-sub-name">
-                                                                        {token.address ?
-                                                                            `${token.address.substring(0, 4)}...${token.address.substring(token.address.length - 4)}` :
-                                                                            'No address'
-                                                                        }
-                                                                    </label>
-                                                                </div>
-                                                            </div>
-                                                            {/* Balance Display */}
-                                                            {walletData.address && (
-                                                                <>
-                                                                    {token.isLoadingBalance ? (
-                                                                        <Skeleton width={50} height={10} />
-                                                                    ) : (
-                                                                        token.balance !== undefined && token.balance > 0 ? (
-                                                                            <div className="d-flex flex-column align-items-end">
-                                                                                <label className="fw-600">{formatBalance(token.balance)}</label>
-                                                                                {token.balanceUSD !== undefined && token.balanceUSD > 0 && (
-                                                                                    <label className="small text-muted">${token.balanceUSD.toFixed(2)}</label>
-                                                                                )}
-                                                                            </div>
-                                                                        ) : null
-                                                                    )}
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    ))
-                                                }
-                                            </InfiniteScroll>
+                                            <Skeleton width={50} height={10} />
                                         </div>
-                                    </>
-                                }
-                            </div>
+                                    ))}
+                                </>
+                            }
+                            {
+                                showCoinSpinner == false &&
+                                <>
+                                    <div id="scrollableCoinDiv" className="coin-list-wrapper d-flex flex-column gap-2">
+                                        <InfiniteScroll
+                                            dataLength={AvailableToken?.length}
+                                            next={fetchMoreData}
+                                            hasMore={hasMoreData}
+                                            loader={<span className="text-center mt-2">Loading...</span>}
+                                            scrollableTarget="scrollableCoinDiv"
+                                        >
+                                            {
+                                                AvailableToken.map((token: Tokens, index) => (
+                                                    <div key={index} className="inner-card d-flex align-items-center justify-content-between w-100 py-2 px-3 cursor-pointer"
+                                                        onClick={() => handleCloseTokenUI(token)}>
+                                                        <div className="d-flex align-items-center gap-3">
+                                                            <div className="position-relative coin-wrapper">
+                                                                <img
+                                                                    src={token.logoURI || 'https://media.istockphoto.com/id/2173059563/vector/coming-soon-image-on-white-background-no-photo-available.jpg?s=612x612&w=0&k=20&c=v0a_B58wPFNDPULSiw_BmPyhSNCyrP_d17i2BPPyDTk='}
+                                                                    className="coin"
+                                                                    alt="coin"
+                                                                    onError={(e) => {
+                                                                        (e.target as HTMLImageElement).src = 'https://media.istockphoto.com/id/2173059563/vector/coming-soon-image-on-white-background-no-photo-available.jpg?s=612x612&w=0&k=20&c=v0a_B58wPFNDPULSiw_BmPyhSNCyrP_d17i2BPPyDTk=';
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <div className="d-flex flex-column">
+                                                                <label className="coin-name d-block fw-600">{token.symbol || 'Unknown'}</label>
+                                                                <label className="coin-sub-name">
+                                                                    {token.address ?
+                                                                        `${token.address.substring(0, 4)}...${token.address.substring(token.address.length - 4)}` :
+                                                                        'No address'
+                                                                    }
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                        {/* Balance Display */}
+                                                        {walletData.address && (
+                                                            <>
+                                                                {token.isLoadingBalance ? (
+                                                                    <Skeleton width={50} height={10} />
+                                                                ) : (
+                                                                    token.balance !== undefined && token.balance > 0 ? (
+                                                                        <div className="d-flex flex-column align-items-end">
+                                                                            <label className="fw-600">{formatBalance(token.balance)}</label>
+                                                                            {token.balanceUSD !== undefined && token.balanceUSD > 0 && (
+                                                                                <label className="small text-muted">${token.balanceUSD.toFixed(2)}</label>
+                                                                            )}
+                                                                        </div>
+                                                                    ) : null
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            }
+                                        </InfiniteScroll>
+                                    </div>
+                                </>
+                            }
                         </div>
                     </div>
                 </div>
+            </div>
         </>
     );
 }

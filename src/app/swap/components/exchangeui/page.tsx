@@ -1,6 +1,6 @@
 "use client"
 import { AggregatorProvider, DataSource, Keys, TransactionStatus } from "@/shared/Enum/Common.enum";
-import { BridgeMessage, Chains, ChatBotResponse, PathShowViewModel, RequestTransaction, SwapRequest, Tokens, TransactionRequestoDto } from "@/shared/Models/Common.model";
+import {  Chains, PathShowViewModel, SwapRequest, Tokens, TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -9,11 +9,9 @@ import Pathshow from "../pathshow/page";
 import { UtilityService } from "@/shared/Services/UtilityService";
 import Skeleton from "react-loading-skeleton";
 import { useDispatch, useSelector } from "react-redux";
-import { OpenWalletModalA, SetActiveTransactionA, SetWalletDataA, UpdateTransactionGuid } from "@/app/redux-store/action/action-redux";
-import { mainnet, sepolia } from 'wagmi/chains';
+import { SetActiveTransactionA, SetWalletDataA } from "@/app/redux-store/action/action-redux";
 import { config } from '../../../wagmi/config';// Go up a level if needed
 import { Chain } from "wagmi/chains";
-import { TransactionService } from "@/shared/Services/TransactionService";
 
 import BridgeView from "../bridge-view/page";
 import { formatUnits, parseEther } from 'viem';
@@ -74,21 +72,15 @@ export default function Exchangeui(props: propsType) {
         failureCount,
         failureReason,
     } = useSwitchChain();
-    const initialChains: Chain[] = []; // Start with an empty array
-    const [dynamicChains, setDynamicChains] = useState<Chains[]>([]);
 
-    const [pathshow, setpathshow] = useState<boolean>(false);
-
-    let bridgeMessage: BridgeMessage = new BridgeMessage();
-    let [isBridgeMessageVisible, setIsBridgeMessageVisible] = useState<boolean>(false);
-    let [isBridgeMessage, setIsBridgeMessage] = useState<string>('');
     const { sendTransactionAsync, isPending: isTransactionPending, isError: isTransactionError } = useSendTransaction();
     let [startBridging, setStartBridging] = useState<boolean>(false);
     let [showSubBridgeView, setShowSubBridgeView] = useState<boolean>(false);
-    let [showMinOneUSDAmountErr, setShowMinOneUSDAmountErr] = useState<boolean>(false);
-    let [showNoRouteFoundErr, setShowNoRouteFoundErr] = useState<boolean>(false);
     let cryptoService = new CryptoService();
     let [messageFromAssistant, setMessageFromAssistant] = useState<string>('');
+    let [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [showToast, setShowToast] = useState(false);
     
     const getAllChains = (): Chain[] => {
         return Object.values(definedChains).filter((chain) => chain.id !== undefined) as Chain[];
@@ -103,9 +95,7 @@ export default function Exchangeui(props: propsType) {
     }
 
     // Type assertion to tuple
-    const chainsTuple = [allChains[0], ...allChains.slice(1)] as const;
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    let [showBalanceErr, setBalanceErr] = useState<boolean>(false);
 
     // Token balance state
     const [sourceTokenBalance, setSourceTokenBalance] = useState<any>(null);
@@ -185,7 +175,6 @@ export default function Exchangeui(props: propsType) {
     // Handle percentage button clicks
     const handlePercentageClick = useCallback((percentage: number) => {
 
-        debugger;
         if (!sourceTokenBalance || sourceTokenBalance.balance === 0) return;
 
         let adjustedBalance = sourceTokenBalance.balance;
@@ -212,13 +201,8 @@ export default function Exchangeui(props: propsType) {
 
         setSendAmount(null);
         setequAmountUSD(null);
-        setShowMinOneUSDAmountErr(false);
         setTotalAvailablePath(0);
         setSelectedPath(new PathShowViewModel());
-
-        setIsBridgeMessageVisible(false);
-        setIsBridgeMessage("");
-        setShowNoRouteFoundErr(false);
 
         // Immediately hide Pathshow while typing
         setIsPathShow(false);
@@ -258,32 +242,25 @@ export default function Exchangeui(props: propsType) {
 
                 if (eq < 0.95) {
                     currentAmountRef.current = null;
-                    setShowMinOneUSDAmountErr(true);
+                    displayToast("Minimum swap amount is $1 USD.");
                     return;
                 }
                 else {
                     currentAmountRef.current = numAmount;
                     setSendAmount(numAmount);
-                    setShowMinOneUSDAmountErr(false);
-
-                    if (numAmount > sourceTokenBalance?.balance) {
-                        setBalanceErr(true);
-                        setIsShowPathComponent(true);
+                    //if balance is available and amount is greater than balance then show error
+                    // (balance is only available when wallet is connected)
+                    if (sourceTokenBalance && numAmount > sourceTokenBalance?.balance) {
+                        displayToast(`Insufficient balance. Available: ${formatBalance(sourceTokenBalance?.balance)} ${sourceToken.symbol}. Required: ${formatBalance(numAmount)} ${sourceToken.symbol}.`);
                     }
-                    else {
-                        setIsShowPathComponent(true);
-                        setBalanceErr(false);
-                    }
-
+                    setIsShowPathComponent(true);
                 }
             }
             else {
                 setSendAmount(null);
                 currentAmountRef.current = null;
                 setequAmountUSD(null);
-                setShowMinOneUSDAmountErr(false);
                 setIsShowPathComponent(false);
-                setBalanceErr(false);
             }
         } catch (error) {
 
@@ -298,7 +275,6 @@ export default function Exchangeui(props: propsType) {
             amountTextBoxRef.current.value = '';
         }
         prevFetchKeyRef.current = '';
-        setBalanceErr(false);
         props.interChangeData();
     }
 
@@ -310,8 +286,6 @@ export default function Exchangeui(props: propsType) {
         setIsShowPathComponent(false);
         setTotalAvailablePath(0);
         setSelectedPath(new PathShowViewModel());
-        setShowMinOneUSDAmountErr(false);
-        setBalanceErr(false);
 
         if (amountTextBoxRef.current) {
             amountTextBoxRef.current.value = '';
@@ -329,7 +303,7 @@ export default function Exchangeui(props: propsType) {
         } else {
             setIsShowPathComponent(false);
             setSelectedPath(new PathShowViewModel());
-            setShowNoRouteFoundErr(true);
+            displayToast("No Route Found.");
         }
     }
 
@@ -358,7 +332,6 @@ export default function Exchangeui(props: propsType) {
     }, [props.sourceChain, props.destChain, props.sourceToken, props.destToken, props.sourceTokenAmount])
 
     async function isGasEnough(checkSourceTokenIsNativeCoin: boolean, workingRpc: string, sourceTokenbalance: string) {
-        
 
         let totalGasCost = 0;
         let totalGasCostNative = 0;
@@ -376,7 +349,7 @@ export default function Exchangeui(props: propsType) {
 
         let currentNativeBalance = checkSourceTokenIsNativeCoin ? sourceTokenbalance : await utilityService.getBalanceIne(true, payableGasToken, walletData.address, workingRpc);
 
-        let payableprice = (await cryptoService.GetTokenData(payableGasToken)).data.price;
+        let payableprice = (await cryptoService.getTokenAllInformation(payableGasToken)).price;
 
         let gasafeeRequiredTransactionEther = formatUnits(BigInt(selectedPath.gasafeeRequiredTransaction), payableGasToken.decimal)
 
@@ -391,32 +364,17 @@ export default function Exchangeui(props: propsType) {
         let totalNativeBalanceRequired =  checkSourceTokenIsNativeCoin ? totalGasCostNative + sendAmount : totalGasCostNative;
 
         if (Number(currentNativeBalance) < totalNativeBalanceRequired) {
-
-            bridgeMessage.message = "You don't have enough Gas to Complete this transaction. You required atleast " + totalNativeBalanceRequired + "  " + payableGasToken.symbol;
-            setIsBridgeMessageVisible(true);
-            setIsBridgeMessage(bridgeMessage.message);
+            displayToast(`Insufficient gas balance. Available: ${formatBalance(Number(currentNativeBalance))} ${payableGasToken.symbol}. Required: ${formatBalance(totalNativeBalanceRequired)} ${payableGasToken.symbol}.`);
             return false;
-
         }
         else {
-
-            bridgeMessage.message = "";
-            setIsBridgeMessageVisible(false);
-            setIsBridgeMessage("");
             return true;
-
         }
-
-
-
-
-
-
-
     }
 
     async function prepareTransactionRequest() {
 
+        clearPreviousActiveData();
         let sendAmt = '';
         let sendAmtUsdc = '0';
 
@@ -473,6 +431,7 @@ export default function Exchangeui(props: propsType) {
 
         dispatch(SetActiveTransactionA(transactoinObj));
         //addTransactionLog(transactoinObj);
+        setIsProcessingPayment(false);
         setShowSubBridgeView(false);
         setStartBridging(true);
         //getAllowance();
@@ -481,59 +440,45 @@ export default function Exchangeui(props: propsType) {
 
     async function exchange() {
         //setStartBridging(true);
-        if (!utilityService.isNullOrEmpty(walletData.address)) {
-
+            //start showing processing loading message
+        try {
+            setIsProcessingPayment(true);
             let workingRpc = await utilityService.setupProviderForChain(sourceChain.chainId, sourceChain.rpcUrl);
-
+            
             if (workingRpc != undefined && workingRpc != null) {
-                console.log(error);
+                
+                //check current chain and switch if not matched
                 if (walletData.chainId != sourceChain.chainId) {
                     console.log("Need switch chain");
-                    try {
-                        await switchChain({ chainId: sourceChain.chainId }) // Call switchChain with only chainId
-                        console.log("Chain Switched")
-                        
-                        //update redux wallet data state
-                        dispatch(SetWalletDataA({
-                            ...walletData,
-                            chainId: sourceChain?.chainId,
-                            chainName: sourceChain?.chainName,
-                            chainLogo: sourceChain?.logoURI,
-                            //blockExplorer: newChain.blockExplorers?.default
-                        }));
-
-                        await waitUntilWagmiUpdatesChain(sourceChain.chainId);
-                        console.log("wagmi chain updated")
-                    }
-                    catch (error) {
-                        console.log("rejected switch chain");
-                    }
-                }
-                else {
-                    console.log("No Need to switch chain")
+                    await switchCurrentChain();
                 }
 
                 let checkSourceTokenIsNativeCoin = await utilityService.checkCoinNative(sourceChain, sourceToken);
                 // check balance
-                let sourceTokenbalance = await utilityService.getBalanceIne(checkSourceTokenIsNativeCoin, sourceToken, walletData.address, workingRpc);
-                if (Number(sourceTokenbalance) < Number(sendAmount)) {
-                    bridgeMessage.message = "You don't have enough " + sourceToken.symbol + " to complete the transaction.";
-                    setIsBridgeMessageVisible(true);
-                    setIsBridgeMessage(bridgeMessage.message);
+                let sourceTokenbal = await utilityService.getBalanceIne(checkSourceTokenIsNativeCoin, sourceToken, walletData.address, workingRpc);
+                
+                if (Number(sourceTokenbal) < Number(sendAmount)) {
+                    displayToast(`Insufficient balance. Available: ${formatBalance(Number(sourceTokenbal))} ${sourceToken.symbol}. Required: ${formatBalance(sendAmount)} ${sourceToken.symbol}.`);
+                    setIsProcessingPayment(false);
                     return false;
                 }
                 else {
-                    if (await isGasEnough(checkSourceTokenIsNativeCoin, workingRpc, sourceTokenbalance)) {
+                    const gasEnough = await isGasEnough(checkSourceTokenIsNativeCoin, workingRpc, sourceTokenbal);
+                    if (gasEnough) {
                         await prepareTransactionRequest();
                     }
                     else {
+                        setIsProcessingPayment(false);
                         return false;
                     }
                 }
             }
         }
+        catch (error) {
+            console.log(error);
+            setIsProcessingPayment(false);
+        }
     }
-
 
     function closeBridBridgeView() {
         setStartBridging(false);
@@ -582,13 +527,19 @@ export default function Exchangeui(props: propsType) {
 
         setTotalAvailablePath(0);
         setSelectedPath(new PathShowViewModel());
-        setShowMinOneUSDAmountErr(false);
-        setShowNoRouteFoundErr(false);
-        setIsBridgeMessageVisible(false);
-        setIsBridgeMessage("");
 
         setIsPathShow(false);
         setIsShowPathComponent(false);
+    }
+
+    function clearPreviousActiveData(){
+        //if previous transaction is active then clear it
+        let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
+        if(activeTransactiondata){
+            sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
+            dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
+            setShowSubBridgeView(false);
+        }
     }
 
     async function receivedChatDetails(data: SwapRequest) {
@@ -603,7 +554,8 @@ export default function Exchangeui(props: propsType) {
             let sourceTokenObj = sourceTokenObjList && sourceTokenObjList.length > 0 ? sourceTokenObjList.find(x => x.address == data?.sourceTokenAddress) : new Tokens();
             if (sourceTokenObj) {
                 setSourceToken(sourceTokenObj);
-                setSourceTokenAmount(sourceTokenObj?.price);
+                let payableprice = (await cryptoService.getTokenAllInformation(sourceTokenObj)).price;
+                setSourceTokenAmount(payableprice ?? 0);
             } else {
                 setMessageFromAssistant("Source Token Is Not Supported By Chain.");
                 return;
@@ -618,7 +570,8 @@ export default function Exchangeui(props: propsType) {
             let destTokenObj = destTokenObjList && destTokenObjList.length > 0 ? destTokenObjList.find(x => x.address == data?.destTokenAddress) : new Tokens();
             if (destTokenObj) {
                 setDestToken(destTokenObj);
-                setDestTokenAmount(destTokenObj?.price);
+                let payableprice = (await cryptoService.getTokenAllInformation(destTokenObj)).price;
+                setDestTokenAmount(payableprice ?? 0);
             } else {
                 setMessageFromAssistant("Destination Token Is Not Supported By Chain.");
                 return;
@@ -653,6 +606,36 @@ export default function Exchangeui(props: propsType) {
     function openWalletConnectModel() {
         open();
     }
+
+    function displayToast (message: string){
+        setToastMessage(message);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 5000);
+    };
+
+    async function switchCurrentChain() {
+        try {
+            await switchChain({ chainId: sourceChain.chainId }) // Call switchChain with only chainId
+            console.log("Chain Switched")
+
+            //update redux wallet data state
+            dispatch(SetWalletDataA({
+                ...walletData,
+                chainId: sourceChain?.chainId,
+                chainName: sourceChain?.chainName,
+                chainLogo: sourceChain?.logoURI,
+                //blockExplorer: newChain.blockExplorers?.default
+            }));
+
+            await waitUntilWagmiUpdatesChain(sourceChain.chainId);
+            console.log("wagmi chain updated")
+        }
+        catch (error) {
+            console.log("rejected switch chain");
+            throw error;
+        }
+    }
+
     return (
         <>
             {
@@ -904,48 +887,6 @@ export default function Exchangeui(props: propsType) {
                                     </>
                                 }
                                 {
-                                    (bridgeMessage) && (isBridgeMessage != '') &&
-
-                                    <>
-                                        <div className="inner-card w-100 py-2 px-3 mt-2">
-                                            <div className="d-flex align-items-center gap-3">
-                                                <><span>{isBridgeMessage}</span></>
-                                            </div>
-                                        </div>
-                                    </>
-                                }
-                                {
-                                    showMinOneUSDAmountErr &&
-                                    <>
-                                        <div className="inner-card w-100 py-2 px-3 mt-2">
-                                            <div className="d-flex align-items-center gap-3">
-                                                <span>Please enter an amount of at least $1 to proceed.</span>
-                                            </div>
-                                        </div>
-
-                                    </>
-                                }
-                                {
-                                    showBalanceErr &&
-                                    <>
-                                        <div className="inner-card w-100 py-2 px-3 mt-2">
-                                            <div className="d-flex align-items-center gap-3">
-                                                <span>You do not have enough balance. {showBalanceErr}</span>
-                                            </div>
-                                        </div>
-                                    </>
-                                }
-                                {
-                                    showNoRouteFoundErr &&
-                                    <>
-                                        <div className="inner-card w-100 py-2 px-3 mt-2">
-                                            <div className="d-flex align-items-center gap-3">
-                                                <span>No Routes Found.</span>
-                                            </div>
-                                        </div>
-                                    </>
-                                }
-                                {
                                     (sendAmount != null && sendAmount > 0 && isShowPathComponent) &&
                                     <>
                                         <div className="inner-card w-100 py-3 px-3 mt-3">
@@ -1051,7 +992,14 @@ export default function Exchangeui(props: propsType) {
                                     !utilityService.isNullOrEmpty(walletData.address) &&
                                     <>
                                         <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => exchange()} disabled={sendAmount == null} title={sendAmount == null ? "Enter Amount" : ""} style={{ cursor: sendAmount == null ? "not-allowed" : "pointer", pointerEvents: sendAmount == null ? "all" : "auto" }}>
-                                            Exchange
+                                            {
+                                                isProcessingPayment ?
+                                                    <>
+                                                        <i className="fa-solid fa-spinner fa-spin me-2"></i> Processing...
+                                                    </>
+                                                    :
+                                                    'Exchange'
+                                            }
                                         </button>
                                     </>
                                 }
@@ -1064,6 +1012,12 @@ export default function Exchangeui(props: propsType) {
                                     </>
                                 }
                             </div>
+                            {showToast && (
+                                <div className="toast-notification">
+                                    <i className="fas fa-check-circle"></i>
+                                    <span>{toastMessage}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 

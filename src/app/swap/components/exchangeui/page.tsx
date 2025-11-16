@@ -22,6 +22,7 @@ import SubBridgeView from "../sub-bridge-view/page";
 import SwapChatBot from "../swap-chatbot/page";
 import { TokenBalanceService } from "@/shared/Services/TokenBalanceService";
 import { parse } from "path";
+import { TransactionService } from "@/shared/Services/TransactionService";
 
 type propsType = {
     sourceChain: Chains,
@@ -41,6 +42,7 @@ export default function Exchangeui(props: propsType) {
     let sharedService = SharedService.getSharedServiceInstance();
     let walletData = useSelector((state: any) => state.WalletData);
     let utilityService = new UtilityService();
+    let transactionService = new TransactionService();
     let [totalAvailablePath, setTotalAvailablePath] = useState<number>(0);
     let [isPathShow, setIsPathShow] = useState<boolean>(false);
     let [isShowPathComponent, setIsShowPathComponent] = useState<boolean>(false);
@@ -372,59 +374,11 @@ export default function Exchangeui(props: propsType) {
         }
     }
 
-    async function prepareTransactionRequest() {
+    async function prepareTransactionRequest(checkSourceTokenIsNativeCoin: boolean) {
 
         clearPreviousActiveData();
-        let sendAmt = '';
-        let sendAmtUsdc = '0';
-
-        if (selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain) {
-            sendAmt = selectedPath.fromAmountWei;
-            sendAmtUsdc = selectedPath.fromAmountUsd;
-        } else if (selectedPath.aggregator != AggregatorProvider.RAPID_DEX) {
-            let wei = parseEther(sendAmount.toString());
-            sendAmt = String(wei);
-            sendAmtUsdc = String(equAmountUSD);
-        }
-
-        let transactoinObj = new TransactionRequestoDto();
-        transactoinObj.transactionId = 0;
-        transactoinObj.transactionGuid = '';
-        transactoinObj.walletAddress = walletData.address;
-        transactoinObj.amount = sendAmt;
-        transactoinObj.amountUsd = sendAmtUsdc;
-        transactoinObj.amountInEther = sendAmount.toString();//value in ether
-        transactoinObj.approvalAddress = selectedPath.aggregator == AggregatorProvider.RAPID_DEX && selectedPath.isMultiChain == true ? '' : selectedPath.approvalAddress;
-        transactoinObj.transactionHash = '';
-        transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
-        transactoinObj.transactionSubStatus = 0;
-        transactoinObj.quoteDetail = JSON.stringify(selectedPath.entire);
-        transactoinObj.sourceChainId = sourceChain.chainId;
-        transactoinObj.sourceChainName = sourceChain.chainName;
-        transactoinObj.sourceChainLogoUri = sourceChain.logoURI;
-        transactoinObj.destinationChainId = destChain.chainId;
-        transactoinObj.destinationChainName = destChain.chainName;
-        transactoinObj.destinationChainLogoUri = destChain.logoURI;
-        transactoinObj.sourceTokenName = sourceToken.name;
-        transactoinObj.sourceTokenAddress = sourceToken.address;
-        transactoinObj.sourceTokenSymbol = sourceToken.symbol;
-        transactoinObj.sourceTokenLogoUri = sourceToken.logoURI
-        transactoinObj.destinationTokenName = destToken.name;
-        transactoinObj.destinationTokenAddress = destToken.address;
-        transactoinObj.destinationTokenSymbol = destToken.symbol;
-        transactoinObj.destinationTokenLogoUri = destToken.logoURI;
-        transactoinObj.isNativeToken = await utilityService.isNativeCurrency(sourceChain, sourceToken);
-        transactoinObj.transactiionAggregator = selectedPath.aggregator;
-        transactoinObj.transactionAggregatorRequestId = selectedPath.aggergatorRequestId;
-        transactoinObj.transactionAggregatorGasLimit = selectedPath.gasLimit;
-        transactoinObj.transactionAggregatorGasPrice = selectedPath.gasPrice;
-        transactoinObj.transactionAggregatorRequestData = selectedPath.data;
-        transactoinObj.isMultiChain = selectedPath.isMultiChain;
-        transactoinObj.sourceTransactionData = selectedPath.sourceTransactionData;
-        transactoinObj.destinationTransactionData = selectedPath.destinationTransactionData;
-        transactoinObj.transactionSourceHash = '';
-        transactoinObj.transactionSourceStatus = TransactionStatus.ALLOWANCSTATE;
-        transactoinObj.transactionSourceSubStatus = 0;
+        
+        const transactoinObj = transactionService.GetTransactionRequest(selectedPath, sendAmount, equAmountUSD, walletData.address, sourceChain, destChain, sourceToken, destToken, checkSourceTokenIsNativeCoin);
 
         //store active transaction in local storage and use when realod page
         sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, transactoinObj);
@@ -454,23 +408,24 @@ export default function Exchangeui(props: propsType) {
                 }
 
                 let checkSourceTokenIsNativeCoin = await utilityService.checkCoinNative(sourceChain, sourceToken);
-                // check balance
-                let sourceTokenbal = await utilityService.getBalanceIne(checkSourceTokenIsNativeCoin, sourceToken, walletData.address, workingRpc);
+
+                //check sufficient source token balance
+                const hasSufficientBalance = await transactionService.HasSufficientSourceBalance(sourceChain, sourceToken, checkSourceTokenIsNativeCoin, walletData.address, workingRpc, sendAmount);
+                if(!hasSufficientBalance.status){
+                    displayToast(hasSufficientBalance.message);
+                    setIsProcessingPayment(false);
+                    return false;
+                }
                 
-                if (Number(sourceTokenbal) < Number(sendAmount)) {
-                    displayToast(`Insufficient balance. Available: ${formatBalance(Number(sourceTokenbal))} ${sourceToken.symbol}. Required: ${formatBalance(sendAmount)} ${sourceToken.symbol}.`);
+                //check sufficient balance for gas fee
+                const hasSufficientGasBalance = await transactionService.HasSufficientGasBalance(sourceChain, sourceToken, checkSourceTokenIsNativeCoin, hasSufficientBalance.tokenBalance, walletData.address, workingRpc, selectedPath, sendAmount);
+                if (!hasSufficientGasBalance.status) {
+                    displayToast(hasSufficientGasBalance.message);
                     setIsProcessingPayment(false);
                     return false;
                 }
                 else {
-                    const gasEnough = await isGasEnough(checkSourceTokenIsNativeCoin, workingRpc, sourceTokenbal);
-                    if (gasEnough) {
-                        await prepareTransactionRequest();
-                    }
-                    else {
-                        setIsProcessingPayment(false);
-                        return false;
-                    }
+                    await prepareTransactionRequest(checkSourceTokenIsNativeCoin);
                 }
             }
         }

@@ -459,3 +459,9 @@ export class BestPathFromGPTOss {
   suggestedPath: number;
   declaration: string;
 }
+
+export class HasSufficientBalanceResponse{
+  status: boolean;
+  message: string;
+  tokenBalance: string;
+}

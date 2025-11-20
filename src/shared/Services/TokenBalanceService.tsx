@@ -2,6 +2,7 @@
 import { Chains, Tokens } from '@/shared/Models/Common.model';
 import { UtilityService } from './UtilityService';
 import { SwapProvider } from '../Enum/Common.enum';
+import { Multicall3Service } from './Multicall3Service';
 
 interface MobulaAsset {
     contracts_balances: Array<{
@@ -60,6 +61,7 @@ export class TokenBalanceService {
     private readonly MOBULA_API_URL = process.env.NEXT_PUBLIC_MOBULA_API_URL || 'https://api.mobula.io/api/1';
     private readonly MOBULA_API_KEY = "4ee7370b-89e7-4d74-8b87-38355f2fb37d";
     private readonly utilityService = new UtilityService();
+    private readonly multicall3Service = Multicall3Service.getInstance();
 
     // Native token address constants
     private readonly SYSTEM_NATIVE_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -332,7 +334,7 @@ export class TokenBalanceService {
 
             let payLoad = {
                 apiType: 'GET',
-                apiUrl: `/wallet/portfolio?${params.toString()}`,
+                apiUrl: `wallet/portfolio?${params.toString()}`,
                 apiData: null,
                 apiProvider: SwapProvider.MOBULA,
 
@@ -409,16 +411,16 @@ export class TokenBalanceService {
         if (!walletAddress || !chain) {
             return [];
         }
- 
+
         const cacheKey = this.getCacheKey(walletAddress, chain.chainId);
- 
+
         // Check cache first
         const cachedEntry = this.cache.get(cacheKey);
         if (cachedEntry && this.isCacheValid(cachedEntry)) {
             console.log('Returning cached balances');
             return this.tokensFromCache(cachedEntry.data, tokens);
         }
- 
+
         // Check if there's already a pending request
         const pendingRequest = this.pendingRequests.get(cacheKey);
         if (pendingRequest) {
@@ -426,11 +428,11 @@ export class TokenBalanceService {
             const result = await pendingRequest;
             return this.tokensFromCache(result, tokens);
         }
- 
+
         // Create new request
         const requestPromise = this.fetchBalancesFromMobula(walletAddress, chain);
         this.pendingRequests.set(cacheKey, requestPromise);
- 
+
         try {
             const balances = await requestPromise;
             this.pendingRequests.delete(cacheKey);
@@ -442,9 +444,55 @@ export class TokenBalanceService {
     }
 
     /**
-     * Fetch all balances from Mobula API
+     * Fetch all balances from Mobula API with Multicall3 fallback
+     * Fallback chain: Mobula API → Multicall3 → Individual RPC calls
      */
     private async fetchBalancesFromMobula(
+        walletAddress: string,
+        chain: Chains
+    ): Promise<TokenBalance[]> {
+        console.log('[TokenBalance] Starting balance fetch - trying Mobula first...');
+
+        // Try Mobula API first
+        try {
+            const balances = await this.fetchFromMobulaAPI(walletAddress, chain);
+
+            if (balances && balances.length > 0) {
+                console.log(`[TokenBalance] Mobula API succeeded with ${balances.length} balances`);
+                this.updateCache(walletAddress, chain, balances);
+                return balances;
+            }
+
+            console.log('[TokenBalance] Mobula returned no balances, trying Multicall3...');
+        } catch (error) {
+            console.error('[TokenBalance] Mobula API failed:', error);
+            console.log('[TokenBalance] Falling back to Multicall3...');
+        }
+
+        // Fallback to Multicall3
+        try {
+            const balances = await this.fetchFromMulticall3(walletAddress, chain);
+
+            if (balances && balances.length > 0) {
+                console.log(`[TokenBalance] Multicall3 succeeded with ${balances.length} balances`);
+                this.updateCache(walletAddress, chain, balances);
+                return balances;
+            }
+
+            console.log('[TokenBalance] Multicall3 returned no balances');
+        } catch (error) {
+            console.error('[TokenBalance] Multicall3 failed:', error);
+            console.log('[TokenBalance] All methods failed, returning empty array');
+        }
+
+        // Return empty array if all methods fail
+        return [];
+    }
+
+    /**
+     * Fetch balances directly from Mobula API
+     */
+    private async fetchFromMobulaAPI(
         walletAddress: string,
         chain: Chains
     ): Promise<TokenBalance[]> {
@@ -457,70 +505,157 @@ export class TokenBalanceService {
             unlistedAssets: 'false',
             minliq: '1000'
         });
+
+        let payLoad = {
+            apiType: 'GET',
+            apiUrl: `wallet/portfolio?${params.toString()}`,
+            apiData: null,
+            apiProvider: SwapProvider.MOBULA,
+        }
+
+        const response = await fetch(this.apiUrlENV + '/api/common', {
+            method: 'POST',
+            headers: {
+                'Authorization': this.MOBULA_API_KEY || '',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payLoad),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Mobula API error: ${response.status}`);
+        }
+
+        let data = await response.json();
+        data = data.Data as MobulaResponse
+
+        console.log('[TokenBalance] Mobula API response received');
+
+        return this.transformMobulaResponse(data, chain.chainId);
+    }
+
+    /**
+     * Fetch balances using Multicall3 for specific tokens
+     */
+    private async fetchFromMulticall3(
+        walletAddress: string,
+        chain: Chains,
+        tokens?: Tokens[]
+    ): Promise<TokenBalance[]> {
+        if (!tokens || tokens.length === 0) {
+            console.log('[TokenBalance] Multicall3 requires token list - skipping');
+            return [];
+        }
+
         try {
+            const multicallBalances = await this.multicall3Service.getTokenBalances(
+                walletAddress,
+                chain,
+                tokens
+            );
 
-
-            let payLoad = {
-                apiType: 'GET',
-                apiUrl: `/wallet/portfolio?${params.toString()}`,
-                apiData: null,
-                apiProvider: SwapProvider.MOBULA,
-
-            }
-
-            const response = await fetch(this.apiUrlENV + '/api/common', {
-                method: 'POST',
-                headers: {
-                    'Authorization': this.MOBULA_API_KEY || '',
-                    'Content-Type': 'application/json',
+            // Convert Multicall3 response to TokenBalance format
+            return multicallBalances.map(mb => ({
+                token: {
+                    ...mb.token,
+                    balance: mb.balance,
+                    balanceUSD: mb.balance * (mb.token.price || 0)
                 },
-                body: JSON.stringify(payLoad),
+                balance: mb.balance,
+                balanceRaw: mb.balanceRaw,
+                balanceUSD: mb.balance * (mb.token.price || 0),
+                price: mb.token.price || 0,
+                chainId: chain.chainId,
+                lastUpdated: Date.now()
+            }));
+        } catch (error) {
+            console.error('[TokenBalance] Multicall3 error:', error);
+            return [];
+        }
+    }
 
-            });
+    /**
+     * Public method to fetch balances for specific tokens with full fallback chain
+     * Fallback: Mobula API → Multicall3 → Individual RPC
+     */
+    public async getTokenBalancesWithFallback(
+        walletAddress: string,
+        chain: Chains,
+        tokens: Tokens[]
+    ): Promise<TokenBalance[]> {
+        console.log(`[TokenBalance] Fetching balances for ${tokens.length} tokens...`);
 
-
-
-            if (!response.ok) {
-                throw new Error(`Mobula API error: ${response.status}`);
+        // Try Mobula first
+        try {
+            const balances = await this.fetchFromMobulaAPI(walletAddress, chain);
+            if (balances && balances.length > 0) {
+                console.log(`[TokenBalance] Mobula API succeeded with ${balances.length} balances`);
+                return balances;
             }
+        } catch (error) {
+            console.error('[TokenBalance] Mobula API failed:', error);
+        }
 
-            let data = await response.json();
+        // Try Multicall3
+        console.log('[TokenBalance] Trying Multicall3 with token list...');
+        try {
+            const balances = await this.fetchFromMulticall3(walletAddress, chain, tokens);
+            if (balances && balances.length > 0) {
+                console.log(`[TokenBalance] Multicall3 succeeded with ${balances.length} balances`);
+                return balances;
+            }
+        } catch (error) {
+            console.error('[TokenBalance] Multicall3 failed:', error);
+        }
 
-            data = data.Data as MobulaResponse
+        // Last resort: individual RPC calls
+        console.log('[TokenBalance] Falling back to individual RPC calls...');
+        const balances: TokenBalance[] = [];
+        for (const token of tokens) {
+            try {
+                const balance = await this.fetchViaRPC(walletAddress, chain, token);
+                if (balance && balance.balance > 0) {
+                    balances.push(balance);
+                }
+            } catch (error) {
+                console.error(`[TokenBalance] RPC failed for ${token.symbol}:`, error);
+            }
+        }
 
-            console.log('Mobula bulk response:', data.Data as MobulaResponse);
+        console.log(`[TokenBalance] RPC fallback returned ${balances.length} balances`);
+        return balances;
+    }
 
-            const balances = this.transformMobulaResponse(data, chain.chainId);
+    /**
+     * Update cache with balances
+     */
+    private updateCache(
+        walletAddress: string,
+        chain: Chains,
+        balances: TokenBalance[]
+    ): void {
+        const cacheKey = this.getCacheKey(walletAddress, chain.chainId);
+        this.cache.set(cacheKey, {
+            data: balances,
+            timestamp: Date.now(),
+            walletAddress,
+            chainId: chain.chainId
+        });
 
-            // Update cache
-            const cacheKey = this.getCacheKey(walletAddress, chain.chainId);
-            this.cache.set(cacheKey, {
-                data: balances,
+        // Also cache individual tokens for quick single token lookups
+        balances.forEach(balance => {
+            const singleCacheKey = this.getSingleTokenCacheKey(
+                walletAddress,
+                chain.chainId,
+                balance.token.address
+            );
+            this.cache.set(singleCacheKey, {
+                data: [balance],
                 timestamp: Date.now(),
                 walletAddress,
                 chainId: chain.chainId
             });
-
-            // Also cache individual tokens for quick single token lookups
-            balances.forEach(balance => {
-                const singleCacheKey = this.getSingleTokenCacheKey(
-                    walletAddress,
-                    chain.chainId,
-                    balance.token.address
-                );
-                this.cache.set(singleCacheKey, {
-                    data: [balance],
-                    timestamp: Date.now(),
-                    walletAddress,
-                    chainId: chain.chainId
-                });
-            });
-
-            return balances;
-        } catch (error) {
-            console.error('Error fetching from Mobula:', error);
-            throw error;
-        }
+        });
     }
 
     /**

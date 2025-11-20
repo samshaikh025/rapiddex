@@ -1,6 +1,6 @@
 "use client"
 import { AggregatorProvider, DataSource, Keys, TransactionStatus } from "@/shared/Enum/Common.enum";
-import {  Chains, PathShowViewModel, SwapRequest, Tokens, TransactionRequestoDto } from "@/shared/Models/Common.model";
+import { Chains, PathShowViewModel, SwapRequest, Tokens, TransactionRequestoDto } from "@/shared/Models/Common.model";
 import { SharedService } from "@/shared/Services/SharedService";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -83,7 +83,7 @@ export default function Exchangeui(props: propsType) {
     let [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
     const [toastMessage, setToastMessage] = useState('');
     const [showToast, setShowToast] = useState(false);
-    
+
     const getAllChains = (): Chain[] => {
         return Object.values(definedChains).filter((chain) => chain.id !== undefined) as Chain[];
     };
@@ -349,6 +349,10 @@ export default function Exchangeui(props: propsType) {
         payableGasToken.decimal = payableGasChain.nativeCurrency.decimals;
         payableGasToken.name = payableGasChain.nativeCurrency.name;
 
+        payableGasToken.chainId = payableGasChain.id;
+        payableGasToken.tokenIsNative = true;
+        payableGasToken.tokenIsStable = false;
+
         let currentNativeBalance = checkSourceTokenIsNativeCoin ? sourceTokenbalance : await utilityService.getBalanceIne(true, payableGasToken, walletData.address, workingRpc);
 
         let payableprice = (await cryptoService.getTokenAllInformation(payableGasToken)).price;
@@ -363,7 +367,7 @@ export default function Exchangeui(props: propsType) {
 
         //let currentBalance = Number(balance);
 
-        let totalNativeBalanceRequired =  checkSourceTokenIsNativeCoin ? totalGasCostNative + sendAmount : totalGasCostNative;
+        let totalNativeBalanceRequired = checkSourceTokenIsNativeCoin ? totalGasCostNative + sendAmount : totalGasCostNative;
 
         if (Number(currentNativeBalance) < totalNativeBalanceRequired) {
             displayToast(`Insufficient gas balance. Available: ${formatBalance(Number(currentNativeBalance))} ${payableGasToken.symbol}. Required: ${formatBalance(totalNativeBalanceRequired)} ${payableGasToken.symbol}.`);
@@ -377,7 +381,7 @@ export default function Exchangeui(props: propsType) {
     async function prepareTransactionRequest(checkSourceTokenIsNativeCoin: boolean) {
 
         clearPreviousActiveData();
-        
+
         const transactoinObj = transactionService.GetTransactionRequest(selectedPath, sendAmount, equAmountUSD, walletData.address, sourceChain, destChain, sourceToken, destToken, checkSourceTokenIsNativeCoin);
 
         //store active transaction in local storage and use when realod page
@@ -394,13 +398,13 @@ export default function Exchangeui(props: propsType) {
 
     async function exchange() {
         //setStartBridging(true);
-            //start showing processing loading message
+        //start showing processing loading message
         try {
             setIsProcessingPayment(true);
             let workingRpc = await utilityService.setupProviderForChain(sourceChain.chainId, sourceChain.rpcUrl);
-            
+
             if (workingRpc != undefined && workingRpc != null) {
-                
+
                 //check current chain and switch if not matched
                 if (walletData.chainId != sourceChain.chainId) {
                     console.log("Need switch chain");
@@ -411,12 +415,12 @@ export default function Exchangeui(props: propsType) {
 
                 //check sufficient source token balance
                 const hasSufficientBalance = await transactionService.HasSufficientSourceBalance(sourceChain, sourceToken, checkSourceTokenIsNativeCoin, walletData.address, workingRpc, sendAmount);
-                if(!hasSufficientBalance.status){
+                if (!hasSufficientBalance.status) {
                     displayToast(hasSufficientBalance.message);
                     setIsProcessingPayment(false);
                     return false;
                 }
-                
+
                 //check sufficient balance for gas fee
                 const hasSufficientGasBalance = await transactionService.HasSufficientGasBalance(sourceChain, sourceToken, checkSourceTokenIsNativeCoin, hasSufficientBalance.tokenBalance, walletData.address, workingRpc, selectedPath, sendAmount);
                 if (!hasSufficientGasBalance.status) {
@@ -446,10 +450,10 @@ export default function Exchangeui(props: propsType) {
 
     function openOrCloseSubBridBridgeView() {
         let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
-        
-        if(activeTransactiondata){
+
+        if (activeTransactiondata) {
             setShowSubBridgeView(true);
-        }else{
+        } else {
             setShowSubBridgeView(false);
             fetchTokenBalance();
         }
@@ -487,10 +491,10 @@ export default function Exchangeui(props: propsType) {
         setIsShowPathComponent(false);
     }
 
-    function clearPreviousActiveData(){
+    function clearPreviousActiveData() {
         //if previous transaction is active then clear it
         let activeTransactiondata = sharedService.getData(Keys.ACTIVE_TRANASCTION_DATA);
-        if(activeTransactiondata){
+        if (activeTransactiondata) {
             sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
             dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
             setShowSubBridgeView(false);
@@ -562,7 +566,7 @@ export default function Exchangeui(props: propsType) {
         open();
     }
 
-    function displayToast (message: string){
+    function displayToast(message: string) {
         setToastMessage(message);
         setShowToast(true);
         setTimeout(() => setShowToast(false), 5000);
@@ -943,7 +947,7 @@ export default function Exchangeui(props: propsType) {
                                         </div>
                                     </>
                                 }
-                            {
+                                {
                                     !utilityService.isNullOrEmpty(walletData.address) &&
                                     <>
                                         <button className="btn primary-btn w-100 mt-3 btn-primary-bgColor" onClick={() => exchange()} disabled={sendAmount == null} title={sendAmount == null ? "Enter Amount" : ""} style={{ cursor: sendAmount == null ? "not-allowed" : "pointer", pointerEvents: sendAmount == null ? "all" : "auto" }}>

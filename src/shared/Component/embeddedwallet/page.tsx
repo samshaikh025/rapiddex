@@ -120,6 +120,8 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
         if (!activeWalletAddress || !currentChain) return;
 
         setLoading(true);
+        console.log('[EmbeddedWallet] Loading balances with fallback system...');
+
         try {
             // Create chain object for TokenBalanceService
             const chainForService = new Chains();
@@ -137,12 +139,40 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
             nativeToken.chainId = currentChain.chainId;
             nativeToken.logoURI = currentChain.nativeToken.logoURI;
 
-            // Fetch all tokens including native
-            const allTokens = await tokenBalanceService.getTokenBalances(
-                activeWalletAddress,
-                chainForService,
-                [nativeToken] // Pass native token to ensure it's included
-            );
+            let allTokens: TokenBalance[] = [];
+
+            // Try Mobula first (gets all tokens with balances)
+            try {
+                console.log('[EmbeddedWallet] Trying Mobula API...');
+                allTokens = await tokenBalanceService.getTokenBalances(
+                    activeWalletAddress,
+                    chainForService,
+                    [] // Empty array gets all balances from Mobula
+                );
+
+                if (allTokens && allTokens.length > 0) {
+                    console.log(`[EmbeddedWallet] Mobula succeeded with ${allTokens.length} tokens`);
+                } else {
+                    console.log('[EmbeddedWallet] Mobula returned empty, trying Multicall3 fallback...');
+                    throw new Error('Mobula returned no balances');
+                }
+            } catch (mobulaError) {
+                console.error('[EmbeddedWallet] Mobula failed:', mobulaError);
+                console.log('[EmbeddedWallet] Falling back to Multicall3 + RPC...');
+
+                // Fallback: Use Multicall3 with native token at minimum
+                try {
+                    allTokens = await tokenBalanceService.getTokenBalancesWithFallback(
+                        activeWalletAddress,
+                        chainForService,
+                        [nativeToken]
+                    );
+                    console.log(`[EmbeddedWallet] Fallback succeeded with ${allTokens.length} tokens`);
+                } catch (fallbackError) {
+                    console.error('[EmbeddedWallet] All methods failed:', fallbackError);
+                    allTokens = [];
+                }
+            }
 
             if (allTokens.length > 0) {
                 // Sort tokens by balance (highest first)
@@ -152,24 +182,14 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
                 // Calculate total balance
                 const total = sortedTokens.reduce((sum, token) => sum + (token.balanceUSD || 0), 0);
                 setTotalBalance(total);
+                console.log(`[EmbeddedWallet] Total balance: $${total.toFixed(2)}`);
             } else {
-                // If no tokens returned, try to get at least the native token
-                const nativeBalance = await tokenBalanceService.getSingleTokenBalance(
-                    activeWalletAddress,
-                    chainForService,
-                    nativeToken
-                );
-
-                if (nativeBalance) {
-                    setAllTokenBalances([nativeBalance]);
-                    setTotalBalance(nativeBalance.balanceUSD || 0);
-                } else {
-                    setAllTokenBalances([]);
-                    setTotalBalance(0);
-                }
+                console.log('[EmbeddedWallet] No tokens with balances found');
+                setAllTokenBalances([]);
+                setTotalBalance(0);
             }
         } catch (error) {
-            console.error('Error loading token balances:', error);
+            console.error('[EmbeddedWallet] Error loading token balances:', error);
             setAllTokenBalances([]);
             setTotalBalance(0);
         } finally {

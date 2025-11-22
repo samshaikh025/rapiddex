@@ -85,17 +85,37 @@ export default function Tokenui(props: propsType) {
             return;
         }
 
-        console.log('Fetching ALL balances from Mobula for chain:', chainDataSource.chainId);
+        console.log('[TokenUI] Fetching balances with fallback system...');
+
+        let allBalances: any[] = [];
 
         try {
-            // Fetch ALL balances from Mobula (it returns all tokens with balance)
-            const allBalances = await tokenBalanceService.getTokenBalances(
+            // Method 1: Try Mobula first (gets all tokens with balances)
+            console.log('[TokenUI] Trying Mobula API...');
+            allBalances = await tokenBalanceService.getTokenBalances(
                 walletData.address,
                 chainDataSource,
-                [] // Empty array triggers fetching all balances
+                []
             );
 
-            console.log('Received all balances from Mobula:', allBalances);
+            if (allBalances && allBalances.length > 0) {
+                console.log(`[TokenUI] Mobula succeeded with ${allBalances.length} balances`);
+            } else {
+                console.log('[TokenUI] Mobula returned no balances, trying Multicall3...');
+
+                // Method 2: Fallback to Multicall3 with available token list
+                if (tokenResponse && tokenResponse.length > 0) {
+                    console.log(`[TokenUI] Trying Multicall3 with ${tokenResponse.length} tokens...`);
+                    allBalances = await tokenBalanceService.getTokenBalancesWithFallback(
+                        walletData.address,
+                        chainDataSource,
+                        tokenResponse
+                    );
+                    console.log(`[TokenUI] Multicall3 returned ${allBalances.length} balances`);
+                }
+            }
+
+            console.log('[TokenUI] Final balance count:', allBalances.length);
 
             if (!isMountedRef.current) return;
 
@@ -175,9 +195,9 @@ export default function Tokenui(props: propsType) {
             });
 
         } catch (error) {
-            console.error('Error fetching all balances:', error);
+            console.error('[TokenUI] Error fetching balances:', error);
         }
-    }, [walletData.address, props.dataSource, props.sourceChain, props.destChain]);
+    }, [walletData.address, props.dataSource, props.sourceChain, props.destChain, tokenResponse]);
 
     // Legacy function for backward compatibility (now just calls the main function)
     const fetchBalancesForTokens = useCallback(async (tokens: Tokens[]) => {

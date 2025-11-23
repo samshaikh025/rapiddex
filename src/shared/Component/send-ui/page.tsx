@@ -21,6 +21,8 @@ import { UserService } from "@/shared/Services/UserService";
 import EmbeddedWallet from "../embeddedwallet/page";
 import { getChainId } from '@wagmi/core';
 import { config } from "@/app/wagmi/config";
+import { Transaction } from "ethers";
+import { TransactionService } from "@/shared/Services/TransactionService";
 
 type propsType = {
   chains: Chains[],
@@ -119,6 +121,7 @@ export default function SendUI(props: propsType) {
   const { disconnect } = useDisconnect();
   const allAvailableChains = useSelector((state: any) => state.AvailableChains);
   let userService = new UserService();
+  let transactionService = new TransactionService();
   let apiUrlENV: string = process.env.NEXT_PUBLIC_NODE_API_URL;
   let currentTheme = useSelector((state: any) => state.SelectedTheme);
   const [toastMessage, setToastMessage] = useState('');
@@ -166,21 +169,22 @@ export default function SendUI(props: propsType) {
         }
 
         let checkSourceTokenIsNativeCoin = await utilityService.checkCoinNative(sourceChain, sourceToken);
-        // check balance
-        let sourceTokenbalance = await utilityService.getBalanceIne(checkSourceTokenIsNativeCoin, sourceToken, walletData.address, workingRpc);
-
-        if (Number(sourceTokenbalance) < Number(sendAmount)) {
-          displayToast(`Insufficient balance. Available: ${formatBalance(Number(sourceTokenbalance))} ${sourceToken.symbol}. Required: ${formatBalance(sendAmount)} ${sourceToken.symbol}.`);
+        
+        //check sufficient source token balance
+        const hasSufficientBalance = await transactionService.HasSufficientSourceBalance(sourceChain, sourceToken, checkSourceTokenIsNativeCoin, walletData.address, workingRpc, sendAmount);
+        if (!hasSufficientBalance.status) {
+          displayToast(hasSufficientBalance.message);
+          return false;
+        }
+        
+        //check sufficient balance for gas fee
+        const hasSufficientGasBalance = await transactionService.HasSufficientGasBalance(sourceChain, sourceToken, checkSourceTokenIsNativeCoin, hasSufficientBalance.tokenBalance, walletData.address, workingRpc, selectedPath, sendAmount);
+        if (!hasSufficientGasBalance.status) {
+          displayToast(hasSufficientGasBalance.message);
           return false;
         }
         else {
-          const gasEnough = await isGasEnough(checkSourceTokenIsNativeCoin, workingRpc, sourceTokenbalance);
-          if (gasEnough) {
-            await prepareTransactionRequest();
-          }
-          else {
-            return false;
-          }
+          await prepareTransactionRequest(checkSourceTokenIsNativeCoin);
         }
       }
     } catch (error) {
@@ -229,60 +233,11 @@ export default function SendUI(props: propsType) {
     }
   }
 
-  async function prepareTransactionRequest() {
+  async function prepareTransactionRequest(checkSourceTokenIsNativeCoin: boolean) {
 
     // let sendAmount = (selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain) ? selectedPath.fromAmountWei : '';
     // let sendAmountUsdc = (selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain) ? selectedPath.fromAmountUsd : '';
-
-    let sendAmt = '';
-    let sendAmtUsdc = '0';
-
-    if (selectedPath.aggregator == AggregatorProvider.RAPID_DEX && !selectedPath.isMultiChain) {
-      sendAmt = selectedPath.fromAmountWei;
-      sendAmtUsdc = selectedPath.fromAmountUsd;
-    } else if (selectedPath.aggregator != AggregatorProvider.RAPID_DEX) {
-      let wei = parseEther(sendAmount.toString());
-      sendAmt = String(wei);
-      sendAmtUsdc = String(sendAmountUSDC);
-    }
-
-    let transactoinObj = new TransactionRequestoDto();
-    transactoinObj.transactionId = 0;
-    transactoinObj.transactionGuid = '';
-    transactoinObj.walletAddress = walletData.address;
-    transactoinObj.amount = sendAmt;
-    transactoinObj.amountUsd = sendAmtUsdc;
-    transactoinObj.approvalAddress = selectedPath.aggregator == AggregatorProvider.RAPID_DEX && selectedPath.isMultiChain == true ? '' : selectedPath.approvalAddress;
-    transactoinObj.transactionHash = '';
-    transactoinObj.transactionStatus = TransactionStatus.ALLOWANCSTATE;
-    transactoinObj.transactionSubStatus = 0;
-    transactoinObj.quoteDetail = JSON.stringify(selectedPath.entire);
-    transactoinObj.sourceChainId = sourceChain.chainId;
-    transactoinObj.sourceChainName = sourceChain.chainName;
-    transactoinObj.sourceChainLogoUri = sourceChain.logoURI;
-    transactoinObj.destinationChainId = destiationChain.chainId;
-    transactoinObj.destinationChainName = destiationChain.chainName;
-    transactoinObj.destinationChainLogoUri = destiationChain.logoURI;
-    transactoinObj.sourceTokenName = sourceToken.name;
-    transactoinObj.sourceTokenAddress = sourceToken.address;
-    transactoinObj.sourceTokenSymbol = sourceToken.symbol;
-    transactoinObj.sourceTokenLogoUri = sourceToken.logoURI
-    transactoinObj.destinationTokenName = destiationToken.name;
-    transactoinObj.destinationTokenAddress = destiationToken.address;
-    transactoinObj.destinationTokenSymbol = destiationToken.symbol;
-    transactoinObj.destinationTokenLogoUri = destiationToken.logoURI;
-    transactoinObj.isNativeToken = await utilityService.isNativeCurrency(sourceChain, sourceToken);
-    transactoinObj.transactiionAggregator = selectedPath.aggregator;
-    transactoinObj.transactionAggregatorRequestId = selectedPath.aggergatorRequestId;
-    transactoinObj.transactionAggregatorGasLimit = selectedPath.gasLimit;
-    transactoinObj.transactionAggregatorGasPrice = selectedPath.gasPrice;
-    transactoinObj.transactionAggregatorRequestData = selectedPath.data;
-    transactoinObj.isMultiChain = selectedPath.isMultiChain;
-    transactoinObj.sourceTransactionData = selectedPath.sourceTransactionData;
-    transactoinObj.destinationTransactionData = selectedPath.destinationTransactionData;
-    transactoinObj.transactionSourceHash = '';
-    transactoinObj.transactionSourceStatus = TransactionStatus.ALLOWANCSTATE;
-    transactoinObj.transactionSourceSubStatus = 0;
+    const transactoinObj = transactionService.GetTransactionRequest(selectedPath, sendAmount, sendAmountUSDC, walletData.address, sourceChain, destiationChain, sourceToken, destiationToken, checkSourceTokenIsNativeCoin);
 
     //store active transaction in local storage and use when realod page
     sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, transactoinObj);
@@ -290,7 +245,6 @@ export default function SendUI(props: propsType) {
     dispatch(SetActiveTransactionA(transactoinObj));
     //addTransactionLog(transactoinObj);
     setStartBridging(true);
-    //getAllowance();
   }
 
   useEffect(() => {

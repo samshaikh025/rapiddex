@@ -30,6 +30,7 @@
     flex-direction: column;
     height: 100%;
     animation: slideOut 0.3s ease;
+    overflow: hidden;
 }
 
 .wallet-view.active {
@@ -68,6 +69,7 @@
     align-items: center;
     padding: 20px;
     border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0;
 }
 
 .wallet-address {
@@ -231,6 +233,7 @@
 .balance-section {
     padding: 24px;
     background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    flex-shrink: 0;
 }
 
 .total-balance {
@@ -340,6 +343,7 @@
     padding: 0 16px;
     border-bottom: 1px solid #f0f0f0;
     background: #fafafa;
+    flex-shrink: 0;
 }
 
 .tab {
@@ -385,34 +389,29 @@
 /* Tab Content */
 .tab-content {
     display: none;
-    flex: 1;
+    flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 16px;
     min-height: 0;
-    max-height: calc(100% - 280px);
+    /* Hide scrollbar but keep scroll functionality */
+    scrollbar-width: thin;
+    /* Firefox */
+    -ms-overflow-style: auto;
+    /* IE and Edge */
 }
 
 .tab-content.active {
-    display: block;
+    display: flex;
+    flex: 1;
+    min-height: 0;
 }
 
+/* Hide scrollbar for Chrome, Safari and Opera */
 .tab-content::-webkit-scrollbar {
-    width: 6px;
-}
-
-.tab-content::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
-}
-
-.tab-content::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 3px;
-}
-
-.tab-content::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 /* Token List */

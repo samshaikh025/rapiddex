@@ -119,20 +119,20 @@ export default function Exchangeui(props: propsType) {
     }, [walletData.address, props.sourceToken?.address, props.sourceChain?.chainId]);
 
     // Function to fetch token balance
-    const fetchTokenBalance = useCallback(async () => {
+    const fetchTokenBalance = useCallback(async (forceRefresh: boolean = false) => {
         if (!walletData.address || !props.sourceToken || !props.sourceChain ||
             props.sourceChain.chainId <= 0 || !props.sourceToken.address) {
             setSourceTokenBalance(null);
             return;
         }
 
-        // Prevent duplicate fetches
-        if (prevFetchKeyRef.current === fetchParamsKey && sourceTokenBalance !== null) {
+        // Prevent duplicate fetches (unless forced refresh)
+        if (!forceRefresh && prevFetchKeyRef.current === fetchParamsKey && sourceTokenBalance !== null) {
             console.log('Skipping duplicate fetch for:', fetchParamsKey);
             return;
         }
 
-        console.log('Fetching balance for:', fetchParamsKey);
+        console.log('Fetching balance for:', fetchParamsKey, forceRefresh ? '(forced refresh)' : '');
         setBalanceLoading(true);
 
         try {
@@ -166,6 +166,28 @@ export default function Exchangeui(props: propsType) {
             fetchTokenBalance();
         }
     }, [fetchParamsKey, fetchTokenBalance]);
+
+    // Auto-refresh balance every 60 seconds (1 minute)
+    useEffect(() => {
+        // Only set up auto-refresh if wallet is connected and tokens are selected
+        if (!walletData.address || !props.sourceToken || !props.sourceChain ||
+            props.sourceChain.chainId <= 0 || !props.sourceToken.address) {
+            return;
+        }
+
+        console.log('[ExchangeUI] Starting balance auto-refresh (60s interval)');
+
+        const refreshInterval = setInterval(() => {
+            console.log('[ExchangeUI] Auto-refreshing balance...');
+            fetchTokenBalance(true); // Force refresh to bypass duplicate check
+        }, 60000); // 60 seconds = 1 minute
+
+        // Cleanup interval on unmount or when dependencies change
+        return () => {
+            console.log('[ExchangeUI] Stopping balance auto-refresh');
+            clearInterval(refreshInterval);
+        };
+    }, [walletData.address, props.sourceToken?.address, props.sourceChain?.chainId, fetchTokenBalance]);
 
     const isNativeToken = useCallback((token: Tokens): boolean => {
         if (!token) return false;
@@ -397,6 +419,8 @@ export default function Exchangeui(props: propsType) {
     }
 
     async function exchange() {
+
+        debugger;
         //setStartBridging(true);
         //start showing processing loading message
         try {

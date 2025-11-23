@@ -245,7 +245,7 @@ export class TokenBalanceService {
     }
 
     /**
-     * Fallback to RPC for fetching balance
+     * Fallback to RPC for fetching balance (mainly for native tokens or single token queries)
      */
     private async fetchViaRPC(
         walletAddress: string,
@@ -253,7 +253,6 @@ export class TokenBalanceService {
         token: Tokens
     ): Promise<TokenBalance | null> {
         try {
-            console.log('Fetching balance via RPC');
             const balance = await this.utilityService.getBalance(
                 token.tokenIsNative,
                 token,
@@ -263,6 +262,11 @@ export class TokenBalanceService {
 
             const balanceNum = Number(balance[1]) || 0;
             const balanceUSD = balanceNum * (token.price || 0);
+
+            // Only return if balance > 0
+            if (balanceNum === 0) {
+                return null;
+            }
 
             const tokenBalance: TokenBalance = {
                 token: {
@@ -288,23 +292,16 @@ export class TokenBalanceService {
             });
 
             return tokenBalance;
-        } catch (rpcError) {
-            console.error('RPC fallback also failed:', rpcError);
-
-            // Return zero balance as last resort
-            return {
-                token: {
-                    ...token,
-                    balance: 0,
-                    balanceUSD: 0
-                },
-                balance: 0,
-                balanceRaw: '0',
-                balanceUSD: 0,
-                price: token.price || 0,
-                chainId: chain.chainId,
-                lastUpdated: Date.now()
-            };
+        } catch (rpcError: any) {
+            // Silently handle common errors (invalid token, no data, etc.)
+            const errorMsg = rpcError.message || rpcError.toString();
+            if (!errorMsg.includes('could not decode') &&
+                !errorMsg.includes('BUFFER_OVERRUN') &&
+                !errorMsg.includes('BAD_DATA')) {
+                // Only log unexpected errors
+                console.warn(`[TokenBalance] RPC error for ${token.symbol}:`, errorMsg.substring(0, 100));
+            }
+            return null;
         }
     }
 
@@ -334,7 +331,7 @@ export class TokenBalanceService {
 
             let payLoad = {
                 apiType: 'GET',
-                apiUrl: `wallet/portfolio?${params.toString()}`,
+                apiUrl: `/wallet/portfolio?${params.toString()}`,
                 apiData: null,
                 apiProvider: SwapProvider.MOBULA,
 
@@ -508,10 +505,13 @@ export class TokenBalanceService {
 
         let payLoad = {
             apiType: 'GET',
-            apiUrl: `wallet/portfolio?${params.toString()}`,
+            apiUrl: `/wallet/portfolio?${params.toString()}`,
             apiData: null,
             apiProvider: SwapProvider.MOBULA,
         }
+
+        console.log('[TokenBalance] Calling Mobula API:', this.apiUrlENV + '/api/common');
+        console.log('[TokenBalance] Payload:', JSON.stringify(payLoad, null, 2));
 
         const response = await fetch(this.apiUrlENV + '/api/common', {
             method: 'POST',
@@ -522,14 +522,25 @@ export class TokenBalanceService {
             body: JSON.stringify(payLoad),
         });
 
+        console.log('[TokenBalance] Mobula response status:', response.status);
+
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[TokenBalance] Mobula API error:', response.status, errorText);
             throw new Error(`Mobula API error: ${response.status}`);
         }
 
         let data = await response.json();
-        data = data.Data as MobulaResponse
+        console.log('[TokenBalance] Mobula raw response:', JSON.stringify(data).substring(0, 500));
 
-        console.log('[TokenBalance] Mobula API response received');
+        data = data.Data as MobulaResponse;
+
+        if (!data || !data.data || !data.data.assets) {
+            console.error('[TokenBalance] Mobula returned invalid data structure');
+            throw new Error('Invalid Mobula response');
+        }
+
+        console.log('[TokenBalance] Mobula API found', data.data.assets.length, 'assets');
 
         return this.transformMobulaResponse(data, chain.chainId);
     }
@@ -540,7 +551,8 @@ export class TokenBalanceService {
     private async fetchFromMulticall3(
         walletAddress: string,
         chain: Chains,
-        tokens?: Tokens[]
+        tokens?: Tokens[],
+        onProgress?: (balances: TokenBalance[]) => void
     ): Promise<TokenBalance[]> {
         if (!tokens || tokens.length === 0) {
             console.log('[TokenBalance] Multicall3 requires token list - skipping');
@@ -548,10 +560,31 @@ export class TokenBalanceService {
         }
 
         try {
+            // Create progress callback that converts to TokenBalance format
+            const progressCallback = onProgress ? (multicallBalances: any[]) => {
+                console.log(`[TokenBalance] 🔄 Progress callback received ${multicallBalances.length} balances from Multicall3`);
+                const converted = multicallBalances.map(mb => ({
+                    token: {
+                        ...mb.token,
+                        balance: mb.balance,
+                        balanceUSD: mb.balance * (mb.token.price || 0)
+                    },
+                    balance: mb.balance,
+                    balanceRaw: mb.balanceRaw,
+                    balanceUSD: mb.balance * (mb.token.price || 0),
+                    price: mb.token.price || 0,
+                    chainId: chain.chainId,
+                    lastUpdated: Date.now()
+                }));
+                console.log(`[TokenBalance] 📤 Forwarding ${converted.length} converted balances to UI`);
+                onProgress(converted);
+            } : undefined;
+
             const multicallBalances = await this.multicall3Service.getTokenBalances(
                 walletAddress,
                 chain,
-                tokens
+                tokens,
+                progressCallback
             );
 
             // Convert Multicall3 response to TokenBalance format
@@ -575,55 +608,29 @@ export class TokenBalanceService {
     }
 
     /**
-     * Public method to fetch balances for specific tokens with full fallback chain
-     * Fallback: Mobula API → Multicall3 → Individual RPC
+     * Public method to fetch balances for specific tokens using Multicall3 ONLY
+     * NO Mobula dependency
+     * Supports progressive updates via onProgress callback
      */
     public async getTokenBalancesWithFallback(
         walletAddress: string,
         chain: Chains,
-        tokens: Tokens[]
+        tokens: Tokens[],
+        onProgress?: (balances: TokenBalance[]) => void
     ): Promise<TokenBalance[]> {
-        console.log(`[TokenBalance] Fetching balances for ${tokens.length} tokens...`);
+        console.log(`[TokenBalance] Fetching balances for ${tokens.length} tokens using Multicall3...`);
+        console.log(`[TokenBalance] Chain: ${chain.chainName} (${chain.chainId})`);
+        console.log(`[TokenBalance] RPC URLs available:`, Array.isArray(chain.rpcUrl) ? chain.rpcUrl.length : 'NOT AN ARRAY!');
 
-        // Try Mobula first
+        // Use Multicall3 directly with progress updates
         try {
-            const balances = await this.fetchFromMobulaAPI(walletAddress, chain);
-            if (balances && balances.length > 0) {
-                console.log(`[TokenBalance] Mobula API succeeded with ${balances.length} balances`);
-                return balances;
-            }
-        } catch (error) {
-            console.error('[TokenBalance] Mobula API failed:', error);
-        }
-
-        // Try Multicall3
-        console.log('[TokenBalance] Trying Multicall3 with token list...');
-        try {
-            const balances = await this.fetchFromMulticall3(walletAddress, chain, tokens);
-            if (balances && balances.length > 0) {
-                console.log(`[TokenBalance] Multicall3 succeeded with ${balances.length} balances`);
-                return balances;
-            }
+            const balances = await this.fetchFromMulticall3(walletAddress, chain, tokens, onProgress);
+            console.log(`[TokenBalance] Multicall3 completed with ${balances.length} balances`);
+            return balances;
         } catch (error) {
             console.error('[TokenBalance] Multicall3 failed:', error);
+            return [];
         }
-
-        // Last resort: individual RPC calls
-        console.log('[TokenBalance] Falling back to individual RPC calls...');
-        const balances: TokenBalance[] = [];
-        for (const token of tokens) {
-            try {
-                const balance = await this.fetchViaRPC(walletAddress, chain, token);
-                if (balance && balance.balance > 0) {
-                    balances.push(balance);
-                }
-            } catch (error) {
-                console.error(`[TokenBalance] RPC failed for ${token.symbol}:`, error);
-            }
-        }
-
-        console.log(`[TokenBalance] RPC fallback returned ${balances.length} balances`);
-        return balances;
     }
 
     /**

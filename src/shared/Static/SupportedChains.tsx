@@ -4,10 +4,10 @@ export const SupportedChains = [
         "name": "Ethereum Mainnet",
         "chainId": 1,
         "supportedRPC": [
-            "https://mainnet.infura.io/v3/187e3c93df364840824e3274e58e402c",
+            "https://ethereum.publicnode.com",
             "https://eth.llamarpc.com",
             "https://rpc.ankr.com/eth",
-            "https://ethereum.publicnode.com",
+
             "https://1rpc.io/eth",
             "https://eth.drpc.org"
         ],
@@ -33,7 +33,7 @@ export const SupportedChains = [
         "name": "BNB Smart Chain Mainnet",
         "chainId": 56,
         "supportedRPC": [
-            "https://bsc-mainnet.infura.io/v3/187e3c93df364840824e3274e58e402c",
+
             "https://bsc-dataseed.binance.org",
             "https://bsc-dataseed1.defibit.io",
             "https://bsc-dataseed1.ninicoin.io",
@@ -61,7 +61,7 @@ export const SupportedChains = [
         "name": "Arbitrum One Mainnet",
         "chainId": 42161,
         "supportedRPC": [
-            "https://arbitrum-mainnet.infura.io/v3/187e3c93df364840824e3274e58e402c",
+
             "https://arb1.arbitrum.io/rpc",
             "https://rpc.ankr.com/arbitrum",
             "https://arbitrum.publicnode.com",
@@ -88,7 +88,7 @@ export const SupportedChains = [
         "name": "Optimism Mainnet",
         "chainId": 10,
         "supportedRPC": [
-            "https://optimism-mainnet.infura.io/v3/187e3c93df364840824e3274e58e402c",
+
             "https://mainnet.optimism.io",
             "https://rpc.ankr.com/optimism",
             "https://optimism.publicnode.com",
@@ -115,7 +115,7 @@ export const SupportedChains = [
         "name": "Base Mainnet",
         "chainId": 8453,
         "supportedRPC": [
-            "https://base-mainnet.infura.io/v3/187e3c93df364840824e3274e58e402c",
+
             "https://mainnet.base.org",
             "https://base.llamarpc.com",
             "https://rpc.ankr.com/base",

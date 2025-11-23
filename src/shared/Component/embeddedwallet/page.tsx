@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useAccount, useDisconnect, useSwitchChain } from 'wagmi';
 import { TokenBalanceService } from '@/shared/Services/TokenBalanceService';
 import { UtilityService } from '@/shared/Services/UtilityService';
+import { CryptoService } from '@/shared/Services/CryptoService';
 import { Chains, Tokens, TransactionRequestoDto, WalletConnectData } from '@/shared/Models/Common.model';
 import { SupportedChains } from '@/shared/Static/SupportedChains';
 
@@ -40,15 +41,35 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
     const [loading, setLoading] = useState(false);
     const [totalBalance, setTotalBalance] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
-    const [currentChain, setCurrentChain] = useState<any>(null);
+    // Store selected chain in localStorage to persist across opens/closes
+    const [currentChain, setCurrentChain] = useState<any>(() => {
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('embeddedWallet_selectedChain');
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    return SupportedChains.find((c: any) => c.chainId === parsed.chainId) || null;
+                } catch (e) {
+                    return null;
+                }
+            }
+        }
+        return null;
+    });
     const [isChainSupported, setIsChainSupported] = useState(true);
     const [isFavorite, setIsFavorite] = useState(false);
     const [showChainSelector, setShowChainSelector] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [showToast, setShowToast] = useState(false);
+    const [availableTokens, setAvailableTokens] = useState<Tokens[]>([]); // All available tokens for current chain
+    const [loadingTokens, setLoadingTokens] = useState(false);
+
+    // AbortController to cancel ongoing requests when switching chains
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     const tokenBalanceService = TokenBalanceService.getInstance();
     const utilityService = new UtilityService();
+    const cryptoService = new CryptoService();
     const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
     // Use passed walletAddress or fall back to Redux walletData
@@ -65,29 +86,93 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
     } = useSwitchChain();
     const allAvailableChains = useSelector((state: any) => state.AvailableChains);
     
-    // Check if connected chain is supported and set current chain
+    // Save selected chain to localStorage whenever it changes
     useEffect(() => {
-        if (walletData.chainId) {
-            const supportedChain = SupportedChains.find((chain: any) => chain.chainId === walletData.chainId);
+        if (currentChain && typeof window !== 'undefined') {
+            localStorage.setItem('embeddedWallet_selectedChain', JSON.stringify({ chainId: currentChain.chainId }));
+        }
+    }, [currentChain]);
 
-            if (supportedChain) {
-                setCurrentChain(supportedChain);
-                setIsChainSupported(true);
-            } else {
-                setCurrentChain(null);
-                setIsChainSupported(false);
-                setAllTokenBalances([]);
-                setTotalBalance(0);
+    // Load chain data when wallet opens
+    useEffect(() => {
+        const loadChainData = async () => {
+            // Don't run if wallet is not open
+            if (!isOpen) {
+                return;
             }
-        }
-    }, [walletData.chainId]);
 
-    // Load all token balances when wallet or chain changes
-    useEffect(() => {
-        if (activeWalletAddress && currentChain && isChainSupported && isOpen) {
-            loadAllTokenBalances();
-        }
-    }, [activeWalletAddress, currentChain, isChainSupported, isOpen]);
+            console.log('[EmbeddedWallet] Wallet opened');
+
+            // Priority 1: Use currentChain if already set (from localStorage or previous selection)
+            if (currentChain) {
+                console.log(`[EmbeddedWallet] Using remembered chain: ${currentChain.name} (${currentChain.chainId})`);
+                console.log(`[EmbeddedWallet] Active wallet address: ${activeWalletAddress || 'NOT SET'}`);
+
+                const tokens = await getCoinsByChain(currentChain);
+                console.log(`[EmbeddedWallet] Loaded ${tokens.length} tokens`);
+
+                if (!activeWalletAddress) {
+                    console.warn('[EmbeddedWallet] No wallet address - skipping balance fetch');
+                    return;
+                }
+
+                if (tokens.length > 0) {
+                    console.log(`[EmbeddedWallet] Calling loadAllTokenBalances with ${tokens.length} tokens`);
+                    await loadAllTokenBalances(tokens, currentChain);
+                } else {
+                    console.warn('[EmbeddedWallet] No tokens loaded - skipping balance fetch');
+                }
+                return;
+            }
+
+            // Priority 2: Use wallet's connected chain
+            if (walletData.chainId && walletData.chainId > 0) {
+                let supportedChain = SupportedChains.find((chain: any) => chain.chainId === walletData.chainId);
+
+                if (supportedChain) {
+                    console.log(`[EmbeddedWallet] Using wallet's connected chain: ${supportedChain.name} (${supportedChain.chainId})`);
+                    console.log(`[EmbeddedWallet] Active wallet address: ${activeWalletAddress || 'NOT SET'}`);
+                    setCurrentChain(supportedChain);
+                    setIsChainSupported(true);
+
+                    const tokens = await getCoinsByChain(supportedChain);
+
+                    if (!activeWalletAddress) {
+                        console.warn('[EmbeddedWallet] No wallet address - skipping balance fetch');
+                        return;
+                    }
+
+                    if (tokens.length > 0) {
+                        await loadAllTokenBalances(tokens, supportedChain);
+                    }
+                    return;
+                }
+            }
+
+            // Priority 3: Use first supported chain as fallback
+            console.log('[EmbeddedWallet] Using default chain (first supported)');
+            console.log(`[EmbeddedWallet] Active wallet address: ${activeWalletAddress || 'NOT SET'}`);
+            const defaultChain = SupportedChains[0];
+            setCurrentChain(defaultChain);
+            setIsChainSupported(true);
+
+            const tokens = await getCoinsByChain(defaultChain);
+
+            if (!activeWalletAddress) {
+                console.warn('[EmbeddedWallet] No wallet address - skipping balance fetch');
+                return;
+            }
+
+            if (tokens.length > 0) {
+                await loadAllTokenBalances(tokens, defaultChain);
+            }
+        };
+
+        loadChainData();
+    }, [isOpen, activeWalletAddress]);
+
+    // Balances are loaded in the main useEffect when wallet opens
+    // No need for a separate effect here
 
     // Reset view when wallet closes
     useEffect(() => {
@@ -116,77 +201,368 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
         };
     }, [isOpen, onClose]);
 
-    const loadAllTokenBalances = async () => {
-        if (!activeWalletAddress || !currentChain) return;
+    // Auto-refresh balances every 60 seconds when wallet is open
+    useEffect(() => {
+        if (!isOpen || !activeWalletAddress || !currentChain) {
+            return;
+        }
+
+        console.log('[EmbeddedWallet] Starting 60-second auto-refresh');
+
+        const refreshInterval = setInterval(async () => {
+            console.log('[EmbeddedWallet] Auto-refreshing balances...');
+
+            // Don't refresh if already loading or manually refreshing
+            if (loading || refreshing) {
+                console.log('[EmbeddedWallet] Skipping auto-refresh (already loading)');
+                return;
+            }
+
+            // Clear cache to get fresh balances
+            tokenBalanceService.clearCache(activeWalletAddress, currentChain.chainId);
+
+            // Reload balances with current tokens
+            if (availableTokens.length > 0) {
+                await loadAllTokenBalances(availableTokens, currentChain);
+            }
+        }, 60000); // 60 seconds
+
+        return () => {
+            console.log('[EmbeddedWallet] Stopping auto-refresh');
+            clearInterval(refreshInterval);
+        };
+    }, [isOpen, activeWalletAddress, currentChain?.chainId, availableTokens.length]);
+
+    // Load all available tokens for the current chain (similar to Token UI)
+    const getCoinsByChain = async (chain: any): Promise<Tokens[]> => {
+        if (!chain || chain.chainId <= 0) {
+            console.log('[EmbeddedWallet] Invalid chain provided to getCoinsByChain');
+            return [];
+        }
+
+        // Check cache first
+        const cacheKey = `tokenList_chain_${chain.chainId}`;
+        const cacheExpiry = 3600000; // 1 hour cache
+
+        if (typeof window !== 'undefined') {
+            try {
+                const cached = localStorage.getItem(cacheKey);
+                if (cached) {
+                    const { tokens, timestamp } = JSON.parse(cached);
+                    const age = Date.now() - timestamp;
+
+                    if (age < cacheExpiry) {
+                        console.log(`[EmbeddedWallet] Using cached token list for ${chain.name} (age: ${Math.round(age / 1000)}s)`);
+                        console.log(`[EmbeddedWallet] Cached token count: ${tokens?.length || 0}`);
+
+                        // If cache is empty or invalid, don't use it - fetch fresh
+                        if (!tokens || tokens.length === 0) {
+                            console.warn(`[EmbeddedWallet] ⚠️ Cache is empty! Clearing and fetching fresh...`);
+                            localStorage.removeItem(cacheKey);
+                        } else {
+                            setAvailableTokens(tokens);
+                            return tokens;
+                        }
+                    } else {
+                        console.log(`[EmbeddedWallet] Cache expired for ${chain.name} (age: ${Math.round(age / 1000)}s)`);
+                    }
+                }
+            } catch (e) {
+                console.warn('[EmbeddedWallet] Failed to read token cache:', e);
+            }
+        }
+
+        setLoadingTokens(true);
+        console.log(`[EmbeddedWallet] Fetching fresh token list for chain: ${chain.name} (${chain.chainId})`);
+
+        try {
+            const chainForService = new Chains();
+            chainForService.chainId = chain.chainId;
+            chainForService.chainName = chain.name;
+            chainForService.rpcUrl = chain.supportedRPC;
+
+            // Fetch all available tokens for this chain
+            const tokens = await cryptoService.GetAllAvailableCoinsRapidX(chainForService);
+            console.log(`[EmbeddedWallet] GetAllAvailableCoinsRapidX returned ${tokens?.length || 0} tokens`);
+
+            if (!tokens || tokens.length === 0) {
+                console.error(`[EmbeddedWallet] ❌ No tokens returned from GetAllAvailableCoinsRapidX for ${chain.name}`);
+                setAvailableTokens([]);
+                setLoadingTokens(false);
+                return [];
+            }
+
+            // CRITICAL: Filter to only include tokens that belong to this chain
+            const correctChainTokens = tokens.filter(token => {
+                // If token has chainId, it must match
+                if (token.chainId && token.chainId !== chain.chainId) {
+                    return false;
+                }
+                // Set chainId if not present
+                if (!token.chainId) {
+                    token.chainId = chain.chainId;
+                }
+                return true;
+            });
+
+            console.log(`[EmbeddedWallet] Filtered ${tokens.length} → ${correctChainTokens.length} tokens for chain ${chain.chainId}`);
+
+            // Use ALL tokens - we'll check all of them for balances
+            // Multicall3 can handle thousands of tokens efficiently with batching
+            const tokensToUse = correctChainTokens;
+
+            console.log(`[EmbeddedWallet] Will check balances for ALL ${tokensToUse.length} tokens`);
+
+            // Debug: Check if native token is in the list
+            const hasNative = tokensToUse.some(t => t.tokenIsNative === true);
+            const nativeToken = tokensToUse.find(t => t.tokenIsNative === true);
+            console.log(`[EmbeddedWallet] Native token in list: ${hasNative ? 'YES' : 'NO'}`, nativeToken ? `(${nativeToken.symbol})` : '');
+            console.log(`[EmbeddedWallet] First 3 tokens:`, tokensToUse.slice(0, 3).map(t => ({symbol: t.symbol, native: t.tokenIsNative, addr: t.address?.substring(0, 10)})));
+
+            // Save to cache (only if we have tokens)
+            if (tokensToUse.length > 0 && typeof window !== 'undefined') {
+                try {
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                        tokens: tokensToUse,
+                        timestamp: Date.now()
+                    }));
+                    console.log(`[EmbeddedWallet] ✅ Cached ${tokensToUse.length} tokens for ${chain.name}`);
+                } catch (e) {
+                    console.warn('[EmbeddedWallet] Failed to cache token list:', e);
+                }
+            } else if (tokensToUse.length === 0) {
+                console.warn(`[EmbeddedWallet] ⚠️ Not caching empty token list for ${chain.name}`);
+            }
+
+            setAvailableTokens(tokensToUse);
+            return tokensToUse;
+        } catch (error) {
+            console.error('[EmbeddedWallet] Error loading tokens:', error);
+            setAvailableTokens([]);
+            return [];
+        } finally {
+            setLoadingTokens(false);
+        }
+    };
+
+    const loadAllTokenBalances = async (tokensToUse?: Tokens[], chainToUse?: any) => {
+        // Use provided chain or fall back to currentChain
+        const targetChain = chainToUse || currentChain;
+
+        if (!activeWalletAddress || !targetChain) {
+            console.log('[EmbeddedWallet] Cannot load balances - missing wallet or chain');
+            return;
+        }
+
+        console.log(`[EmbeddedWallet] ════════════════════════════════════════`);
+        console.log(`[EmbeddedWallet] LOADING BALANCES FOR: ${targetChain.name}`);
+        console.log(`[EmbeddedWallet] Chain ID: ${targetChain.chainId}`);
+        console.log(`[EmbeddedWallet] Wallet: ${activeWalletAddress}`);
+        console.log(`[EmbeddedWallet] Tokens passed: ${tokensToUse ? tokensToUse.length : 'none (will use availableTokens)'}`);
+        console.log(`[EmbeddedWallet] Available tokens in state: ${availableTokens.length}`);
+        console.log(`[EmbeddedWallet] RPC Count: ${targetChain.supportedRPC?.length || 0}`);
+        console.log(`[EmbeddedWallet] ════════════════════════════════════════`);
+
+        // Try to load cached balances first for instant display
+        let cacheLoaded = false;
+        if (typeof window !== 'undefined') {
+            try {
+                const balanceCacheKey = `balances_${activeWalletAddress}_chain_${targetChain.chainId}`;
+                const cached = localStorage.getItem(balanceCacheKey);
+                if (cached) {
+                    const { balances, timestamp } = JSON.parse(cached);
+                    const age = Date.now() - timestamp;
+                    const cacheExpiry = 60000; // 1 minute cache for balances
+
+                    if (age < cacheExpiry) {
+                        console.log(`[EmbeddedWallet] 📦 Loading cached balances (${Math.round(age / 1000)}s old)`);
+                        setAllTokenBalances(balances);
+                        const total = balances.reduce((sum: number, token: any) => sum + (token.balanceUSD || 0), 0);
+                        setTotalBalance(total);
+                        cacheLoaded = true;
+                        console.log(`[EmbeddedWallet] ✅ Displayed ${balances.length} cached tokens, now fetching fresh data...`);
+                    } else {
+                        console.log(`[EmbeddedWallet] Cache expired (${Math.round(age / 1000)}s old), fetching fresh...`);
+                    }
+                }
+            } catch (e) {
+                console.warn('[EmbeddedWallet] Failed to load cached balances:', e);
+            }
+        }
 
         setLoading(true);
-        console.log('[EmbeddedWallet] Loading balances with fallback system...');
+
+        // Validate that tokensToUse (if provided) match the target chain
+        if (tokensToUse && tokensToUse.length > 0) {
+            const firstToken = tokensToUse[0];
+            if (firstToken.chainId && firstToken.chainId !== targetChain.chainId) {
+                console.error(`[EmbeddedWallet] ❌ CHAIN MISMATCH! Tokens are for chain ${firstToken.chainId}, but target is ${targetChain.chainId}!`);
+                setLoading(false);
+                return;
+            }
+        }
+
+        // Keep track of all balances as they come in
+        const accumulatedBalances: TokenBalance[] = [];
 
         try {
             // Create chain object for TokenBalanceService
             const chainForService = new Chains();
-            chainForService.chainId = currentChain.chainId;
-            chainForService.chainName = currentChain.name;
-            chainForService.rpcUrl = currentChain.supportedRPC;
+            chainForService.chainId = targetChain.chainId;
+            chainForService.chainName = targetChain.name;
+            chainForService.rpcUrl = targetChain.supportedRPC; // This is the RPC array from SupportedChains
+
+            console.log(`[EmbeddedWallet] Chain for balance fetch:`, {
+                name: chainForService.chainName,
+                chainId: chainForService.chainId,
+                rpcCount: Array.isArray(chainForService.rpcUrl) ? chainForService.rpcUrl.length : 'NOT ARRAY',
+                firstRpc: Array.isArray(chainForService.rpcUrl) ? chainForService.rpcUrl[0] : chainForService.rpcUrl
+            });
 
             // First, get the native token
             const nativeToken = new Tokens();
-            nativeToken.address = currentChain.nativeToken.address;
-            nativeToken.symbol = currentChain.nativeToken.symbol;
-            nativeToken.name = currentChain.nativeToken.name;
-            nativeToken.tokenIsNative = currentChain.nativeToken.tokenIsNative;
-            nativeToken.decimal = currentChain.nativeToken.decimal;
-            nativeToken.chainId = currentChain.chainId;
-            nativeToken.logoURI = currentChain.nativeToken.logoURI;
+            nativeToken.address = targetChain.nativeToken.address;
+            nativeToken.symbol = targetChain.nativeToken.symbol;
+            nativeToken.name = targetChain.nativeToken.name;
+            nativeToken.tokenIsNative = targetChain.nativeToken.tokenIsNative;
+            nativeToken.decimal = targetChain.nativeToken.decimal;
+            nativeToken.chainId = targetChain.chainId;
+            nativeToken.logoURI = targetChain.nativeToken.logoURI;
 
-            let allTokens: TokenBalance[] = [];
+            // Progress callback - updates UI as balances come in
+            const handleProgressUpdate = (newBalances: TokenBalance[]) => {
+                console.log(`[EmbeddedWallet] 🔄 PROGRESS UPDATE: +${newBalances.length} tokens`);
+                console.log(`[EmbeddedWallet] New tokens:`, newBalances.map(t => t.token.symbol));
 
-            // Try Mobula first (gets all tokens with balances)
-            try {
-                console.log('[EmbeddedWallet] Trying Mobula API...');
-                allTokens = await tokenBalanceService.getTokenBalances(
-                    activeWalletAddress,
-                    chainForService,
-                    [] // Empty array gets all balances from Mobula
-                );
-
-                if (allTokens && allTokens.length > 0) {
-                    console.log(`[EmbeddedWallet] Mobula succeeded with ${allTokens.length} tokens`);
-                } else {
-                    console.log('[EmbeddedWallet] Mobula returned empty, trying Multicall3 fallback...');
-                    throw new Error('Mobula returned no balances');
-                }
-            } catch (mobulaError) {
-                console.error('[EmbeddedWallet] Mobula failed:', mobulaError);
-                console.log('[EmbeddedWallet] Falling back to Multicall3 + RPC...');
-
-                // Fallback: Use Multicall3 with native token at minimum
-                try {
-                    allTokens = await tokenBalanceService.getTokenBalancesWithFallback(
-                        activeWalletAddress,
-                        chainForService,
-                        [nativeToken]
+                // Merge new balances with accumulated ones (avoid duplicates)
+                newBalances.forEach(newBal => {
+                    const exists = accumulatedBalances.find(b =>
+                        b.token.address.toLowerCase() === newBal.token.address.toLowerCase() &&
+                        b.token.symbol === newBal.token.symbol
                     );
-                    console.log(`[EmbeddedWallet] Fallback succeeded with ${allTokens.length} tokens`);
-                } catch (fallbackError) {
-                    console.error('[EmbeddedWallet] All methods failed:', fallbackError);
-                    allTokens = [];
-                }
-            }
+                    if (!exists) {
+                        accumulatedBalances.push(newBal);
+                    }
+                });
 
-            if (allTokens.length > 0) {
-                // Sort tokens by balance (highest first)
-                const sortedTokens = allTokens.sort((a, b) => b.balanceUSD - a.balanceUSD);
-                setAllTokenBalances(sortedTokens);
+                // Sort tokens by balance USD
+                const sortedTokens = [...accumulatedBalances].sort((a, b) => b.balanceUSD - a.balanceUSD);
 
                 // Calculate total balance
                 const total = sortedTokens.reduce((sum, token) => sum + (token.balanceUSD || 0), 0);
+
+                console.log(`[EmbeddedWallet] 📊 Current totals: ${accumulatedBalances.length} tokens, $${total.toFixed(2)}`);
+
+                // STOP LOADING SKELETON on first balance arrival
+                if (newBalances.length > 0) {
+                    console.log('[EmbeddedWallet] ✅ First balances arrived - stopping skeleton loader');
+                    setLoading(false);
+                }
+
+                // Update token list immediately - PROGRESSIVE DISPLAY
+                setAllTokenBalances(sortedTokens);
+
+                // Update total balance
                 setTotalBalance(total);
-                console.log(`[EmbeddedWallet] Total balance: $${total.toFixed(2)}`);
-            } else {
+
+                console.log(`[EmbeddedWallet] ✅ UI updated with ${accumulatedBalances.length} total tokens displayed`);
+            };
+
+            let allTokens: TokenBalance[] = [];
+
+            // STRATEGY: Try Mobula first (gets ALL tokens with balances), then fallback to Multicall3
+            try {
+                // Create new AbortController for this chain
+                abortControllerRef.current = new AbortController();
+
+                // Method 1: Try Mobula API first with 2-second timeout
+                console.log(`[EmbeddedWallet] Trying Mobula API (2s timeout)...`);
+
+                const mobulaPromise = tokenBalanceService.getTokenBalances(
+                    activeWalletAddress,
+                    chainForService,
+                    [] // Empty array = fetch ALL tokens with balances from Mobula
+                );
+
+                const timeoutPromise = new Promise<any[]>((resolve) =>
+                    setTimeout(() => {
+                        console.log('[EmbeddedWallet] ⏱️ Mobula timeout (2s) - switching to Multicall3');
+                        resolve([]);
+                    }, 2000)
+                );
+
+                allTokens = await Promise.race([mobulaPromise, timeoutPromise]);
+
+                if (allTokens && allTokens.length > 0) {
+                    console.log(`[EmbeddedWallet] ✅ Mobula succeeded with ${allTokens.length} balances`);
+
+                    // Update UI with Mobula results and STOP LOADING immediately
+                    handleProgressUpdate(allTokens);
+                    setLoading(false); // Stop loading skeleton
+                } else {
+                    console.log(`[EmbeddedWallet] Mobula returned no balances, falling back to Multicall3...`);
+
+                    // Method 2: Fallback to Multicall3 with token list
+                    let tokensToCheck = tokensToUse || availableTokens;
+
+                    // ALWAYS ensure native token is included
+                    const hasNativeToken = tokensToCheck.some(t =>
+                        t.tokenIsNative === true ||
+                        (t.address && t.address.toLowerCase() === nativeToken.address.toLowerCase())
+                    );
+
+                    if (!hasNativeToken) {
+                        console.log(`[EmbeddedWallet] ⚠️ Native token ${nativeToken.symbol} NOT in token list, adding it`);
+                        tokensToCheck = [nativeToken, ...tokensToCheck];
+                    } else {
+                        console.log(`[EmbeddedWallet] ✅ Native token ${nativeToken.symbol} already in token list`);
+                    }
+
+                    // Fallback to native token only if no tokens at all
+                    if (tokensToCheck.length === 0) {
+                        tokensToCheck = [nativeToken];
+                    }
+
+                    console.log(`[EmbeddedWallet] Using Multicall3 with ${tokensToCheck.length} tokens (including native: ${nativeToken.symbol})`);
+                    console.log(`[EmbeddedWallet] Chain RPC URLs:`, chainForService.rpcUrl);
+
+                    allTokens = await tokenBalanceService.getTokenBalancesWithFallback(
+                        activeWalletAddress,
+                        chainForService,
+                        tokensToCheck,
+                        handleProgressUpdate // Pass progress callback for real-time updates
+                    );
+                    console.log(`[EmbeddedWallet] Multicall3 returned ${allTokens.length} balances`);
+                }
+            } catch (fallbackError) {
+                console.error('[EmbeddedWallet] Balance fetch failed:', fallbackError);
+                allTokens = [];
+            }
+
+            // Final update (in case progress wasn't called)
+            if (allTokens.length > 0 && accumulatedBalances.length === 0) {
+                handleProgressUpdate(allTokens);
+            }
+
+            if (accumulatedBalances.length === 0 && allTokens.length === 0) {
                 console.log('[EmbeddedWallet] No tokens with balances found');
                 setAllTokenBalances([]);
                 setTotalBalance(0);
+            }
+
+            // Cache balances in localStorage for instant loading next time
+            if (allTokens.length > 0 && typeof window !== 'undefined') {
+                try {
+                    const balanceCacheKey = `balances_${activeWalletAddress}_chain_${targetChain.chainId}`;
+                    const cacheData = {
+                        balances: allTokens,
+                        timestamp: Date.now()
+                    };
+                    localStorage.setItem(balanceCacheKey, JSON.stringify(cacheData));
+                    console.log(`[EmbeddedWallet] Cached ${allTokens.length} balances for quick reload`);
+                } catch (e) {
+                    console.warn('[EmbeddedWallet] Failed to cache balances:', e);
+                }
             }
         } catch (error) {
             console.error('[EmbeddedWallet] Error loading token balances:', error);
@@ -199,39 +575,125 @@ export default function EmbeddedWallet({ isOpen, onClose, walletAddress, classNa
 
     const refreshBalance = async () => {
         if (!activeWalletAddress || !currentChain) return;
+
+        console.log('[EmbeddedWallet] Manual refresh triggered - clearing all caches...');
         setRefreshing(true);
+
+        // Clear balance cache
         tokenBalanceService.clearCache(activeWalletAddress, currentChain.chainId);
-        setTimeout(async () => {
-            await loadAllTokenBalances();
+
+        // Clear token list cache from localStorage
+        const tokenCacheKey = `tokenList_chain_${currentChain.chainId}`;
+        const balanceCacheKey = `balances_${activeWalletAddress}_chain_${currentChain.chainId}`;
+        if (typeof window !== 'undefined') {
+            try {
+                localStorage.removeItem(tokenCacheKey);
+                localStorage.removeItem(balanceCacheKey);
+                console.log('[EmbeddedWallet] Cleared token list and balance caches');
+            } catch (e) {
+                console.warn('[EmbeddedWallet] Failed to clear caches:', e);
+            }
+        }
+
+        // Clear current balances
+        setAllTokenBalances([]);
+        setTotalBalance(0);
+
+        // Reload fresh token list and balances
+        try {
+            console.log('[EmbeddedWallet] Reloading fresh token list...');
+            const tokens = await getCoinsByChain(currentChain);
+
+            console.log('[EmbeddedWallet] Reloading fresh balances...');
+            await loadAllTokenBalances(tokens, currentChain);
+
+            displayToast('Balances refreshed!');
+        } catch (error) {
+            console.error('[EmbeddedWallet] Refresh failed:', error);
+            displayToast('Refresh failed');
+        } finally {
             setRefreshing(false);
-            displayToast('Balance updated!');
-        }, 2000);
+        }
     };
 
     const switchChainSelectedByUSer = async (newChain: any) => {
-        if (newChain.chainId === currentChain?.chainId) return;
-        //swich chain
-        // await switchChain({ chainId: newChain.chainId });
-        
-        // //get switched chain infor from allChains and update redux walletData state
-        // let selectedChain = allAvailableChains.length > 0 ? allAvailableChains?.find(x => x.chainId == newChain?.chainId) : null;
-        // if (selectedChain) {
-        //     dispatch(SetWalletDataA({
-        //         ...walletData,
-        //         chainId: selectedChain?.chainId,
-        //         chainName: selectedChain?.chainName,
-        //         chainLogo: selectedChain?.logoURI,
-        //         //blockExplorer: newChain.blockExplorers?.default
-        //     }));
-        // }
+        if (!newChain || !newChain.chainId) {
+            console.error('[EmbeddedWallet] Invalid chain provided');
+            return;
+        }
 
-        setCurrentChain(newChain);
-        setIsChainSupported(true);
-        setLoading(true);
+        if (newChain.chainId === currentChain?.chainId) {
+            console.log(`[EmbeddedWallet] Already on ${newChain.name}, skipping`);
+            setShowChainSelector(false);
+            return;
+        }
+
+        console.log(`[EmbeddedWallet] ========== CHAIN SWITCH: ${currentChain?.name || 'none'} → ${newChain.name} (${newChain.chainId}) ==========`);
+
+        // CRITICAL: Abort all ongoing requests from previous chain
+        if (abortControllerRef.current) {
+            console.log('[EmbeddedWallet] ⚠️ Aborting previous chain requests');
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+
+        // STEP 1: Clear ALL old data IMMEDIATELY and set new chain FIRST
+        setShowChainSelector(false);
         setAllTokenBalances([]);
         setTotalBalance(0);
-        setShowChainSelector(false);
-        displayToast(`Switched to ${newChain.name}`);
+        setAvailableTokens([]);
+        setLoading(true);
+
+        // Clear cache for both old and new chains
+        if (activeWalletAddress) {
+            if (currentChain) {
+                console.log(`[EmbeddedWallet] Clearing cache for old chain ${currentChain.chainId}`);
+                tokenBalanceService.clearCache(activeWalletAddress, currentChain.chainId);
+            }
+            console.log(`[EmbeddedWallet] Clearing cache for new chain ${newChain.chainId}`);
+            tokenBalanceService.clearCache(activeWalletAddress, newChain.chainId);
+        }
+
+        // CRITICAL: Set new chain BEFORE any async operations
+        setCurrentChain(newChain);
+        setIsChainSupported(true);
+
+        // Wait for state to update
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        if (!activeWalletAddress) {
+            console.warn('[EmbeddedWallet] No wallet connected');
+            setLoading(false);
+            displayToast(`Switched to ${newChain.name}`);
+            return;
+        }
+
+        try {
+            // STEP 2: Load tokens for NEW chain
+            console.log(`[EmbeddedWallet] Loading ${newChain.name} tokens...`);
+            const tokens = await getCoinsByChain(newChain);
+            console.log(`[EmbeddedWallet] ✓ Loaded ${tokens.length} tokens for ${newChain.name}`);
+            console.log(`[EmbeddedWallet] Token chainIds check:`, tokens.slice(0, 5).map(t => ({ symbol: t.symbol, chainId: t.chainId })));
+
+            if (tokens.length === 0) {
+                console.warn('[EmbeddedWallet] No tokens loaded');
+                setLoading(false);
+                displayToast(`Switched to ${newChain.name}`);
+                return;
+            }
+
+            // STEP 3: Fetch balances using NEW chain explicitly
+            console.log(`[EmbeddedWallet] Fetching balances on ${newChain.name} (chainId: ${newChain.chainId})...`);
+            console.log(`[EmbeddedWallet] Passing ${tokens.length} tokens to loadAllTokenBalances`);
+            await loadAllTokenBalances(tokens, newChain);
+            console.log(`[EmbeddedWallet] ✓ Balance fetch complete`);
+            displayToast(`Switched to ${newChain.name}`);
+
+        } catch (error) {
+            console.error('[EmbeddedWallet] Chain switch failed:', error);
+            displayToast(`Error: ${error.message}`);
+            setLoading(false);
+        }
     };
 
     const generateQRCode = () => {

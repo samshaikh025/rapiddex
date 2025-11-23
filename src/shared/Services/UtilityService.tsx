@@ -208,8 +208,15 @@ export class UtilityService {
 
             console.log(`Balance: ${formattedBalance} tokens`);
             return [balance, formattedBalance];
-        } catch (error) {
-            console.error('Error fetching balance:', error);
+        } catch (error: any) {
+            // Suppress common errors for invalid tokens (they're handled by caller)
+            const errorMsg = error.message || error.toString();
+            if (!errorMsg.includes('could not decode') &&
+                !errorMsg.includes('BUFFER_OVERRUN') &&
+                !errorMsg.includes('BAD_DATA') &&
+                !errorMsg.includes('ENS name')) {
+                console.error('Error fetching balance:', error);
+            }
             return ['0', '0'];
         }
     }

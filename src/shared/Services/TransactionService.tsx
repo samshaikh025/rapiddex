@@ -244,7 +244,7 @@ export class TransactionService {
         return response;
     }
 
-    async HasSufficientSourceBalance(sourceChain: Chains, sourceToken: Tokens, checkSourceTokenIsNativeCoin:boolean,walletAddress: string, workingRpc: string, sendAmount: number): Promise<HasSufficientBalanceResponse> {
+    async HasSufficientSourceBalance(sourceChain: Chains, sourceToken: Tokens, checkSourceTokenIsNativeCoin: boolean, walletAddress: string, workingRpc: string, sendAmount: number): Promise<HasSufficientBalanceResponse> {
 
         let sourceTokenbal = await this.utilityService.getBalanceIne(checkSourceTokenIsNativeCoin, sourceToken, walletAddress, workingRpc);
 
@@ -271,7 +271,7 @@ export class TransactionService {
         return value.toLocaleString(undefined, { maximumFractionDigits: 4 });
     }
 
-    async HasSufficientGasBalance(sourceChain: Chains, sourceToken: Tokens, checkSourceTokenIsNativeCoin:boolean, sourceTokenbalance: string, walletAddress: string, workingRpc: string, selectedPath: PathShowViewModel, sendAmount: number): Promise<HasSufficientBalanceResponse> {
+    async HasSufficientGasBalance(sourceChain: Chains, sourceToken: Tokens, checkSourceTokenIsNativeCoin: boolean, sourceTokenbalance: string, walletAddress: string, workingRpc: string, selectedPath: PathShowViewModel, sendAmount: number): Promise<HasSufficientBalanceResponse> {
         let totalGasCost = 0;
         let totalGasCostNative = 0;
 
@@ -285,6 +285,9 @@ export class TransactionService {
         payableGasToken.symbol = payableGasChain.nativeCurrency.symbol;
         payableGasToken.decimal = payableGasChain.nativeCurrency.decimals;
         payableGasToken.name = payableGasChain.nativeCurrency.name;
+        payableGasToken.chainId = sourceToken.chainId;
+        payableGasToken.tokenIsNative = true;
+        payableGasToken.tokenIsStable = false;
 
         let currentNativeBalance = checkSourceTokenIsNativeCoin ? sourceTokenbalance : await this.utilityService.getBalanceIne(true, payableGasToken, walletAddress, workingRpc);
 
@@ -318,8 +321,8 @@ export class TransactionService {
         }
     }
 
-    GetTransactionRequest(selectedPath: PathShowViewModel, sendAmount:number, equAmountUSD: number, walletAddress: string, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, isNativeCurrency: boolean) : TransactionRequestoDto{
-        
+    GetTransactionRequest(selectedPath: PathShowViewModel, sendAmount: number, equAmountUSD: number, walletAddress: string, sourceChain: Chains, destChain: Chains, sourceToken: Tokens, destToken: Tokens, isNativeCurrency: boolean): TransactionRequestoDto {
+
         let sendAmt = '';
         let sendAmtUsdc = '0';
 

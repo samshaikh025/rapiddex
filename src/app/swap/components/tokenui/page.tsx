@@ -206,6 +206,8 @@ export default function Tokenui(props: propsType) {
     }, [fetchAllBalancesAndMerge]);
 
     async function getCoinsByChain() {
+
+        debugger;
         let tokens: Tokens[] = [];
         let chainDataSource = new Chains();
         try {
@@ -256,9 +258,9 @@ export default function Tokenui(props: propsType) {
 
 
 
-        let tokendata = await cryptoService.getTokenAllInformation(token);
-        token.price = tokendata?.price || 0;
-        console.log(token);
+        //let tokendata = await cryptoService.getTokenAllInformation(token);
+        //token.price = tokendata?.price || 0;
+        //console.log(token);
 
         await props.closeTokenUI(token);
     }

@@ -13,6 +13,10 @@ interface TokenBalance {
     balanceRaw: string;
 }
 
+interface ProgressCallback {
+    (balances: TokenBalance[]): void;
+}
+
 export class Multicall3Service {
     private static instance: Multicall3Service;
 
@@ -72,13 +76,35 @@ export class Multicall3Service {
     }
 
     /**
+     * Validate if address is a valid Ethereum address
+     */
+    private isValidAddress(address: string): boolean {
+        if (!address) return false;
+
+        // Filter out addresses with colons (invalid for EVM chains)
+        if (address.includes(':')) {
+            console.log(`[Multicall3] Skipping invalid address with colon: ${address}`);
+            return false;
+        }
+
+        // Check if it's a valid hex address format
+        if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+            console.log(`[Multicall3] Skipping invalid address format: ${address}`);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Get token balances using Multicall3
      * This is the main function that handles RPC rotation and fallback
      */
     public async getTokenBalances(
         walletAddress: string,
         chain: Chains,
-        tokens: Tokens[]
+        tokens: Tokens[],
+        onProgress?: ProgressCallback
     ): Promise<TokenBalance[]> {
         if (!walletAddress || !chain || !tokens || tokens.length === 0) {
             return [];
@@ -86,32 +112,48 @@ export class Multicall3Service {
 
         console.log(`[Multicall3] Fetching ${tokens.length} token balances for chain ${chain.chainId}`);
 
+        // Check if native token is in the input
+        const nativeTokenInput = tokens.find(t => t.tokenIsNative === true);
+        console.log(`[Multicall3] Native token in input: ${nativeTokenInput ? 'YES (' + nativeTokenInput.symbol + ')' : 'NO'}`);
+
+        // Note: Address validation happens in fetchBalancesWithRPC during call preparation
+
         // Get RPC URLs from chain config
-        const rpcUrls = chain.rpcUrl || [];
+        let rpcUrls = chain.rpcUrl || [];
+
+        // Ensure rpcUrls is an array
+        if (!Array.isArray(rpcUrls)) {
+            console.warn('[Multicall3] rpcUrl is not an array, converting:', rpcUrls);
+            rpcUrls = [rpcUrls];
+        }
 
         if (rpcUrls.length === 0) {
             console.error('[Multicall3] No RPC URLs available for chain', chain.chainId);
             return [];
         }
 
+        console.log(`[Multicall3] Chain ${chain.chainId} has ${rpcUrls.length} RPC URLs:`, rpcUrls.map(url => url.substring(0, 50)));
+
         // Try each RPC endpoint until one succeeds
         for (let i = 0; i < rpcUrls.length; i++) {
             const rpcUrl = rpcUrls[i];
-            console.log(`[Multicall3] Trying RPC ${i + 1}/${rpcUrls.length}: ${rpcUrl.substring(0, 30)}...`);
+            console.log(`[Multicall3] Trying RPC ${i + 1}/${rpcUrls.length}: ${rpcUrl.substring(0, 50)}...`);
 
             try {
+                // Pass ORIGINAL tokens array (includes native), not validTokens (filtered)
                 const balances = await this.fetchBalancesWithRPC(
                     walletAddress,
                     chain,
-                    tokens,
-                    rpcUrl
+                    tokens,  // Pass original tokens, not validTokens
+                    rpcUrl,
+                    onProgress
                 );
 
                 console.log(`[Multicall3] Successfully fetched ${balances.length} balances using RPC ${i + 1}`);
                 return balances;
 
-            } catch (error) {
-                console.error(`[Multicall3] RPC ${i + 1} failed:`, error);
+            } catch (error: any) {
+                console.error(`[Multicall3] RPC ${i + 1} failed:`, error.message || error);
 
                 // If this is the last RPC, throw the error
                 if (i === rpcUrls.length - 1) {
@@ -129,12 +171,14 @@ export class Multicall3Service {
 
     /**
      * Fetch balances using a specific RPC endpoint
+     * Now with parallel batch processing and progress callbacks
      */
     private async fetchBalancesWithRPC(
         walletAddress: string,
         chain: Chains,
         tokens: Tokens[],
-        rpcUrl: string
+        rpcUrl: string,
+        onProgress?: ProgressCallback
     ): Promise<TokenBalance[]> {
         // Create provider
         const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -149,10 +193,18 @@ export class Multicall3Service {
         // Prepare multicall calls
         const calls: any[] = [];
         const tokensList: Tokens[] = []; // Track tokens for non-native only
+        let nativeTokenIncluded = false;
 
         for (const token of tokens) {
             if (token.tokenIsNative) {
+                nativeTokenIncluded = true;
                 // For native tokens, we'll fetch separately using eth_getBalance
+                continue;
+            }
+
+            // Validate address before adding to multicall
+            if (!this.isValidAddress(token.address)) {
+                // Skip invalid addresses silently
                 continue;
             }
 
@@ -169,22 +221,33 @@ export class Multicall3Service {
             tokensList.push(token);
         }
 
+        console.log(`[Multicall3] Prepared ${calls.length} ERC20 calls, native token: ${nativeTokenIncluded ? 'yes' : 'no'}`);
+
         const results: TokenBalance[] = [];
 
         // Fetch native token balance separately if needed
         const nativeToken = tokens.find(t => t.tokenIsNative);
         if (nativeToken) {
             try {
+                console.log(`[Multicall3] Fetching native token ${nativeToken.symbol} balance...`);
                 const nativeBalance = await provider.getBalance(walletAddress);
                 const balanceFormatted = Number(ethers.formatUnits(nativeBalance, nativeToken.decimal || 18));
 
-                results.push({
+                console.log(`[Multicall3] Native token balance: ${balanceFormatted} ${nativeToken.symbol}`);
+
+                // ALWAYS include native token, even if balance is 0
+                const nativeResult = {
                     token: nativeToken,
                     balance: balanceFormatted,
                     balanceRaw: nativeBalance.toString()
-                });
+                };
 
-                console.log(`[Multicall3] Native token balance: ${balanceFormatted} ${nativeToken.symbol}`);
+                results.push(nativeResult);
+
+                // Immediately notify progress with native token
+                if (onProgress) {
+                    onProgress([nativeResult]);
+                }
             } catch (error) {
                 console.error('[Multicall3] Failed to fetch native balance:', error);
             }
@@ -195,23 +258,46 @@ export class Multicall3Service {
             return results;
         }
 
-        // Execute multicall in batches of 100 to avoid RPC limits
-        const batchSize = 100;
+        // Execute multicall in batches - process batches in PARALLEL for speed
+        // Larger batches for better efficiency with thousands of tokens
+        const batchSize = 200; // 200 tokens per batch (increased from 100)
+        const batches: { calls: any[], tokens: Tokens[], index: number }[] = [];
 
         for (let i = 0; i < calls.length; i += batchSize) {
-            const batchCalls = calls.slice(i, i + batchSize);
-            const batchTokens = tokensList.slice(i, i + batchSize);
+            batches.push({
+                calls: calls.slice(i, i + batchSize),
+                tokens: tokensList.slice(i, i + batchSize),
+                index: Math.floor(i / batchSize)
+            });
+        }
 
+        console.log(`[Multicall3] Processing ${batches.length} batches (${calls.length} tokens total) with maximum concurrency`);
+
+        // Process batches with high concurrency for maximum speed
+        const maxConcurrent = 30; // Process 30 batches at a time (increased from 20)
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Function to process a single batch with 4-second timeout
+        const processBatch = async (batch: { calls: any[], tokens: Tokens[], index: number }) => {
             try {
-                console.log(`[Multicall3] Executing batch ${Math.floor(i / batchSize) + 1}, calls: ${batchCalls.length}`);
+                console.log(`[Multicall3] Executing batch ${batch.index + 1}/${batches.length}, tokens: ${batch.calls.length}`);
 
-                const batchResults: MulticallResult[] = await multicall.aggregate3(batchCalls);
+                // Use staticCall with 4-second timeout
+                const batchPromise = multicall.aggregate3.staticCall(batch.calls);
+                const timeoutPromise = new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error('Batch timeout (4s)')), 4000)
+                );
+
+                const batchResults: MulticallResult[] = await Promise.race([batchPromise, timeoutPromise]);
+
+                const batchBalances: TokenBalance[] = [];
 
                 // Process results
                 batchResults.forEach((result, index) => {
-                    const token = batchTokens[index];
+                    const token = batch.tokens[index];
 
-                    if (result.success && result.returnData !== '0x') {
+                    // Check if call succeeded and returned data
+                    if (result.success && result.returnData && result.returnData !== '0x' && result.returnData.length > 2) {
                         try {
                             // Decode the balance
                             const balance = ethers.toBigInt(result.returnData);
@@ -219,25 +305,82 @@ export class Multicall3Service {
 
                             // Only include tokens with non-zero balance
                             if (balanceFormatted > 0) {
-                                results.push({
+                                batchBalances.push({
                                     token: token,
                                     balance: balanceFormatted,
                                     balanceRaw: balance.toString()
                                 });
-
-                                console.log(`[Multicall3] ${token.symbol}: ${balanceFormatted}`);
                             }
-                        } catch (error) {
-                            console.error(`[Multicall3] Failed to decode balance for ${token.symbol}:`, error);
+                        } catch (decodeError) {
+                            // Silently skip tokens that fail to decode (invalid contracts)
+                            // This is normal for tokens that don't exist on this chain
                         }
                     }
+                    // If result.success is false, the token contract doesn't exist or doesn't support balanceOf
+                    // This is expected for many tokens, so we just skip them silently
                 });
 
-            } catch (error) {
-                console.error(`[Multicall3] Batch ${Math.floor(i / batchSize) + 1} failed:`, error);
-                // Continue with next batch instead of failing completely
+                if (batchBalances.length > 0) {
+                    console.log(`[Multicall3] ✅ Batch ${batch.index + 1} completed with ${batchBalances.length} valid balances`);
+                    console.log(`[Multicall3] Tokens found:`, batchBalances.map(b => b.token.symbol).join(', '));
+                } else {
+                    console.log(`[Multicall3] Batch ${batch.index + 1} completed with 0 balances`);
+                }
+
+                // Notify progress IMMEDIATELY when this batch completes
+                if (onProgress && batchBalances.length > 0) {
+                    console.log(`[Multicall3] 📢 Calling progress callback with ${batchBalances.length} tokens`);
+                    onProgress(batchBalances);
+                } else if (!onProgress) {
+                    console.warn(`[Multicall3] ⚠️ No progress callback provided!`);
+                }
+
+                return { success: true, balances: batchBalances };
+
+            } catch (error: any) {
+                // Log error but don't fail the entire process
+                const errorMsg = error.message || error.toString();
+                if (errorMsg.includes('Batch timeout')) {
+                    console.warn(`[Multicall3] ⏱️ Batch ${batch.index + 1} timeout (4s) - skipping and continuing...`);
+                } else if (errorMsg.includes('Too Many Requests') || errorMsg.includes('429')) {
+                    console.warn(`[Multicall3] Batch ${batch.index + 1} hit rate limit, continuing...`);
+                } else {
+                    console.warn(`[Multicall3] Batch ${batch.index + 1} failed:`, errorMsg.substring(0, 100));
+                }
+                return { success: false, balances: [] };
+            }
+        };
+
+        // Process batches in chunks with controlled concurrency
+        const allResults: any[] = [];
+
+        for (let i = 0; i < batches.length; i += maxConcurrent) {
+            const chunk = batches.slice(i, i + maxConcurrent);
+            console.log(`[Multicall3] Processing chunk ${Math.floor(i / maxConcurrent) + 1}/${Math.ceil(batches.length / maxConcurrent)}`);
+
+            const chunkPromises = chunk.map(batch => processBatch(batch));
+            const chunkResults = await Promise.allSettled(chunkPromises);
+            allResults.push(...chunkResults);
+
+            // Minimal delay between chunks for maximum speed
+            if (i + maxConcurrent < batches.length) {
+                await delay(20); // 20ms delay between chunks (reduced from 50ms)
             }
         }
+
+        const batchResultsSettled = allResults;
+
+        // Collect all successful results
+        batchResultsSettled.forEach((result) => {
+            if (result.status === 'fulfilled' && result.value.success) {
+                results.push(...result.value.balances);
+            }
+        });
+
+        console.log(`[Multicall3] ✅ All batches completed!`);
+        console.log(`[Multicall3] Total tokens checked: ${calls.length}`);
+        console.log(`[Multicall3] Total balances found: ${results.length}`);
+        console.log(`[Multicall3] Success rate: ${((results.length / calls.length) * 100).toFixed(2)}%`);
 
         return results;
     }

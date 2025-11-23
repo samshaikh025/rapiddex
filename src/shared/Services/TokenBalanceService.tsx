@@ -331,7 +331,7 @@ export class TokenBalanceService {
 
             let payLoad = {
                 apiType: 'GET',
-                apiUrl: `/wallet/portfolio?${params.toString()}`,
+                apiUrl: `wallet/portfolio?${params.toString()}`,
                 apiData: null,
                 apiProvider: SwapProvider.MOBULA,
 
@@ -505,7 +505,7 @@ export class TokenBalanceService {
 
         let payLoad = {
             apiType: 'GET',
-            apiUrl: `/wallet/portfolio?${params.toString()}`,
+            apiUrl: `wallet/portfolio?${params.toString()}`,
             apiData: null,
             apiProvider: SwapProvider.MOBULA,
         }

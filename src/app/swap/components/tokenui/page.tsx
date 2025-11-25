@@ -73,17 +73,136 @@ export default function Tokenui(props: propsType) {
     };
 
     // Fetch ALL balances from Mobula and merge with token list
-    const fetchAllBalancesAndMerge = useCallback(async () => {
-        if (!walletData.address || !isMountedRef.current) {
-            return;
-        }
+    // const fetchAllBalancesAndMerge = useCallback(async () => {
+    //     if (!walletData.address || !isMountedRef.current) {
+    //         return;
+    //     }
+
+    //     const chainDataSource = props.dataSource == DataSource.From ? props.sourceChain : props.destChain;
+
+    //     // Skip if already fetched for this chain
+    //     if (fetchedBalancesRef.current.has(`chain_${chainDataSource.chainId}`)) {
+    //         return;
+    //     }
+
+    //     console.log('[TokenUI] Fetching balances with fallback system...');
+
+    //     let allBalances: any[] = [];
+
+    //     try {
+    //         // Method 1: Try Mobula first (gets all tokens with balances)
+    //         console.log('[TokenUI] Trying Mobula API...');
+    //         allBalances = await tokenBalanceService.getTokenBalances(
+    //             walletData.address,
+    //             chainDataSource,
+    //             []
+    //         );
+
+    //         if (allBalances && allBalances.length > 0) {
+    //             console.log(`[TokenUI] Mobula succeeded with ${allBalances.length} balances`);
+    //         } else {
+    //             console.log('[TokenUI] Mobula returned no balances, trying Multicall3...');
+
+    //             // Method 2: Fallback to Multicall3 with available token list
+    //             if (tokenResponse && tokenResponse.length > 0) {
+    //                 console.log(`[TokenUI] Trying Multicall3 with ${tokenResponse.length} tokens...`);
+    //                 allBalances = await tokenBalanceService.getTokenBalancesWithFallback(
+    //                     walletData.address,
+    //                     chainDataSource,
+    //                     tokenResponse
+    //                 );
+    //                 console.log(`[TokenUI] Multicall3 returned ${allBalances.length} balances`);
+    //             }
+    //         }
+
+    //         console.log('[TokenUI] Final balance count:', allBalances.length);
+
+    //         if (!isMountedRef.current) return;
+
+    //         // Mark as fetched for this chain
+    //         fetchedBalancesRef.current.add(`chain_${chainDataSource.chainId}`);
+
+    //         // Helper function to check if addresses match
+    //         const addressesMatch = (addr1: string, addr2: string): boolean => {
+    //             const a1 = addr1.toLowerCase();
+    //             const a2 = addr2.toLowerCase();
+    //             if (a1 === a2) return true;
+    //             const nativeAddresses = [
+    //                 '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+    //                 '0x0000000000000000000000000000000000000000',
+    //                 'native'
+    //             ];
+    //             return (nativeAddresses.includes(a1) && nativeAddresses.includes(a2));
+    //         };
+
+    //         // Helper function to merge balances into token list
+    //         const mergeBalances = (tokens: Tokens[]): Tokens[] => {
+    //             const updatedTokens = tokens.map(token => {
+    //                 if (!token.address) return token;
+
+    //                 const balanceData = allBalances.find(b => {
+    //                     if (!b.token || !b.token.address) return false;
+    //                     return addressesMatch(token.address, b.token.address) ||
+    //                         (token.symbol === b.token.symbol && (token.tokenIsNative || b.token.tokenIsNative));
+    //                 });
+
+    //                 if (balanceData) {
+    //                     return {
+    //                         ...token,
+    //                         balance: balanceData.balance,
+    //                         balanceUSD: balanceData.balanceUSD,
+    //                         price: balanceData.price || token.price
+    //                     };
+    //                 }
+    //                 return token;
+    //             });
+
+    //             // Add tokens with balances that aren't in the current list
+    //             const tokensToAdd: Tokens[] = [];
+    //             allBalances.forEach(balanceData => {
+    //                 if (!balanceData.token || !balanceData.token.address) return;
+
+    //                 // Check if this token is already in the list
+    //                 const existsInList = updatedTokens.some(token =>
+    //                     token.address && (
+    //                         addressesMatch(token.address, balanceData.token.address) ||
+    //                         (token.symbol === balanceData.token.symbol && (token.tokenIsNative || balanceData.token.tokenIsNative))
+    //                     )
+    //                 );
+
+    //                 // If not in list and has balance, add it
+    //                 if (!existsInList && balanceData.balance > 0) {
+    //                     tokensToAdd.push({
+    //                         ...balanceData.token,
+    //                         balance: balanceData.balance,
+    //                         balanceUSD: balanceData.balanceUSD,
+    //                         price: balanceData.price
+    //                     });
+    //                 }
+    //             });
+
+    //             // Combine and sort
+    //             return sortTokensByBalance([...updatedTokens, ...tokensToAdd]);
+    //         };
+
+    //         // Update all token lists
+    //         setTokenResponse(prev => mergeBalances(prev));
+    //         setMasterAvailableToken(prev => mergeBalances(prev));
+    //         setAvailableToken(prev => {
+    //             const merged = mergeBalances(prev);
+    //             // Keep only first batch visible
+    //             return merged.slice(0, Math.max(prev.length, defaultListSize));
+    //         });
+
+    //     } catch (error) {
+    //         console.error('[TokenUI] Error fetching balances:', error);
+    //     }
+    // }, [walletData.address, props.dataSource, props.sourceChain, props.destChain, tokenResponse]);
+
+    // Fetch ALL balances from Mobula and merge with token list
+    async function fetchAllTokenBalances(tokenResponse: Tokens[]) {
 
         const chainDataSource = props.dataSource == DataSource.From ? props.sourceChain : props.destChain;
-
-        // Skip if already fetched for this chain
-        if (fetchedBalancesRef.current.has(`chain_${chainDataSource.chainId}`)) {
-            return;
-        }
 
         console.log('[TokenUI] Fetching balances with fallback system...');
 
@@ -100,6 +219,7 @@ export default function Tokenui(props: propsType) {
 
             if (allBalances && allBalances.length > 0) {
                 console.log(`[TokenUI] Mobula succeeded with ${allBalances.length} balances`);
+                return allBalances;
             } else {
                 console.log('[TokenUI] Mobula returned no balances, trying Multicall3...');
 
@@ -112,102 +232,16 @@ export default function Tokenui(props: propsType) {
                         tokenResponse
                     );
                     console.log(`[TokenUI] Multicall3 returned ${allBalances.length} balances`);
+                    return allBalances;
                 }
             }
-
-            console.log('[TokenUI] Final balance count:', allBalances.length);
-
-            if (!isMountedRef.current) return;
-
-            // Mark as fetched for this chain
-            fetchedBalancesRef.current.add(`chain_${chainDataSource.chainId}`);
-
-            // Helper function to check if addresses match
-            const addressesMatch = (addr1: string, addr2: string): boolean => {
-                const a1 = addr1.toLowerCase();
-                const a2 = addr2.toLowerCase();
-                if (a1 === a2) return true;
-                const nativeAddresses = [
-                    '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-                    '0x0000000000000000000000000000000000000000',
-                    'native'
-                ];
-                return (nativeAddresses.includes(a1) && nativeAddresses.includes(a2));
-            };
-
-            // Helper function to merge balances into token list
-            const mergeBalances = (tokens: Tokens[]): Tokens[] => {
-                const updatedTokens = tokens.map(token => {
-                    if (!token.address) return token;
-
-                    const balanceData = allBalances.find(b => {
-                        if (!b.token || !b.token.address) return false;
-                        return addressesMatch(token.address, b.token.address) ||
-                            (token.symbol === b.token.symbol && (token.tokenIsNative || b.token.tokenIsNative));
-                    });
-
-                    if (balanceData) {
-                        return {
-                            ...token,
-                            balance: balanceData.balance,
-                            balanceUSD: balanceData.balanceUSD,
-                            price: balanceData.price || token.price
-                        };
-                    }
-                    return token;
-                });
-
-                // Add tokens with balances that aren't in the current list
-                const tokensToAdd: Tokens[] = [];
-                allBalances.forEach(balanceData => {
-                    if (!balanceData.token || !balanceData.token.address) return;
-
-                    // Check if this token is already in the list
-                    const existsInList = updatedTokens.some(token =>
-                        token.address && (
-                            addressesMatch(token.address, balanceData.token.address) ||
-                            (token.symbol === balanceData.token.symbol && (token.tokenIsNative || balanceData.token.tokenIsNative))
-                        )
-                    );
-
-                    // If not in list and has balance, add it
-                    if (!existsInList && balanceData.balance > 0) {
-                        tokensToAdd.push({
-                            ...balanceData.token,
-                            balance: balanceData.balance,
-                            balanceUSD: balanceData.balanceUSD,
-                            price: balanceData.price
-                        });
-                    }
-                });
-
-                // Combine and sort
-                return sortTokensByBalance([...updatedTokens, ...tokensToAdd]);
-            };
-
-            // Update all token lists
-            setTokenResponse(prev => mergeBalances(prev));
-            setMasterAvailableToken(prev => mergeBalances(prev));
-            setAvailableToken(prev => {
-                const merged = mergeBalances(prev);
-                // Keep only first batch visible
-                return merged.slice(0, Math.max(prev.length, defaultListSize));
-            });
-
         } catch (error) {
             console.error('[TokenUI] Error fetching balances:', error);
         }
-    }, [walletData.address, props.dataSource, props.sourceChain, props.destChain, tokenResponse]);
-
-    // Legacy function for backward compatibility (now just calls the main function)
-    const fetchBalancesForTokens = useCallback(async (tokens: Tokens[]) => {
-        // Just trigger the full balance fetch
-        await fetchAllBalancesAndMerge();
-    }, [fetchAllBalancesAndMerge]);
+    };
 
     async function getCoinsByChain() {
 
-        debugger;
         let tokens: Tokens[] = [];
         let chainDataSource = new Chains();
         try {
@@ -228,19 +262,42 @@ export default function Tokenui(props: propsType) {
 
                     dispatch(SetPredineTokensForChainA(obj));
                 }
-                setShowCoinSpinner(false);
 
                 if (tokens && tokens.length > 0) {
+                    
+                    if (walletData.address) {
+                        const allTokenBalance = await fetchAllTokenBalances(tokens);
+                        
+                        if (allTokenBalance && allTokenBalance.length > 0) {
+                            allTokenBalance.map(balanceData => {
+                                
+                                //check for native balance address
+                                const nativeAddresses = [
+                                    '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+                                    '0x0000000000000000000000000000000000000000',
+                                    'native'
+                                ];
+                                if (nativeAddresses.includes(balanceData.token.address)) {
+                                    balanceData.token.address = '0x0000000000000000000000000000000000000000';
+                                }
+                                let index = tokens.findIndex(t => t.address?.toLowerCase() == balanceData.token.address?.toLowerCase());
+                                if (index > -1) {
+                                    tokens[index].balance = balanceData.balance;
+                                    tokens[index].balanceUSD = balanceData.balanceUSD;
+                                    tokens[index].price = balanceData.price || tokens[index].price;
+                                }
+                            });
+                        }
+                    }
+                    setShowCoinSpinner(false);
+
                     setTokenResponse(tokens);
                     setMasterAvailableToken(tokens);
                     const firstBatch = tokens.slice(0, defaultListSize);
                     setAvailableToken(firstBatch);
                     setHasMoreData(tokens.length > defaultListSize);
-
-                    // Fetch ALL balances if wallet connected
-                    if (walletData.address) {
-                        fetchAllBalancesAndMerge();
-                    }
+                }else{
+                    setShowCoinSpinner(false);
                 }
             }
         } catch (error) {
@@ -320,14 +377,7 @@ export default function Tokenui(props: propsType) {
             isMountedRef.current = false;
         };
     }, [props.sourceChain.chainId, props.destChain.chainId, props.dataSource]);
-
-    // Fetch balances when wallet connects
-    useEffect(() => {
-        if (walletData.address && AvailableToken.length > 0) {
-            fetchAllBalancesAndMerge();
-        }
-    }, [walletData.address, fetchAllBalancesAndMerge]);
-
+    
     return (
         <>
             <div className="card">

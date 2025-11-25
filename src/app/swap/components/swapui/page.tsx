@@ -34,29 +34,36 @@ export default function Swapui(props: propsType) {
     }, []);
 
     useEffect(() => {
-
+        // if any side is not selected, don't run compare logic
+        if (
+            !sourceChain.chainId ||
+            !destChain.chainId ||
+            !sourceToken.address ||
+            !destToken.address
+        ) {
+            return;
+        }
 
         if (
             sourceChain.chainId === destChain.chainId &&
             sourceToken.address === destToken.address
         ) {
-            if (dataSource == DataSource.From) {
-
-
+            if (dataSource === DataSource.From) {
                 setDestChain(new Chains());
                 setDestToken(new Tokens());
                 setDestTokenAmount(0);
-
-            } else if (dataSource == DataSource.To) {
-
-
+            } else if (dataSource === DataSource.To) {
                 setSourceChain(new Chains());
                 setSourceToken(new Tokens());
                 setSourceTokenAmount(0);
             }
-
         }
-    }, [sourceChain, destChain, sourceToken, destToken]);
+    }, [
+        sourceChain.chainId,
+        destChain.chainId,
+        sourceToken.address,
+        destToken.address,
+    ]);
 
 
     function OpenTokenUI(dataSource: string) {

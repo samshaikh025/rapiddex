@@ -63,7 +63,8 @@ export default function Exchangeui(props: propsType) {
     let [sourceTokenAmount, setSourceTokenAmount] = useState<number>(0);
     let [destTokenAmount, setDestTokenAmount] = useState<number>(0);
     let allAvailableChains = useSelector((state: any) => state.AvailableChains);
-
+    let getSelectedTokenBalanceInterval = useRef<number | null>(null);
+    
     const {
         switchChain,
         error,
@@ -119,75 +120,75 @@ export default function Exchangeui(props: propsType) {
     }, [walletData.address, props.sourceToken?.address, props.sourceChain?.chainId]);
 
     // Function to fetch token balance
-    const fetchTokenBalance = useCallback(async (forceRefresh: boolean = false) => {
-        if (!walletData.address || !props.sourceToken || !props.sourceChain ||
-            props.sourceChain.chainId <= 0 || !props.sourceToken.address) {
-            setSourceTokenBalance(null);
-            return;
-        }
+    // const fetchTokenBalance = useCallback(async (forceRefresh: boolean = false) => {
+    //     if (!walletData.address || !props.sourceToken || !props.sourceChain ||
+    //         props.sourceChain.chainId <= 0 || !props.sourceToken.address) {
+    //         setSourceTokenBalance(null);
+    //         return;
+    //     }
 
-        // Prevent duplicate fetches (unless forced refresh)
-        if (!forceRefresh && prevFetchKeyRef.current === fetchParamsKey && sourceTokenBalance !== null) {
-            console.log('Skipping duplicate fetch for:', fetchParamsKey);
-            return;
-        }
+    //     // Prevent duplicate fetches (unless forced refresh)
+    //     if (!forceRefresh && prevFetchKeyRef.current === fetchParamsKey && sourceTokenBalance !== null) {
+    //         console.log('Skipping duplicate fetch for:', fetchParamsKey);
+    //         return;
+    //     }
 
-        console.log('Fetching balance for:', fetchParamsKey, forceRefresh ? '(forced refresh)' : '');
-        setBalanceLoading(true);
+    //     console.log('Fetching balance for:', fetchParamsKey, forceRefresh ? '(forced refresh)' : '');
+    //     setBalanceLoading(true);
 
-        try {
-            const balance = await tokenBalanceService.getSingleTokenBalance(
-                walletData.address,
-                props.sourceChain,
-                props.sourceToken
-            );
+    //     try {
+    //         const balance = await tokenBalanceService.getSingleTokenBalance(
+    //             walletData.address,
+    //             props.sourceChain,
+    //             props.sourceToken
+    //         );
 
-            // Only update state if component is still mounted
-            if (isMountedRef.current) {
-                console.log('Fetched balance:', balance);
-                setSourceTokenBalance(balance);
-                prevFetchKeyRef.current = fetchParamsKey;
-            }
-        } catch (error) {
-            console.error('Error fetching balance:', error);
-            if (isMountedRef.current) {
-                setSourceTokenBalance(null);
-            }
-        } finally {
-            if (isMountedRef.current) {
-                setBalanceLoading(false);
-            }
-        }
-    }, [walletData.address, props.sourceToken, props.sourceChain, fetchParamsKey, tokenBalanceService, sourceTokenBalance]);
+    //         // Only update state if component is still mounted
+    //         if (isMountedRef.current) {
+    //             console.log('Fetched balance:', balance);
+    //             setSourceTokenBalance(balance);
+    //             prevFetchKeyRef.current = fetchParamsKey;
+    //         }
+    //     } catch (error) {
+    //         console.error('Error fetching balance:', error);
+    //         if (isMountedRef.current) {
+    //             setSourceTokenBalance(null);
+    //         }
+    //     } finally {
+    //         if (isMountedRef.current) {
+    //             setBalanceLoading(false);
+    //         }
+    //     }
+    // }, [walletData.address, props.sourceToken, props.sourceChain, fetchParamsKey, tokenBalanceService, sourceTokenBalance]);
 
     // Effect to fetch balance when parameters change
-    useEffect(() => {
-        if (fetchParamsKey && fetchParamsKey !== prevFetchKeyRef.current) {
-            fetchTokenBalance();
-        }
-    }, [fetchParamsKey, fetchTokenBalance]);
+    // useEffect(() => {
+    //     if (fetchParamsKey && fetchParamsKey !== prevFetchKeyRef.current) {
+    //         fetchTokenBalance();
+    //     }
+    // }, [fetchParamsKey, fetchTokenBalance]);
 
     // Auto-refresh balance every 60 seconds (1 minute)
-    useEffect(() => {
-        // Only set up auto-refresh if wallet is connected and tokens are selected
-        if (!walletData.address || !props.sourceToken || !props.sourceChain ||
-            props.sourceChain.chainId <= 0 || !props.sourceToken.address) {
-            return;
-        }
+    // useEffect(() => {
+    //     // Only set up auto-refresh if wallet is connected and tokens are selected
+    //     if (!walletData.address || !props.sourceToken || !props.sourceChain ||
+    //         props.sourceChain.chainId <= 0 || !props.sourceToken.address) {
+    //         return;
+    //     }
 
-        console.log('[ExchangeUI] Starting balance auto-refresh (60s interval)');
+    //     console.log('[ExchangeUI] Starting balance auto-refresh (60s interval)');
 
-        const refreshInterval = setInterval(() => {
-            console.log('[ExchangeUI] Auto-refreshing balance...');
-            fetchTokenBalance(true); // Force refresh to bypass duplicate check
-        }, 60000); // 60 seconds = 1 minute
+    //     const refreshInterval = setInterval(() => {
+    //         console.log('[ExchangeUI] Auto-refreshing balance...');
+    //         fetchTokenBalance(true); // Force refresh to bypass duplicate check
+    //     }, 60000); // 60 seconds = 1 minute
 
-        // Cleanup interval on unmount or when dependencies change
-        return () => {
-            console.log('[ExchangeUI] Stopping balance auto-refresh');
-            clearInterval(refreshInterval);
-        };
-    }, [walletData.address, props.sourceToken?.address, props.sourceChain?.chainId, fetchTokenBalance]);
+    //     // Cleanup interval on unmount or when dependencies change
+    //     return () => {
+    //         console.log('[ExchangeUI] Stopping balance auto-refresh');
+    //         clearInterval(refreshInterval);
+    //     };
+    // }, [walletData.address, props.sourceToken?.address, props.sourceChain?.chainId, fetchTokenBalance]);
 
     const isNativeToken = useCallback((token: Tokens): boolean => {
         if (!token) return false;
@@ -420,7 +421,6 @@ export default function Exchangeui(props: propsType) {
 
     async function exchange() {
 
-        debugger;
         //setStartBridging(true);
         //start showing processing loading message
         try {
@@ -479,7 +479,7 @@ export default function Exchangeui(props: propsType) {
             setShowSubBridgeView(true);
         } else {
             setShowSubBridgeView(false);
-            fetchTokenBalance();
+            //fetchTokenBalance();
         }
     }
 
@@ -617,6 +617,61 @@ export default function Exchangeui(props: propsType) {
             console.log("rejected switch chain");
             throw error;
         }
+    }
+
+    useEffect(() => {
+
+        if (!walletData.address || !props.sourceToken || !props.sourceToken.address) {
+            setSourceTokenBalance(null);
+            return;
+        }
+
+        const selectedToken= props.sourceToken;
+        const fetchBalance = async () => {
+            await getSelectedTokenbalance(selectedToken);
+            console.log("balance fetched for token now calling intevla method");
+            getSelectedTokenBalanceOnInterval(selectedToken);
+        };
+
+        fetchBalance();
+
+        return () => {
+            if (getSelectedTokenBalanceInterval.current) {
+                clearTimeout(getSelectedTokenBalanceInterval.current);
+                getSelectedTokenBalanceInterval.current = null;
+            }
+        };
+    }, [props.sourceToken, walletData.address])
+
+    async function getSelectedTokenbalance(selectedToken: Tokens) {
+        setBalanceLoading(true);
+        try {
+            const balance = await tokenBalanceService.getSingleTokenBalance(
+                walletData.address,
+                props.sourceChain,
+                props.sourceToken
+            );
+
+            if (balance) {
+                console.log('Fetched balance:', balance);
+                setSourceTokenBalance(balance);
+            }
+        } catch (error) {
+            console.error('Error fetching balance:', error);
+            setSourceTokenBalance(null);
+        } finally {
+            setBalanceLoading(false);
+        }
+    }
+
+    function getSelectedTokenBalanceOnInterval(selectedToken: Tokens) {
+        let refersh = setInterval(async (selectedToken) => {
+            console.log("Interval for get token balance called");
+            await getSelectedTokenbalance(selectedToken);
+            console.log("Interval completed for get token balance called");
+        }, 60000);
+        getSelectedTokenBalanceInterval.current = (refersh as unknown as number);
+        console.log("Set intervalId for get token balance");
     }
 
     return (

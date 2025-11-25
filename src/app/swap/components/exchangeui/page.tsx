@@ -412,6 +412,7 @@ export default function Exchangeui(props: propsType) {
 
         dispatch(SetActiveTransactionA(transactoinObj));
         //addTransactionLog(transactoinObj);
+
         setIsProcessingPayment(false);
         setShowSubBridgeView(false);
         setStartBridging(true);
@@ -470,6 +471,14 @@ export default function Exchangeui(props: propsType) {
         setequAmountUSD(null);
         setIsShowPathComponent(false);
         openOrCloseSubBridBridgeView();
+        
+        const fetchBalance = async () => {
+            await getSelectedTokenbalance();
+            console.log("balance fetched for token now calling intevla method");
+            getSelectedTokenBalanceOnInterval();
+        };
+
+        fetchBalance();
     }
 
     function openOrCloseSubBridBridgeView() {
@@ -522,6 +531,12 @@ export default function Exchangeui(props: propsType) {
             sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
             dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
             setShowSubBridgeView(false);
+        }
+
+        //also clear interval to fetch selected token balance so balance not fetch
+        if (getSelectedTokenBalanceInterval.current) {
+            clearTimeout(getSelectedTokenBalanceInterval.current);
+            getSelectedTokenBalanceInterval.current = null;
         }
     }
 
@@ -621,16 +636,15 @@ export default function Exchangeui(props: propsType) {
 
     useEffect(() => {
 
-        if (!walletData.address || !props.sourceToken || !props.sourceToken.address) {
+        if (!walletData.address || !sourceToken || !sourceToken.address) {
             setSourceTokenBalance(null);
             return;
         }
 
-        const selectedToken= props.sourceToken;
         const fetchBalance = async () => {
-            await getSelectedTokenbalance(selectedToken);
+            await getSelectedTokenbalance();
             console.log("balance fetched for token now calling intevla method");
-            getSelectedTokenBalanceOnInterval(selectedToken);
+            getSelectedTokenBalanceOnInterval();
         };
 
         fetchBalance();
@@ -641,15 +655,15 @@ export default function Exchangeui(props: propsType) {
                 getSelectedTokenBalanceInterval.current = null;
             }
         };
-    }, [props.sourceToken, walletData.address])
+    }, [sourceToken, walletData.address])
 
-    async function getSelectedTokenbalance(selectedToken: Tokens) {
+    async function getSelectedTokenbalance() {
         setBalanceLoading(true);
         try {
             const balance = await tokenBalanceService.getSingleTokenBalance(
                 walletData.address,
-                props.sourceChain,
-                props.sourceToken
+                sourceChain,
+                sourceToken
             );
 
             if (balance) {
@@ -664,10 +678,10 @@ export default function Exchangeui(props: propsType) {
         }
     }
 
-    function getSelectedTokenBalanceOnInterval(selectedToken: Tokens) {
-        let refersh = setInterval(async (selectedToken) => {
+    function getSelectedTokenBalanceOnInterval() {
+        let refersh = setInterval(async () => {
             console.log("Interval for get token balance called");
-            await getSelectedTokenbalance(selectedToken);
+            await getSelectedTokenbalance();
             console.log("Interval completed for get token balance called");
         }, 60000);
         getSelectedTokenBalanceInterval.current = (refersh as unknown as number);

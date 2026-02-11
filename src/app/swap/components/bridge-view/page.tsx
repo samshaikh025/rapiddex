@@ -221,9 +221,9 @@ export default function BridgeView(props: propsType) {
                 // }
 
                 let status = await GetTransactionStatus(tx);
-                
+
                 // if 0 then check one more time tx status
-                if(status == 0){
+                if (status == 0) {
                     status = await GetTransactionStatus(tx);
                 }
                 console.log("Transaction Status:", status);
@@ -245,6 +245,7 @@ export default function BridgeView(props: propsType) {
             }
         }
         if (activeTransactionData.isMultiChain == true && activeTransactionData.transactionStatus == TransactionStatus.PENDING) {
+            debugger;
             sharedService.setData(Keys.ACTIVE_TRANASCTION_DATA, activeTransactionData);
             let transactionStatus = '';
             //Proceed with the main transaction
@@ -462,7 +463,7 @@ export default function BridgeView(props: propsType) {
         document.getElementById('exceptionOffCanvas').classList.remove('show');
     }
 
-    function goBack(){
+    function goBack() {
         sharedService.removeData(Keys.ACTIVE_TRANASCTION_DATA);
         dispatch(SetActiveTransactionA(new TransactionRequestoDto()));
         props.closeBridgeView();
@@ -559,223 +560,223 @@ export default function BridgeView(props: propsType) {
     }
 
     return (
-            <div className="card" style={{overflow: "hidden", borderRadius: isPaymentMode ? 0 : 32}}>
-                <div className={!isPaymentMode ? "p-24" : null}>
+        <div className="card" style={{ overflow: "hidden", borderRadius: isPaymentMode ? 0 : 32 }}>
+            <div className={!isPaymentMode ? "p-24" : null}>
 
-                    {
-                        !isPaymentMode &&
-                        <div className="d-block gap-3 align-items-center mb-4">
-                            <div className="card-action-wrapper cursor-pointer left-arrow" id="back-to-swap" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>
-                                <i className="fas fa-chevron-left"></i>
-                            </div>
-                            <div className="card-title">
-                                Swap
-                            </div>
-
-
+                {
+                    !isPaymentMode &&
+                    <div className="d-block gap-3 align-items-center mb-4">
+                        <div className="card-action-wrapper cursor-pointer left-arrow" id="back-to-swap" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>
+                            <i className="fas fa-chevron-left"></i>
+                        </div>
+                        <div className="card-title">
+                            Swap
+                        </div>
 
 
-                            {/* <div className="card-action-wrapper">
+
+
+                        {/* <div className="card-action-wrapper">
                                 <i className="fas fa-cog cursor-pointer"></i>
                                 </div> */}
-                        </div>
-                    }
+                    </div>
+                }
 
+                {
+                    !isPaymentMode &&
+                    <>
+                        <div className="d-flex align-items-center gap-3 position-relative">
+                            <div className="inner-card w-100 py-2 px-3" id="select-coin">
+                                <label className="mb-2 fw-600">From</label>
+                                <div className="d-flex align-items-center gap-3">
+                                    <div className="position-relative coin-wrapper">
+                                        {!utilityService.isNullOrEmpty(activeTransactionData?.sourceChainLogoUri) && <img src={activeTransactionData?.sourceChainLogoUri}
+                                            className="coin" alt="coin" />}
+                                        {!utilityService.isNullOrEmpty(activeTransactionData?.sourceTokenLogoUri) && <img src={activeTransactionData?.sourceTokenLogoUri}
+                                            className="coin-small" alt="coin" />}
+                                    </div>
+                                    <div className="d-flex flex-column">
+                                        <label className="coin-name d-block fw-600">{activeTransactionData?.sourceChainName}</label>
+                                        <label className="coin-sub-name">{activeTransactionData?.sourceTokenSymbol}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="change-btn position-absolute cursor-pointer inner-card d-flex align-items-center justify-content-center">
+                                <i className="fas fa-exchange-alt"></i>
+                            </div>
+                            <div className="inner-card w-100 py-2 px-3">
+                                <label className="mb-2 fw-600">To</label>
+                                <div className="d-flex align-items-center gap-3">
+                                    <div className="position-relative coin-wrapper">
+                                        {!utilityService.isNullOrEmpty(activeTransactionData?.destinationChainLogoUri) && <img src={activeTransactionData?.destinationChainLogoUri}
+                                            className="coin" alt="coin" />}
+                                        {!utilityService.isNullOrEmpty(activeTransactionData?.destinationTokenLogoUri) && <img src={activeTransactionData?.destinationTokenLogoUri}
+                                            className="coin-small" alt="coin" />}
+                                    </div>
+                                    <div className="d-flex flex-column">
+                                        <label className="coin-name d-block fw-600">{activeTransactionData?.destinationChainName}</label>
+                                        <label className="coin-sub-name">{activeTransactionData?.destinationTokenSymbol}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                }
+
+                <div className={`inner-card w-100 p-4 swap-card ${!isPaymentMode ? "mt-3" : null}`} >
+                    <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE ? 'step-active' : ''}`}>
+                        <div>
+                            <div className="circle">
+                                {
+                                    activeTransactionData.transactionStatus > TransactionStatus.ALLOWANCSTATE &&
+                                    <>
+                                        <i className="fa fa-check"></i>
+                                    </>
+                                }
+                                {
+                                    activeTransactionData.transactionStatus < TransactionStatus.ALLOWANCSTATE &&
+                                    <>
+                                        <span>1</span>
+                                    </>
+                                }
+                                {
+                                    activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE &&
+                                    <>
+                                        <span><i className="fas fa-spinner fa-spin"></i></span>
+                                    </>
+                                }
+                            </div>
+                        </div>
+                        <div>
+                            <div className="title">Token Allowance</div>
+                            <div className="caption">Allowance To Non Native Token</div>
+                            {
+                                (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
+                                <>
+                                    <span className="text-danger">{execptionErrorMessage}</span>
+                                </>
+                            }
+                        </div>
+                    </div>
+                    <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.PENDING ? 'step-active' : ''}`}>
+                        <div>
+                            <div className="circle">
+                                {
+                                    activeTransactionData.transactionStatus > TransactionStatus.PENDING &&
+                                    <>
+                                        <i className="fa fa-check"></i>
+                                    </>
+                                }
+                                {
+                                    activeTransactionData.transactionStatus < TransactionStatus.PENDING &&
+                                    <>
+                                        <span>2</span>
+                                    </>
+                                }
+                                {
+                                    activeTransactionData.transactionStatus == TransactionStatus.PENDING &&
+                                    <>
+                                        <span><i className="fas fa-spinner fa-spin"></i></span>
+                                    </>
+                                }
+                            </div>
+                        </div>
+                        <div>
+                            <div className="title">Swap Transaction</div>
+                            <div className="caption">Transaction Swap Via Bridge</div>
+                            {
+                                (activeTransactionData.transactionStatus == TransactionStatus.PENDING && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
+                                <>
+                                    <span className="text-danger">{execptionErrorMessage}</span>
+                                </>
+                            }
+                        </div>
+                    </div>
+                    <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.COMPLETED ? 'step-active' : ''}`}>
+                        <div>
+                            <div className="circle">
+                                {
+                                    (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED && (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED)) &&
+                                    <>
+                                        <i className="fa fa-check"></i>
+                                    </>
+                                }
+                                {
+                                    activeTransactionData.transactionStatus < TransactionStatus.COMPLETED &&
+                                    <>
+                                        <span>3</span>
+                                    </>
+                                }
+                                {
+                                    (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED && (activeTransactionData.transactionSubStatus == 0 || activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING)) &&
+                                    <>
+                                        <span><i className="fas fa-spinner fa-spin"></i></span>
+                                    </>
+                                }
+                            </div>
+                        </div>
+                        <div>
+                            <div className="title">Transaction Status</div>
+                            <div className="caption">
+                                Swap Transaction
+                                {
+                                    activeTransactionData.transactionSubStatus == 0 &&
+                                    <>
+                                        <span className="alert alert-secondary px-2 p-0 mx-1" role="alert">
+                                            Not Started
+                                        </span>
+                                    </>
+
+                                }
+                                {
+                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING &&
+                                    <>
+                                        <span className="alert alert-warning px-2 p-0 mx-1" role="alert">
+                                            Pending
+                                        </span>
+                                    </>
+
+                                }
+                                {
+                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED &&
+                                    <>
+                                        <span className="alert alert-danger px-2 mx-1" role="alert">
+                                            Failed
+                                        </span>
+                                    </>
+
+                                }
+                                {
+                                    activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE &&
+                                    <>
+                                        <span className="alert alert-success px-2 p-0 mx-1" role="alert">
+                                            Success
+                                        </span>
+                                    </>
+
+                                }
+
+                                {
+                                    (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
+                                    <>
+                                        <span className="text-danger">{execptionErrorMessage}</span>
+                                    </>
+                                }
+                            </div>
+                        </div>
+                    </div>
                     {
-                        !isPaymentMode &&
+                        ((activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) && !isPaymentMode) &&
                         <>
-                            <div className="d-flex align-items-center gap-3 position-relative">
-                                <div className="inner-card w-100 py-2 px-3" id="select-coin">
-                                    <label className="mb-2 fw-600">From</label>
-                                    <div className="d-flex align-items-center gap-3">
-                                        <div className="position-relative coin-wrapper">
-                                            {!utilityService.isNullOrEmpty(activeTransactionData?.sourceChainLogoUri) && <img src={activeTransactionData?.sourceChainLogoUri}
-                                                className="coin" alt="coin" />}
-                                            {!utilityService.isNullOrEmpty(activeTransactionData?.sourceTokenLogoUri) && <img src={activeTransactionData?.sourceTokenLogoUri}
-                                                className="coin-small" alt="coin" />}
-                                        </div>
-                                        <div className="d-flex flex-column">
-                                            <label className="coin-name d-block fw-600">{activeTransactionData?.sourceChainName}</label>
-                                            <label className="coin-sub-name">{activeTransactionData?.sourceTokenSymbol}</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="change-btn position-absolute cursor-pointer inner-card d-flex align-items-center justify-content-center">
-                                    <i className="fas fa-exchange-alt"></i>
-                                </div>
-                                <div className="inner-card w-100 py-2 px-3">
-                                    <label className="mb-2 fw-600">To</label>
-                                    <div className="d-flex align-items-center gap-3">
-                                        <div className="position-relative coin-wrapper">
-                                            {!utilityService.isNullOrEmpty(activeTransactionData?.destinationChainLogoUri) && <img src={activeTransactionData?.destinationChainLogoUri}
-                                                className="coin" alt="coin" />}
-                                            {!utilityService.isNullOrEmpty(activeTransactionData?.destinationTokenLogoUri) && <img src={activeTransactionData?.destinationTokenLogoUri}
-                                                className="coin-small" alt="coin" />}
-                                        </div>
-                                        <div className="d-flex flex-column">
-                                            <label className="coin-name d-block fw-600">{activeTransactionData?.destinationChainName}</label>
-                                            <label className="coin-sub-name">{activeTransactionData?.destinationTokenSymbol}</label>
-                                        </div>
-                                    </div>
-                                </div>
+
+                            <div className="inner-card swap-card-btn mt-4">
+                                <label><a href="" role="button" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>Swap More</a></label>
                             </div>
                         </>
                     }
-                    
-                    <div className={`inner-card w-100 p-4 swap-card ${!isPaymentMode ? "mt-3" : null}`} >
-                        <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE ? 'step-active' : ''}`}>
-                            <div>
-                                <div className="circle">
-                                    {
-                                        activeTransactionData.transactionStatus > TransactionStatus.ALLOWANCSTATE &&
-                                        <>
-                                            <i className="fa fa-check"></i>
-                                        </>
-                                    }
-                                    {
-                                        activeTransactionData.transactionStatus < TransactionStatus.ALLOWANCSTATE &&
-                                        <>
-                                            <span>1</span>
-                                        </>
-                                    }
-                                    {
-                                        activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE &&
-                                        <>
-                                            <span><i className="fas fa-spinner fa-spin"></i></span>
-                                        </>
-                                    }
-                                </div>
-                            </div>
-                            <div>
-                                <div className="title">Token Allowance</div>
-                                <div className="caption">Allowance To Non Native Token</div>
-                                {
-                                    (activeTransactionData.transactionStatus == TransactionStatus.ALLOWANCSTATE && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
-                                    <>
-                                        <span className="text-danger">{execptionErrorMessage}</span>
-                                    </>
-                                }
-                            </div>
-                        </div>
-                        <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.PENDING ? 'step-active' : ''}`}>
-                            <div>
-                                <div className="circle">
-                                    {
-                                        activeTransactionData.transactionStatus > TransactionStatus.PENDING &&
-                                        <>
-                                            <i className="fa fa-check"></i>
-                                        </>
-                                    }
-                                    {
-                                        activeTransactionData.transactionStatus < TransactionStatus.PENDING &&
-                                        <>
-                                            <span>2</span>
-                                        </>
-                                    }
-                                    {
-                                        activeTransactionData.transactionStatus == TransactionStatus.PENDING &&
-                                        <>
-                                            <span><i className="fas fa-spinner fa-spin"></i></span>
-                                        </>
-                                    }
-                                </div>
-                            </div>
-                            <div>
-                                <div className="title">Swap Transaction</div>
-                                <div className="caption">Transaction Swap Via Bridge</div>
-                                {
-                                    (activeTransactionData.transactionStatus == TransactionStatus.PENDING && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
-                                    <>
-                                        <span className="text-danger">{execptionErrorMessage}</span>
-                                    </>
-                                }
-                            </div>
-                        </div>
-                        <div className={`step ${activeTransactionData.transactionStatus == TransactionStatus.COMPLETED ? 'step-active' : ''}`}>
-                            <div>
-                                <div className="circle">
-                                    {
-                                        (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED && (activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED)) &&
-                                        <>
-                                            <i className="fa fa-check"></i>
-                                        </>
-                                    }
-                                    {
-                                        activeTransactionData.transactionStatus < TransactionStatus.COMPLETED &&
-                                        <>
-                                            <span>3</span>
-                                        </>
-                                    }
-                                    {
-                                        (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED && (activeTransactionData.transactionSubStatus == 0 || activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING)) &&
-                                        <>
-                                            <span><i className="fas fa-spinner fa-spin"></i></span>
-                                        </>
-                                    }
-                                </div>
-                            </div>
-                            <div>
-                                <div className="title">Transaction Status</div>
-                                <div className="caption">
-                                    Swap Transaction
-                                    {
-                                        activeTransactionData.transactionSubStatus == 0 &&
-                                        <>
-                                            <span className="alert alert-secondary px-2 p-0 mx-1" role="alert">
-                                                Not Started
-                                            </span>
-                                        </>
-
-                                    }
-                                    {
-                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.PENDING &&
-                                        <>
-                                            <span className="alert alert-warning px-2 p-0 mx-1" role="alert">
-                                                Pending
-                                            </span>
-                                        </>
-
-                                    }
-                                    {
-                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED &&
-                                        <>
-                                            <span className="alert alert-danger px-2 mx-1" role="alert">
-                                                Failed
-                                            </span>
-                                        </>
-
-                                    }
-                                    {
-                                        activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE &&
-                                        <>
-                                            <span className="alert alert-success px-2 p-0 mx-1" role="alert">
-                                                Success
-                                            </span>
-                                        </>
-
-                                    }
-
-                                    {
-                                        (activeTransactionData.transactionStatus == TransactionStatus.COMPLETED && !utilityService.isNullOrEmpty(execptionErrorMessage)) &&
-                                        <>
-                                            <span className="text-danger">{execptionErrorMessage}</span>
-                                        </>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        {
-                            ((activeTransactionData.transactionSubStatus == TransactionSubStatus.DONE || activeTransactionData.transactionSubStatus == TransactionSubStatus.FAILED) && !isPaymentMode) &&
-                            <>
-
-                                <div className="inner-card swap-card-btn mt-4">
-                                    <label><a href="" role="button" onClick={(event) => { event.preventDefault(); closeBridgeView() }}>Swap More</a></label>
-                                </div>
-                            </>
-                        }
-                        {
-                            !utilityService.isNullOrEmpty(execptionErrorMessage) &&
-                            <>
+                    {
+                        !utilityService.isNullOrEmpty(execptionErrorMessage) &&
+                        <>
                             <div className="row justify-content-center mt-4"> {/* g-2 adds space between cols */}
                                 {isPaymentMode && (
                                     <div className="col-5 inner-card swap-card-btn me-3">
@@ -811,39 +812,39 @@ export default function BridgeView(props: propsType) {
                                     </label>
                                 </div>
                             </div>
+                        </>
+                    }
+                </div>
+
+                <div
+                    className="offcanvas offcanvas-bottom position-absolute offcanvas-cms custom-backgrop"
+                    id="exceptionOffCanvas"
+                    data-bs-backdrop="true"
+                    aria-labelledby="exceptionOffCanvasLabel"
+                    style={{ height: '35%' }}
+                >
+                    <div className="offcanvas-header offcanvas-close-btn justify-content-between">
+                        <h5 className="offcanvas-title card-title" id="offcanvasExampleLabel">Transaction Error</h5>
+                        <i className="fa-solid fa-xmark" onClick={() => closeExceptionModal()}></i>
+                    </div>
+                    <div className="offcanvas-body small py-0">
+                        {
+                            !utilityService.isNullOrEmpty(execptionErrorMessage) &&
+                            <>
+                                <div className="alert alert-danger">
+                                    <div className="d-inline">
+                                        <i className="fa-regular fa-circle-xmark"></i>
+                                    </div>
+                                    <div className="d-inline mx-1">
+                                        <span>{execptionErrorMessage}</span>
+                                    </div>
+                                </div>
                             </>
                         }
                     </div>
-
-                    <div
-                        className="offcanvas offcanvas-bottom position-absolute offcanvas-cms custom-backgrop"
-                        id="exceptionOffCanvas"
-                        data-bs-backdrop="true"
-                        aria-labelledby="exceptionOffCanvasLabel"
-                        style={{ height: '35%' }}
-                    >
-                        <div className="offcanvas-header offcanvas-close-btn justify-content-between">
-                            <h5 className="offcanvas-title card-title" id="offcanvasExampleLabel">Transaction Error</h5>
-                            <i className="fa-solid fa-xmark" onClick={() => closeExceptionModal()}></i>
-                        </div>
-                        <div className="offcanvas-body small py-0">
-                            {
-                                !utilityService.isNullOrEmpty(execptionErrorMessage) &&
-                                <>
-                                    <div className="alert alert-danger">
-                                        <div className="d-inline">
-                                            <i className="fa-regular fa-circle-xmark"></i>
-                                        </div>
-                                        <div className="d-inline mx-1">
-                                            <span>{execptionErrorMessage}</span>
-                                        </div>
-                                    </div>
-                                </>
-                            }
-                        </div>
-                    </div>
                 </div>
             </div>
+        </div>
     )
 }
 

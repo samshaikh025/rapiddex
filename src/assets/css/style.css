@@ -1,7 +1,7 @@
 .header {
     position: fixed;
     width: 100%;
-    top: 16px;
+    top: 8px;
     z-index: 1
 }
 
@@ -12,8 +12,9 @@
 .header .header-wrapper {
     border: 1px solid var(--border-color-40);
     padding: 10px 20px;
-    background: var(--header-card);
-    border-radius: 100px;
+
+    border-left: 0px;
+    border-right: 0px;
 }
 
 .header .header-wrapper .site-logo img {
@@ -35,12 +36,12 @@
     border-radius: 100px
 }
 
-.header .header-wrapper .menu-wrapper > a:hover,
-.header .header-wrapper .menu-wrapper > a.active {
+.header .header-wrapper .menu-wrapper>a:hover,
+.header .header-wrapper .menu-wrapper>a.active {
     background-color: var(--primary-color-8)
 }
 
-.header .header-wrapper .menu-wrapper .dropdown > a.dropdown-toggle:hover {
+.header .header-wrapper .menu-wrapper .dropdown>a.dropdown-toggle:hover {
     background-color: var(--primary-color-8)
 }
 
@@ -368,7 +369,7 @@
 }
 
 .offcanvas-backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .btn-close {
